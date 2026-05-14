@@ -4,12 +4,12 @@
 
 ### Authentication
 
-- [ ] R1: Users authenticate via email-based magic link flow
-- [ ] R2: Magic link expires after configurable timeout (default: 15 minutes)
-- [ ] R3: Token stored in client for subsequent requests
-- [ ] R4: Token validation on each WebSocket connection
-- [ ] R5: Token invalidation on explicit logout or expiration
-- [ ] R6: Rate limiting on magic link requests (max 5 per email per hour)
+- [x] R1: Users authenticate via email-based magic link flow (Iteration 2 - I2-001)
+- [x] R2: Magic link expires after configurable timeout (default: 15 minutes) (Iteration 2 - I2-001)
+- [x] R3: Token stored in client for subsequent requests (Iteration 2 - I2-001)
+- [x] R4: Token validation on each WebSocket connection (Iteration 2 - I2-001)
+- [x] R5: Token invalidation on explicit logout or expiration (Iteration 2 - I2-001)
+- [x] R6: Rate limiting on magic link requests (max 5 per email per hour) (Iteration 2 - I2-001)
 
 ### Room Management
 
@@ -79,10 +79,10 @@
 - [ ] R55: Room list with unread indicators
 - [x] R56: Message display with timestamps and sender identification (Iteration 1)
 - [x] R57: Message input with send button and Enter key support (Iteration 1)
-- [ ] R58: Email input for magic link request
-- [ ] R59: Magic link verification page
-- [ ] R60: Session persistence across page refreshes
-- [ ] R61: Logout functionality
+- [x] R58: Email input for magic link request (Iteration 2 - I2-001)
+- [x] R59: Magic link verification page (Iteration 2 - I2-001 - API endpoint with redirect)
+- [x] R60: Session persistence across page refreshes (Iteration 2 - I2-001)
+- [x] R61: Logout functionality (Iteration 2 - I2-001)
 - [ ] R62: Create room interface
 - [ ] R63: Join room interface (public list or code entry)
 - [ ] R64: Room settings panel
