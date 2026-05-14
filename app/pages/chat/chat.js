@@ -15,12 +15,37 @@ var Chat = {
   },
   template: `
     <Page>
-      <v-layout style="height:100vh;">
+      <!-- Authentication Dialog -->
+      <AuthDialog v-if="!authenticated" ref="authDialog"/>
+
+      <v-layout v-if="authenticated" style="height:100vh;">
+        <!-- App Bar with User Menu -->
+        <v-app-bar flat color="surface">
+          <v-toolbar-title><v-icon>mdi-chat</v-icon> Roomz</v-toolbar-title>
+          <v-spacer></v-spacer>
+          <v-menu v-if="currentUser">
+            <template v-slot:activator="{ props }">
+              <v-btn v-bind="props" variant="text">
+                <v-icon start>mdi-account</v-icon>
+                {{ currentUser.email }}
+                <v-icon end>mdi-chevron-down</v-icon>
+              </v-btn>
+            </template>
+            <v-list density="compact">
+              <v-list-item @click="handleLogout">
+                <v-list-item-title>
+                  <v-icon start>mdi-logout</v-icon>
+                  Sign Out
+                </v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
+        </v-app-bar>
+
         <!-- Messages Display Area -->
         <v-main style="height: 100%; overflow: hidden;">
           <v-container fluid style="height: 100%; display: flex; flex-direction: column; padding: 8px;">
             <v-card style="flex: 1; display: flex; flex-direction: column;">
-              <v-card-title class="text-h6">Roomz Chat</v-card-title>
               <v-card-text
                 ref="messagesContainer"
                 style="flex: 1; overflow-y: auto; padding: 16px;"
@@ -35,9 +60,14 @@ var Chat = {
                   :style="{'background-color': message.system ? 'rgba(var(--v-theme-surface-variant))' : 'rgba(var(--v-theme-primary), 0.1)'}"
                 >
                   <div class="text-caption text-medium-emphasis" style="margin-bottom: 4px;">
-                    {{ formatTime(message.timestamp) }}
-                    <span v-if="!message.system && message.sid" style="margin-left: 8px; font-weight: bold;">
-                      {{ message.sid.substring(0, 6) }}
+                    <span v-if="!message.system">
+                      <strong>{{ message.user ? message.user.email : 'Unknown' }}</strong>
+                      <span style="margin-left: 8px; opacity: 0.7;">
+                        {{ formatTime(message.timestamp) }}
+                      </span>
+                    </span>
+                    <span v-else>
+                      {{ formatTime(message.timestamp) }}
                     </span>
                   </div>
                   <div v-if="message.system" class="text-body-2 font-italic">
@@ -79,7 +109,7 @@ var Chat = {
 
         <!-- Connection Status Snackbar -->
         <v-snackbar
-          v-model="showDisconnected"
+          v-model="disconnected"
           color="warning"
           :timeout="-1"
           location="top"
@@ -92,15 +122,21 @@ var Chat = {
   `,
   data() {
     return {
+      connected: false,
       messages: [],
       messageInput: '',
-      sending: false,
-      showDisconnected: false
+      sending: false
     };
   },
   computed: {
-    connected() {
-      return this.$root.connected;
+    disconnected() {
+      return !this.connected;
+    },
+    authenticated() {
+      return store.getters.session != null;
+    },
+    currentUser() {
+      return this.authenticated ? store.getters.session.user : null;
     }
   },
   methods: {
@@ -124,6 +160,7 @@ var Chat = {
       });
     },
     scrollToBottom() {
+      // TODO: also call this function when the window is resized
       this.$nextTick(() => {
         const container = this.$refs.messagesContainer;
         if (container && container.$el) {
@@ -138,9 +175,14 @@ var Chat = {
     addMessage(message) {
       this.messages.push(message);
       this.scrollToBottom();
+    },
+    handleLogout() {
+      store.dispatch("logout");
     }
   },
   mounted() {
+    // TODO: also move this to a messages Store to avoid complexity and have flexibility
+
     // Clean up any existing listeners first (in case of reconnection)
     socket.off('message');
     socket.off('user_joined');
@@ -155,36 +197,37 @@ var Chat = {
 
     // Listen for user joined events
     socket.on('user_joined', (data) => {
-      this.messages.push({
+      const email = data.user ? data.user.email : 'Unknown';
+      this.addMessage({
         id: `system-${Date.now()}`,
         system: true,
-        content: `User joined`,
+        content: `${email} joined`,
         timestamp: data.timestamp
       });
-      this.scrollToBottom();
     });
 
     // Listen for user left events
     socket.on('user_left', (data) => {
-      this.messages.push({
+      const email = data.user ? data.user.email : 'Unknown';
+      this.addMessage({
         id: `system-${Date.now()}`,
         system: true,
-        content: `User left`,
+        content: `${email} left`,
         timestamp: data.timestamp
       });
-      this.scrollToBottom();
     });
 
     // Connection established
     socket.on('connect', () => {
-      console.log('Connected to chat server');
-      this.showDisconnected = false;
+      this.connected = true;
+      console.log("Connected to chat server. Authenticated as", this.currentUser);
+      // TODO: re-establish session, to ensure we're still actually authenticated
     });
 
     // Handle disconnection
     socket.on('disconnect', () => {
-      console.log('Disconnected from chat server');
-      this.showDisconnected = true;
+      this.connected = false;
+      console.log("Disconnected from chat server");
     });
   },
   beforeUnmount() {
@@ -197,7 +240,6 @@ var Chat = {
   }
 };
 
-// Register component with app
 app.component('Chat', Chat);
 
 // Register with baseweb's Navigation system

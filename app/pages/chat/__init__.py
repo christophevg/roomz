@@ -4,8 +4,8 @@ Chat page module for Roomz.
 Registers the chat component and route with baseweb.
 """
 
-import os
 import logging
+import os
 
 from ... import server
 

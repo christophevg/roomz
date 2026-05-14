@@ -1,18 +1,29 @@
 # Roomz
 
-A real-time chatroom web service with instant message broadcasting.
+[![PyPI version](https://img.shields.io/pypi/v/roomz.svg)](https://pypi.org/project/roomz/)
+[![PyPI downloads](https://img.shields.io/pypi/dm/roomz.svg)](https://pypistats.org/packages/roomz)
+[![Python versions](https://img.shields.io/pypi/pyversions/roomz.svg)](https://pypi.org/project/roomz/)
+[![License](https://img.shields.io/github/license/christophevg/roomz.svg)](https://github.com/christophevg/roomz/blob/main/LICENSE)
+[![CI](https://github.com/christophevg/roomz/actions/workflows/ci.yml/badge.svg)](https://github.com/christophevg/roomz/actions/workflows/ci.yml)
+[![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-blue.svg)](https://github.com/astral-sh/ruff)
+[![Type checked: mypy](https://img.shields.io/badge/type%20checked-mypy-blue.svg)](https://mypy.readthedocs.io/)
+[![Agentic](https://img.shields.io/badge/workflow-agentic-blueviolet?style=flat-square)](https://christophe.vg/about/Coding-Agent)
 
-[![License](https://img.shields.io/github/license/christophevg/roomz.svg)](https://github.com/christophevg/roomz/blob/master/LICENSE)
-[![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+A real-time chatroom web service with magic link authentication.
 
 ## What is Roomz?
 
-Roomz is a real-time chat application that lets multiple users communicate instantly in shared chat rooms. Built with modern async technology (Quart + SocketIO), it provides seamless real-time messaging without page refreshes.
+Roomz is a real-time chat application with secure magic link authentication. Built with modern async technology (Quart + SocketIO), it provides seamless real-time messaging with passwordless login.
 
-**Current Status**: Iteration 1 — Minimal working chat (authentication and rooms coming soon).
+## Screenshots
+
+| Login | Magic Link | Chat |
+|-------|-------------|------|
+| ![Login](media/login.png) | ![Magic Link](media/magic-link.png) | ![Chat](media/chat.png) |
 
 ## Features
 
+- **Magic Link Authentication**: Passwordless login via email
 - **Instant Messaging**: Messages appear instantly across all connected users
 - **Real-time Updates**: See when users join or leave
 - **Responsive Design**: Works on desktop, tablet, and mobile
@@ -34,6 +45,9 @@ cd /path/to/roomz
 
 # Install dependencies
 uv sync
+
+# Install dev dependencies (for testing)
+uv sync --extra dev
 ```
 
 ### Running the Application
@@ -54,61 +68,38 @@ Open [http://localhost:8000](http://localhost:8000) in your browser.
 # Run all tests
 uv run pytest tests/ -v
 
-# Run passing tests only (some integration tests are skipped)
-uv run pytest tests/test_app_structure.py tests/test_chat_page.py -v
+# Run tests with coverage
+uv run pytest --cov=app --cov-report=term-missing
+
+# Run tests across Python versions
+uv run tox
 ```
 
 ## How to Use
 
-### Basic Chat
+### Authentication
 
 1. Open the application in your browser
-2. Start typing messages in the input field at the bottom
+2. Enter your email address
+3. Click "Send Magic Link"
+4. Check the server console for the magic link (development mode)
+5. Click the magic link to authenticate
+6. You're now in the chat!
+
+### Chatting
+
+1. After authentication, you see the chat interface
+2. Type a message in the input field at the bottom
 3. Press **Enter** or click the **Send** button
 4. Your message appears instantly to all connected users
 
 ### Multiple Users
 
 1. Open the application in multiple browser tabs or windows
-2. Type messages in any tab
-3. All tabs see the messages instantly
-4. System messages show when users join or leave
-
-### Mobile Access
-
-1. Open the application on your mobile device
-2. The interface adapts to your screen size
-3. Touch-friendly input field and send button
-
-## Acceptance Testing
-
-You can verify the implementation works correctly:
-
-**Test 1: Basic Messaging**
-- Open the application in two browser tabs
-- Send a message from Tab 1
-- **Expected**: Message appears in both tabs instantly
-
-**Test 2: Multiple Users**
-- Open the application in three tabs
-- Send messages from different tabs
-- **Expected**: All messages appear in chronological order
-
-**Test 3: Connection Status**
-- Disconnect your network
-- **Expected**: "Connecting to server..." warning appears
-- Reconnect your network
-- **Expected**: Warning disappears, messaging works
-
-**Test 4: System Messages**
-- Open a second tab
-- **Expected**: First tab shows "User joined"
-- Close the second tab
-- **Expected**: First tab shows "User left"
-
-**Test 5: Mobile Responsive**
-- Resize browser to 320px width (or open on mobile)
-- **Expected**: Chat fills full width, input is touch-friendly
+2. Authenticate in each tab (can use same or different email)
+3. Type messages in any tab
+4. All tabs see the messages instantly
+5. System messages show when users join or leave
 
 ## Technology Stack
 
@@ -119,60 +110,46 @@ You can verify the implementation works correctly:
 | Framework | Baseweb |
 | Runtime | Python 3.10+ |
 | Server | Gunicorn + Uvicorn |
+| Auth | Magic links with httpOnly cookies |
 
 ## Architecture
 
 ```
 Browser (Vue 3 + Vuetify 4)
-    ↓ WebSocket
+    ↓ HTTP POST /auth/request-magic-link
+    Magic Link Email (or console in dev)
+    ↓ HTTP GET /auth/verify?token=...
+    httpOnly Cookie Set
+    ↓ WebSocket with cookie auth
 Quart Server + SocketIO
-    ↓ In-Memory
+    ↓ In-Memory Sessions
 Connected Users
 ```
-
-**Current Limitations:**
-- No authentication (anyone can connect)
-- No message persistence (messages lost on restart)
-- No rooms (all users see all messages)
-
-These features are planned for future iterations.
 
 ## Project Structure
 
 ```
 roomz/
 ├── app/
-│   ├── __init__.py          # Quart app + SocketIO handlers
-│   └── pages/chat/
-│       └── chat.js          # Vue chat component
-├── tests/                   # Test suite
-├── analysis/                # Design documents
+│   ├── __init__.py          # Quart app + SocketIO + Auth endpoints
+│   ├── auth.py             # Magic link and session management
+│   ├── models.py           # Session and magic link models
+│   ├── components/auth/    # AuthDialog Vue component
+│   └── pages/chat/         # Chat page Vue component
+├── tests/                  # Test suite
+├── analysis/               # Design documents
 ├── reporting/               # Task reports
-├── pyproject.toml           # Project configuration
-└── README.md                # This file
+├── pyproject.toml          # Project configuration
+└── README.md               # This file
 ```
 
 ## Development
 
 See [TODO.md](TODO.md) for planned features and [REQUIREMENTS.md](REQUIREMENTS.md) for full requirements list.
 
-See [analysis/](analysis/) for architecture and design documentation.
-
-## Requirements Satisfied
-
-This iteration satisfies: R18, R22, R23, R54, R56, R57, R66, R67, R68, R69, R70
-
-## Next Steps
-
-Future iterations will add:
-- **Iteration 2**: Authentication (secret dialog, magic links)
-- **Iteration 3**: Python client library
-- **Iteration 4**: Multiple chat rooms
-- **Iteration 7**: Message persistence (MongoDB)
-
 ## License
 
-[Add your license here]
+MIT License - See [LICENSE](LICENSE) for details.
 
 ## Credits
 
@@ -182,74 +159,3 @@ Built with:
 - [Socket.IO](https://python-socketio.readthedocs.io/) — Real-time communication
 - [Vue 3](https://vuejs.org/) — Frontend framework
 - [Vuetify 4](https://vuetifyjs.com/) — Material Design components
-
-## Quick Start
-
-### Prerequisites
-
-- Python 3.10+
-- [uv](https://docs.astral.sh/uv/) package manager
-
-### Installation
-
-```bash
-# Install dependencies
-uv sync
-
-# Install dev dependencies (for testing)
-uv sync --extra dev
-
-# Install package in editable mode
-uv pip install -e .
-```
-
-### Running the Application
-
-```bash
-# Start the development server
-uv run uvicorn app:asgi_app --reload --host 0.0.0.0 --port 8000
-```
-
-Then open [http://localhost:8000](http://localhost:8000) in your browser.
-
-### Testing
-
-```bash
-# Run all passing tests
-uv run pytest tests/test_app_structure.py -v
-
-# Note: Some SocketIO and async UI tests are skipped pending
-# integration test setup with actual WebSocket connections
-```
-
-### User Acceptance Testing
-
-**Test 1: Basic Chat**
-1. Open http://localhost:8000 in two browser tabs
-2. Type a message in Tab 1 and press Enter
-3. **Expected**: Message appears in both tabs instantly
-
-**Test 2: System Messages**
-1. Open http://localhost:8000 in Tab 1
-2. Open another tab (Tab 2)
-3. **Expected**: Tab 1 shows "User ... joined"
-4. Close Tab 2
-5. **Expected**: Tab 1 shows "User ... left"
-
-**Test 3: Mobile Responsive**
-1. Resize browser to 320px width (or open on mobile)
-2. **Expected**: Chat fills full width, input is touch-friendly
-
-## Architecture (Implemented)
-
-```
-app/
-├── __init__.py         # Quart app with SocketIO handlers
-│   - on_connect: Track connected clients, broadcast user_joined
-│   - on_disconnect: Remove client, broadcast user_left
-│   - on_message: Validate, sanitize, timestamp, broadcast to all
-└── pages/
-    └── chat/
-        ├── __init__.py  # Route registration
-        └── chat.js      # Vue 3 chat component
-```

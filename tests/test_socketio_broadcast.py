@@ -15,7 +15,9 @@ import pytest
 # Skip all tests in this module until SocketIO AsyncServer test support is implemented
 # The SocketIO AsyncServer class doesn't provide test_client method
 # Tests require integration testing setup with actual WebSocket connections
-pytestmark = pytest.mark.skip(reason="SocketIO AsyncServer doesn't support test_client - requires integration test setup")
+pytestmark = pytest.mark.skip(
+  reason="SocketIO AsyncServer doesn't support test_client - requires integration test setup"
+)
 
 
 class TestMessageBroadcast:
@@ -129,8 +131,7 @@ class TestMessageBroadcast:
     # Empty messages should NOT be broadcast - no 'message' event should be emitted
     # The handler returns {"error": "Missing or invalid 'content' field"} and doesn't broadcast
     assert len(message_events) == 0, (
-      "Empty message should not be broadcast. "
-      f"Expected 0 message events, got {len(message_events)}"
+      f"Empty message should not be broadcast. Expected 0 message events, got {len(message_events)}"
     )
 
   def test_max_message_length_enforced(self, socketio_client):
@@ -289,6 +290,7 @@ class TestClientConnection:
     """
     # This test verifies that MAX_CLIENTS constant exists
     from app import MAX_CLIENTS
+
     assert MAX_CLIENTS == 1000, "MAX_CLIENTS should be configured"
 
   def test_connection_limit_rejection_behavior(self, connected_clients_tracker):
@@ -299,13 +301,13 @@ class TestClientConnection:
     When: Connection attempt when limit reached
     Then: Connection is rejected
     """
-    from app import server, connected_clients, MAX_CLIENTS
+    from app import MAX_CLIENTS, connected_clients, server
 
     # Note: Creating 1000+ real connections would be resource-intensive.
     # Instead, we simulate the condition by filling connected_clients set.
 
     # Save original count for restoration
-    original_count = len(connected_clients)
+    _ = len(connected_clients)
 
     # Clear connected clients and add mock SIDs to fill the connection limit
     connected_clients.clear()
@@ -322,7 +324,7 @@ class TestClientConnection:
 
     # Try to connect a new client - this should be rejected
     # The on_connect handler returns False when limit is reached
-    new_client = server.socketio.test_client(server._app)
+    _ = server.socketio.test_client(server._app)
 
     # Verify connected_clients was NOT increased (connection rejected)
     # The new client's SID should NOT be in connected_clients
@@ -340,8 +342,7 @@ class TestClientConnection:
     # (no new real SID from the attempted connection)
     new_sids = sids_after - sids_before
     assert len(new_sids) == 0, (
-      f"No new SID should be added when at capacity. "
-      f"Got {len(new_sids)} new SIDs: {new_sids}"
+      f"No new SID should be added when at capacity. Got {len(new_sids)} new SIDs: {new_sids}"
     )
 
     # Clean up - restore original state
@@ -417,7 +418,7 @@ class TestMessageAcknowledgment:
     # Send multiple messages
     message_ids = []
     for client in multiple_socketio_clients:
-      client.emit("message", {"content": f"Message from client"})
+      client.emit("message", {"content": "Message from client"})
       received = client.get_received()
       message_events = [event for event in received if event["name"] == "message"]
 

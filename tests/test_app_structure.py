@@ -5,8 +5,8 @@ This module tests that the project structure follows baseweb patterns,
 has correct configuration, and proper initialization.
 """
 
-import pytest
 from pathlib import Path
+
 import tomli
 
 
@@ -199,6 +199,7 @@ class TestBasewebInitialization:
     Then: Baseweb instance is created with name 'roomz'
     """
     from app import server
+
     assert server is not None, "Server should be initialized"
     assert server.name == "roomz", "Server name should be 'roomz'"
 
@@ -211,6 +212,7 @@ class TestBasewebInitialization:
     Then: SocketIO is enabled for WebSocket support
     """
     from app import server
+
     assert server.socketio is not None, "SocketIO should be enabled"
 
   def test_asgi_app_entry_point(self):
@@ -222,6 +224,7 @@ class TestBasewebInitialization:
     Then: asgi_app variable is properly defined
     """
     from app import asgi_app
+
     assert asgi_app is not None, "ASGI app entry point should be defined"
 
   def test_pages_import(self):
@@ -235,6 +238,7 @@ class TestBasewebInitialization:
     # This test verifies that importing app doesn't raise an error
     # The pages module should be imported successfully
     import app.pages
+
     assert app.pages is not None, "Pages module should be imported"
 
 
