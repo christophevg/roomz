@@ -2,23 +2,6 @@
 
 ## Backlog
 
-### Iteration 2: Temporary Authentication
-
-**Goal**: Basic user identification without full auth infrastructure
-
-- [ ] **I2-002: Logged link authentication**
-  - Server logs authentication link to console on startup or request
-  - Link contains token that authenticates user
-  - User copies link to browser to authenticate
-  - Simulates magic link flow without email infrastructure
-  - **Delivers**: Testable authentication flow for development
-  - **Satisfies**: R1 (partial)
-  - **Acceptance**: Copy logged link to browser, get authenticated without entering secret
-
-**Result**: Users can "log in" via shared secret or logged link. Their display name appears with messages. Still no persistence, no rooms.
-
----
-
 ### Iteration 3: Python Client
 
 **Goal**: Complete ecosystem with both client channels
@@ -280,6 +263,18 @@
     - ✅ Logout clears session
 
 **Result**: Users can authenticate via magic link. Their email appears with messages. Session persists across page refreshes.
+
+- [x] **I2-002: Logged link authentication** (2026-05-14)
+  - **NOTE**: This task was merged into I2-001 implementation
+  - Server already logs magic link to console on request
+  - Link contains token that authenticates user
+  - User copies link to browser to authenticate
+  - Simulates magic link flow without email infrastructure
+  - **Delivers**: Testable authentication flow for development
+  - **Satisfies**: R1 (partial)
+  - **Acceptance**: ✅ Copy logged link to browser, get authenticated
+
+**Result**: Iteration 2 complete. Users authenticate via magic link (logged to console in dev mode). Session persists with httpOnly cookies.
 
 - [x] **I1-001: Minimal Chat Broadcast** (2026-05-14)
   - Created complete baseweb project with SocketIO support
