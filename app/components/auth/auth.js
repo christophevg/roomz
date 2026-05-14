@@ -52,6 +52,7 @@ app.component('AuthDialog', {
               density="comfortable"
               variant="outlined"
               class="mb-3"
+              autofocus
             ></v-text-field>
 
             <!-- Success Message -->
