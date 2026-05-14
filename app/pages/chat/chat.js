@@ -15,7 +15,7 @@ var Chat = {
   },
   template: `
     <Page>
-      <v-layout style="height: calc(100vh - 64px);">
+      <v-layout style="height:100vh;">
         <!-- Messages Display Area -->
         <v-main style="height: 100%; overflow: hidden;">
           <v-container fluid style="height: 100%; display: flex; flex-direction: column; padding: 8px;">
