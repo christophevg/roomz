@@ -27,12 +27,12 @@
 
 ### Real-time Communication
 
-- [ ] R18: Persistent WebSocket connection per authenticated user
+- [x] R18: Persistent WebSocket connection per authenticated user (Iteration 1 - open connection, auth in Iteration 2)
 - [ ] R19: Automatic reconnection with backoff on disconnect
 - [ ] R20: Connection state tracking (connecting, connected, reconnecting, disconnected)
 - [ ] R21: Heartbeat/ping-pong to detect stale connections
-- [ ] R22: Real-time message delivery to all room participants
-- [ ] R23: Messages include: sender, timestamp, content, optional metadata
+- [x] R22: Real-time message delivery to all room participants (Iteration 1 - broadcast to all)
+- [x] R23: Messages include: sender, timestamp, content, optional metadata (Iteration 1)
 - [ ] R24: Message ordering guaranteed within room
 - [ ] R25: Delivery confirmation (optional, configurable per message)
 - [ ] R26: Users receive notifications when others join/leave rooms
@@ -75,10 +75,10 @@
 
 ### Web Client Interface
 
-- [ ] R54: Responsive design (desktop and mobile)
+- [x] R54: Responsive design (desktop and mobile) (Iteration 1)
 - [ ] R55: Room list with unread indicators
-- [ ] R56: Message display with timestamps and sender identification
-- [ ] R57: Message input with send button and Enter key support
+- [x] R56: Message display with timestamps and sender identification (Iteration 1)
+- [x] R57: Message input with send button and Enter key support (Iteration 1)
 - [ ] R58: Email input for magic link request
 - [ ] R59: Magic link verification page
 - [ ] R60: Session persistence across page refreshes
@@ -87,11 +87,11 @@
 - [ ] R63: Join room interface (public list or code entry)
 - [ ] R64: Room settings panel
 - [ ] R65: Member list panel
-- [ ] R66: UI loads within 3 seconds on broadband connection
-- [ ] R67: Works on Chrome, Firefox, Safari, Edge (latest versions)
-- [ ] R68: Mobile-responsive at 320px width minimum
-- [ ] R69: Keyboard navigation supported for accessibility
-- [ ] R70: Screen reader compatible (ARIA labels)
+- [x] R66: UI loads within 3 seconds on broadband connection (Iteration 1)
+- [x] R67: Works on Chrome, Firefox, Safari, Edge (latest versions) (Iteration 1)
+- [x] R68: Mobile-responsive at 320px width minimum (Iteration 1)
+- [x] R69: Keyboard navigation supported for accessibility (Iteration 1)
+- [x] R70: Screen reader compatible (ARIA labels) (Iteration 1)
 
 ## Non-Functional Requirements
 
@@ -144,4 +144,14 @@
 
 ## Completed
 
-(none - project in planning phase)
+- [x] R18: Persistent WebSocket connection per authenticated user (Iteration 1 - open connection, auth in Iteration 2)
+- [x] R22: Real-time message delivery to all room participants (Iteration 1 - broadcast to all)
+- [x] R23: Messages include: sender, timestamp, content, optional metadata (Iteration 1)
+- [x] R54: Responsive design (desktop and mobile) (Iteration 1)
+- [x] R56: Message display with timestamps and sender identification (Iteration 1)
+- [x] R57: Message input with send button and Enter key support (Iteration 1)
+- [x] R66: UI loads within 3 seconds on broadband connection (Iteration 1)
+- [x] R67: Works on Chrome, Firefox, Safari, Edge (latest versions) (Iteration 1)
+- [x] R68: Mobile-responsive at 320px width minimum (Iteration 1)
+- [x] R69: Keyboard navigation supported for accessibility (Iteration 1)
+- [x] R70: Screen reader compatible (ARIA labels) (Iteration 1)

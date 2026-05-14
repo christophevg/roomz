@@ -1,0 +1,35 @@
+[project]
+name = "roomz"
+version = "0.1.0"
+description = "Real-time chatroom web service"
+requires-python = ">=3.10"
+dependencies = [
+  "baseweb>=0.5.0",
+  "gunicorn>=21.0.0",
+  "uvicorn[standard]>=0.24.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=7.0.0",
+  "pytest-asyncio>=0.21.0",
+  "tomli>=2.0.0",
+]
+
+[tool.uv.sources]
+# Use local baseweb from parent directory
+baseweb = { path = "../baseweb", editable = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+asyncio_mode = "auto"

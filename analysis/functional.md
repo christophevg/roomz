@@ -277,12 +277,12 @@ Roomz is a real-time chatroom web service built with Quart (async Flask) providi
 
 ### 3.3 Web Framework: Baseweb with Vuetify
 
-**Decision**: Use baseweb framework with Vuetify 3 for web client
+**Decision**: Use baseweb framework with Vuetify 4 for web client
 
 **Rationale:**
 - **Rapid Development**: Baseweb provides structure and common patterns
 - **Consistent**: Follows established project patterns
-- **Vuetify 3**: Modern Vue 3 compatible UI framework
+- **Vuetify 4**: Modern Vue 3 compatible UI framework
 - **Component Library**: Rich set of pre-built components
 - **Customizable**: Theming and styling support
 
@@ -643,7 +643,7 @@ Server -> User: Join previous rooms, receive missed messages
 - Motor (async MongoDB driver)
 - Redis (optional, for session caching if needed)
 - Email delivery service
-- Vue 3 + Vuetify 3 (for web client)
+- Vue 3 + Vuetify 4 (for web client)
 
 ### Assumptions
 - Users have reliable internet connection for WebSocket

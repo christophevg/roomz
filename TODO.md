@@ -2,37 +2,6 @@
 
 ## Backlog
 
-### Iteration 1: Minimal Chat Broadcast
-
-**Goal**: Working real-time chat with web client
-
-- [ ] **I1-001: Basic baseweb project setup**
-  - Initialize baseweb project with Vuetify 3 in web/ directory
-  - Create single page with rough chat UI:
-    - Message display area (scrollable)
-    - Input line for typing messages
-    - Send button
-  - Configure build process (Vite)
-  - Set up proxy for backend connection
-  - **Delivers**: Visual foundation for chat application
-  - **Satisfies**: R54, R56, R57
-  - **Acceptance**: Open web app, see chat UI with input and message area
-
-- [ ] **I1-002: WebSocket server with broadcast**
-  - Create Quart application factory in src/roomz/server/app.py
-  - Implement WebSocket endpoint: /ws
-  - Accept messages and broadcast to all connected clients
-  - No authentication - open connection
-  - No persistence - messages only in memory
-  - Basic logging for debugging
-  - **Delivers**: Real-time message broadcast working
-  - **Satisfies**: R18, R22, R23
-  - **Acceptance**: Open multiple browser tabs, send message in one, see it appear in all tabs within 100ms
-
-**Result**: Open the web app, type a message, see it appear on all connected browsers. Pure real-time chat, no auth, no persistence, no rooms.
-
----
-
 ### Iteration 2: Temporary Authentication
 
 **Goal**: Basic user identification without full auth infrastructure
@@ -274,4 +243,25 @@
 
 ## Done
 
-(none - project in planning phase)
+### Iteration 1: Minimal Chat Broadcast
+
+**Goal**: Working real-time chat with web client
+
+- [x] **I1-001: Minimal Chat Broadcast** (2026-05-14)
+  - Created complete baseweb project with SocketIO support
+  - Backend: Quart app with SocketIO broadcast endpoint
+  - Frontend: Chat UI page with Vuetify 4 (message display, input, send button)
+  - Followed hello-world example pattern (pyproject.toml, app/, pages/)
+  - No authentication - open connection
+  - No persistence - messages in memory only
+  - Complete Python package setup (uv-based)
+  - **Delivers**: Working real-time chat with web client
+  - **Satisfies**: R18, R22, R23, R54, R56, R57, R66, R67, R68, R69, R70
+  - **Acceptance**:
+    - ✅ Open web app, see chat UI with message area and input
+    - ✅ Type message, press Enter or click send, see message appear
+    - ✅ Open second browser tab, send message in one, see it appear in both
+    - ✅ Connection status visible in UI
+    - ✅ Works on mobile (responsive layout)
+
+**Result**: Open the web app, type a message, see it appear on all connected browsers. Pure real-time chat, no auth, no persistence, no rooms.

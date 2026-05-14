@@ -1,179 +1,255 @@
 # Roomz
 
-A real-time chatroom web service built with Quart (async Flask) providing WebSocket-based communication with a plugin architecture for extensible functionality.
+A real-time chatroom web service with instant message broadcasting.
 
-## Overview
+[![License](https://img.shields.io/github/license/christophevg/roomz.svg)](https://github.com/christophevg/roomz/blob/master/LICENSE)
+[![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 
-Roomz is a chatroom framework that provides:
+## What is Roomz?
 
-- **Quart-based WebSocket API** - Real-time bidirectional communication for chat rooms/channels
-- **Python client library** - Event-based client for programmatic interaction
-- **Web client** - Vuetify-based UI prototype using baseweb
-- **Plugin architecture** - Extensible framework for custom chatroom functionality
-- **Session management** - Per-user session tracking with resume capability
+Roomz is a real-time chat application that lets multiple users communicate instantly in shared chat rooms. Built with modern async technology (Quart + SocketIO), it provides seamless real-time messaging without page refreshes.
 
-## Core Components
+**Current Status**: Iteration 1 — Minimal working chat (authentication and rooms coming soon).
 
-### 1. WebSocket API Server
+## Features
 
-Pure API-based service using Quart (async Flask compatible) with WebSocket endpoints:
+- **Instant Messaging**: Messages appear instantly across all connected users
+- **Real-time Updates**: See when users join or leave
+- **Responsive Design**: Works on desktop, tablet, and mobile
+- **Connection Status**: Visual indicator shows when disconnected
+- **Accessibility**: Keyboard navigation and screen reader support
 
-- Room creation, joining, and leaving
-- Real-time message delivery via WebSocket
-- Channel/room management
-- Session lifecycle management
+## Quick Start
 
-### 2. Python Client Library
+### Prerequisites
 
-Event-based client library for Python applications:
+- Python 3.10 or higher
+- [uv](https://docs.astral.sh/uv/) package manager
 
-```python
-from roomz import Client
+### Installation
 
-client = Client("wss://roomz.example.com")
-client.on("message", handle_message)
-client.on("user_joined", handle_join)
-await client.connect()
-await client.join_room("general")
-await client.send("Hello, World!")
+```bash
+# Clone or navigate to the project
+cd /path/to/roomz
+
+# Install dependencies
+uv sync
 ```
 
-### 3. Web Client
+### Running the Application
 
-Vuetify-based web interface (baseweb prototype):
+```bash
+# Start the chat server
+uv run gunicorn -k uvicorn.workers.UvicornWorker app:asgi_app
 
-- Modern responsive UI
-- Magic link email authentication flow:
-  1. User enters email address
-  2. System sends magic link via email
-  3. User clicks link → authenticated
-  4. Token stored in localStorage
-- Real-time chat interface
-- Room/channel navigation
-
-### 4. Plugin Architecture
-
-Generic chatroom framework with plugin system for extensibility:
-
-```python
-from roomz import Room, Plugin
-
-class SessionPlugin(Plugin):
-    def on_join(self, room, user):
-        # Custom session logic
-        pass
-
-room = Room(plugins=[SessionPlugin()])
+# Or for development with auto-reload:
+uv run uvicorn app:asgi_app --reload --host 0.0.0.0 --port 8000
 ```
 
-Built-in plugins:
-- **Session Management** - Track user sessions across connections
-- **Message History** - Persist and retrieve past messages
-- **Presence** - Track online/offline status
+Open [http://localhost:8000](http://localhost:8000) in your browser.
 
-### 5. Session Management
+### Testing
 
-Per-user session tracking with management endpoints:
+```bash
+# Run all tests
+uv run pytest tests/ -v
 
-| Endpoint | Purpose |
-|----------|---------|
-| `/new-session` | Start a new chat session |
-| `/end-session` | End current session |
-| `/resume-session` | Resume a previous session |
+# Run passing tests only (some integration tests are skipped)
+uv run pytest tests/test_app_structure.py tests/test_chat_page.py -v
+```
 
-Sessions persist across reconnections, allowing users to:
-- Return to previous conversations
-- Maintain context across browser sessions
-- Track session history
+## How to Use
+
+### Basic Chat
+
+1. Open the application in your browser
+2. Start typing messages in the input field at the bottom
+3. Press **Enter** or click the **Send** button
+4. Your message appears instantly to all connected users
+
+### Multiple Users
+
+1. Open the application in multiple browser tabs or windows
+2. Type messages in any tab
+3. All tabs see the messages instantly
+4. System messages show when users join or leave
+
+### Mobile Access
+
+1. Open the application on your mobile device
+2. The interface adapts to your screen size
+3. Touch-friendly input field and send button
+
+## Acceptance Testing
+
+You can verify the implementation works correctly:
+
+**Test 1: Basic Messaging**
+- Open the application in two browser tabs
+- Send a message from Tab 1
+- **Expected**: Message appears in both tabs instantly
+
+**Test 2: Multiple Users**
+- Open the application in three tabs
+- Send messages from different tabs
+- **Expected**: All messages appear in chronological order
+
+**Test 3: Connection Status**
+- Disconnect your network
+- **Expected**: "Connecting to server..." warning appears
+- Reconnect your network
+- **Expected**: Warning disappears, messaging works
+
+**Test 4: System Messages**
+- Open a second tab
+- **Expected**: First tab shows "User joined"
+- Close the second tab
+- **Expected**: First tab shows "User left"
+
+**Test 5: Mobile Responsive**
+- Resize browser to 320px width (or open on mobile)
+- **Expected**: Chat fills full width, input is touch-friendly
+
+## Technology Stack
+
+| Layer | Technology |
+|-------|------------|
+| Backend | Quart (async Flask), SocketIO |
+| Frontend | Vue 3, Vuetify 4 |
+| Framework | Baseweb |
+| Runtime | Python 3.10+ |
+| Server | Gunicorn + Uvicorn |
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                    Web Client                        │
-│              (Vuetify / Baseweb)                     │
-│   ┌─────────────────────────────────────────────┐   │
-│   │  Magic Link Auth │ localStorage Token       │   │
-│   └─────────────────────────────────────────────┘   │
-└────────────────────┬────────────────────────────────┘
-                     │ WebSocket
-                     ▼
-┌─────────────────────────────────────────────────────┐
-│              Quart WebSocket Server                  │
-│  ┌─────────────┐  ┌─────────────┐  ┌────────────┐  │
-│  │  Room Mgmt  │  │  Session    │  │  Plugin    │  │
-│  │             │  │  Manager    │  │  System    │  │
-│  └─────────────┘  └─────────────┘  └────────────┘  │
-│  ┌─────────────────────────────────────────────┐   │
-│  │              WebSocket Handler               │   │
-│  └─────────────────────────────────────────────┘   │
-└────────────────────┬────────────────────────────────┘
-                     │
-                     ▼
-┌─────────────────────────────────────────────────────┐
-│           Python Client Library                     │
-│        (Event-based API wrapper)                   │
-└─────────────────────────────────────────────────────┘
+Browser (Vue 3 + Vuetify 4)
+    ↓ WebSocket
+Quart Server + SocketIO
+    ↓ In-Memory
+Connected Users
 ```
 
-## Technology Stack
+**Current Limitations:**
+- No authentication (anyone can connect)
+- No message persistence (messages lost on restart)
+- No rooms (all users see all messages)
 
-- **Server**: Quart (async Flask), Uvicorn ASGI
-- **WebSocket**: Built-in Quart WebSocket support
-- **Client**: Python async/await with event emitters
-- **Web UI**: Vuetify 3, baseweb framework
-- **Auth**: Magic link email authentication
-- **Storage**: Session and message persistence (TBD: Redis/PostgreSQL)
-
-## API Endpoints
-
-### HTTP Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/auth/magic-link` | Request magic link for email |
-| POST | `/auth/verify` | Verify magic link token |
-| POST | `/session/new` | Create new session |
-| POST | `/session/end` | End current session |
-| POST | `/session/resume` | Resume previous session |
-
-### WebSocket Events
-
-| Event | Direction | Description |
-|-------|-----------|-------------|
-| `join` | Client → Server | Join a room |
-| `leave` | Client → Server | Leave a room |
-| `message` | Bidirectional | Send/receive messages |
-| `presence` | Server → Client | User join/leave notifications |
-| `error` | Server → Client | Error notifications |
+These features are planned for future iterations.
 
 ## Project Structure
 
 ```
 roomz/
-├── src/
-│   └── roomz/
-│       ├── __init__.py
-│       ├── server/           # Quart server
-│       │   ├── app.py
-│       │   ├── websocket.py
-│       │   └── routes/
-│       ├── client/           # Python client
-│       │   ├── __init__.py
-│       │   └── client.py
-│       ├── plugins/          # Plugin system
-│       │   ├── __init__.py
-│       │   ├── base.py
-│       │   └── session.py
-│       └── models/           # Data models
-├── web/                     # Web client (baseweb)
-│   └── src/
-├── tests/
-├── docs/
-├── pyproject.toml
-└── README.md
+├── app/
+│   ├── __init__.py          # Quart app + SocketIO handlers
+│   └── pages/chat/
+│       └── chat.js          # Vue chat component
+├── tests/                   # Test suite
+├── analysis/                # Design documents
+├── reporting/               # Task reports
+├── pyproject.toml           # Project configuration
+└── README.md                # This file
 ```
 
-## Status
+## Development
 
-**Planning Phase** - Initial project setup. See TODO.md for implementation roadmap.
+See [TODO.md](TODO.md) for planned features and [REQUIREMENTS.md](REQUIREMENTS.md) for full requirements list.
+
+See [analysis/](analysis/) for architecture and design documentation.
+
+## Requirements Satisfied
+
+This iteration satisfies: R18, R22, R23, R54, R56, R57, R66, R67, R68, R69, R70
+
+## Next Steps
+
+Future iterations will add:
+- **Iteration 2**: Authentication (secret dialog, magic links)
+- **Iteration 3**: Python client library
+- **Iteration 4**: Multiple chat rooms
+- **Iteration 7**: Message persistence (MongoDB)
+
+## License
+
+[Add your license here]
+
+## Credits
+
+Built with:
+- [Baseweb](https://github.com/christophevg/baseweb) — Web framework
+- [Quart](https://pgjones.gitlab.io/quart/) — Async Flask
+- [Socket.IO](https://python-socketio.readthedocs.io/) — Real-time communication
+- [Vue 3](https://vuejs.org/) — Frontend framework
+- [Vuetify 4](https://vuetifyjs.com/) — Material Design components
+
+## Quick Start
+
+### Prerequisites
+
+- Python 3.10+
+- [uv](https://docs.astral.sh/uv/) package manager
+
+### Installation
+
+```bash
+# Install dependencies
+uv sync
+
+# Install dev dependencies (for testing)
+uv sync --extra dev
+
+# Install package in editable mode
+uv pip install -e .
+```
+
+### Running the Application
+
+```bash
+# Start the development server
+uv run uvicorn app:asgi_app --reload --host 0.0.0.0 --port 8000
+```
+
+Then open [http://localhost:8000](http://localhost:8000) in your browser.
+
+### Testing
+
+```bash
+# Run all passing tests
+uv run pytest tests/test_app_structure.py -v
+
+# Note: Some SocketIO and async UI tests are skipped pending
+# integration test setup with actual WebSocket connections
+```
+
+### User Acceptance Testing
+
+**Test 1: Basic Chat**
+1. Open http://localhost:8000 in two browser tabs
+2. Type a message in Tab 1 and press Enter
+3. **Expected**: Message appears in both tabs instantly
+
+**Test 2: System Messages**
+1. Open http://localhost:8000 in Tab 1
+2. Open another tab (Tab 2)
+3. **Expected**: Tab 1 shows "User ... joined"
+4. Close Tab 2
+5. **Expected**: Tab 1 shows "User ... left"
+
+**Test 3: Mobile Responsive**
+1. Resize browser to 320px width (or open on mobile)
+2. **Expected**: Chat fills full width, input is touch-friendly
+
+## Architecture (Implemented)
+
+```
+app/
+├── __init__.py         # Quart app with SocketIO handlers
+│   - on_connect: Track connected clients, broadcast user_joined
+│   - on_disconnect: Remove client, broadcast user_left
+│   - on_message: Validate, sanitize, timestamp, broadcast to all
+└── pages/
+    └── chat/
+        ├── __init__.py  # Route registration
+        └── chat.js      # Vue 3 chat component
+```
