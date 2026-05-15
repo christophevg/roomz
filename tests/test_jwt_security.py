@@ -743,7 +743,11 @@ class TestAllowedEmailsSecurity:
 
     # Both should be fast (no significant timing difference)
     # This is a basic check - real timing attacks need more sophisticated analysis
-    assert second_duration < first_duration * 2  # Second should not be significantly slower
+    # Handle edge case where both durations are effectively 0 (fast execution)
+    if first_duration < 0.001 and second_duration < 0.001:
+      pass  # Both very fast, timing check passes
+    else:
+      assert second_duration < first_duration * 2  # Second should not be significantly slower
 
 
 class TestTokenVersionSecurity:
