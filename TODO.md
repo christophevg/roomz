@@ -1,35 +1,5 @@
 # TODO
 
-## Backlog
-
-### Iteration 3: Python Client
-
-**Goal**: Complete ecosystem with both client channels
-
-- [ ] **I3-001: Python client library**
-  - Create src/roomz/client/client.py with Client class
-  - Implement connect() with WebSocket connection and auth
-  - Implement disconnect() method
-  - Implement send(message) method
-  - Event emitter pattern: on('message'), on('connected'), on('error')
-  - Connection state management
-  - **Delivers**: Programmatic access to chat via Python
-  - **Satisfies**: R47, R48, R49, R51
-  - **Acceptance**: Python script can connect, send message, receive messages from web client
-
-- [ ] **I3-002: Python client packaging**
-  - Create pyproject.toml for roomz-client package
-  - Configure for PyPI distribution
-  - Add usage examples in examples/ directory
-  - Basic README for client usage
-  - **Delivers**: Installable client library
-  - **Satisfies**: R48
-  - **Acceptance**: pip install roomz-client succeeds, example script runs and connects
-
-**Result**: Complete minimal ecosystem. Both web and Python clients working. Every future feature developed for both channels.
-
----
-
 ### Iteration 4: Rooms
 
 **Goal**: Multiple conversation spaces
@@ -294,3 +264,34 @@
     - ✅ Works on mobile (responsive layout)
 
 **Result**: Open the web app, type a message, see it appear on all connected browsers. Pure real-time chat, no auth, no persistence, no rooms.
+
+### Iteration 3: Python Client
+
+**Goal**: Complete ecosystem with both client channels
+
+- [x] **I3-001: Python client library** (2026-05-15)
+  - Created src/roomz/client/ package with AsyncClient and SyncClient
+  - AsyncClient with python-socketio for WebSocket communication
+  - SyncClient wraps AsyncClient with background thread
+  - Event emitter pattern: on('message'), on('authenticated'), on('user_joined'), on('user_left'), on('disconnect'), on('error')
+  - Connection state management (DISCONNECTED, CONNECTING, CONNECTED, RECONNECTING)
+  - Session caching for automatic reconnection
+  - login() method to request magic links
+  - connect(session_token) for authentication
+  - send() with acknowledgment callback
+  - Comprehensive test suite (46 tests)
+  - **Delivers**: Programmatic access to chat via Python
+  - **Satisfies**: R47, R48, R49, R51
+  - **Acceptance**: ✅ Python script can connect, send message, receive messages from web client
+
+- [x] **I3-002: Python client packaging** (2026-05-15)
+  - Client library included in roomz package (src/roomz/)
+  - pyproject.toml updated with dependencies: python-socketio, aiohttp, textual
+  - CLI entry point: roomz-cli command
+  - TUI application with Textual for terminal UI
+  - README with usage examples for AsyncClient, SyncClient, and CLI
+  - **Delivers**: Installable client library with CLI
+  - **Satisfies**: R48
+  - **Acceptance**: ✅ uv run roomz-cli starts TUI, Python client works programmatically
+
+**Result**: Complete minimal ecosystem. Both web and Python clients working. CLI provides terminal access with session caching.
