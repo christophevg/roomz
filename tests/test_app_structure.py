@@ -34,63 +34,63 @@ class TestProjectStructure:
       config = tomli.load(f)
       assert "project" in config, "pyproject.toml should have [project] section"
 
-  def test_app_package_exists(self):
+  def test_server_package_exists(self):
     """
-    Test that app/ package directory exists.
+    Test that src/roomz/server package directory exists.
 
     Given: The project root directory
-    When: Checking for app/ directory
+    When: Checking for src/roomz/server directory
     Then: Directory exists with __init__.py
     """
-    app_path = Path(__file__).parent.parent / "app"
-    assert app_path.exists(), "app/ directory should exist"
-    assert app_path.is_dir(), "app/ should be a directory"
+    server_path = Path(__file__).parent.parent / "src" / "roomz" / "server"
+    assert server_path.exists(), "src/roomz/server directory should exist"
+    assert server_path.is_dir(), "src/roomz/server should be a directory"
 
-    init_path = app_path / "__init__.py"
-    assert init_path.exists(), "app/__init__.py should exist"
+    init_path = server_path / "__init__.py"
+    assert init_path.exists(), "src/roomz/server/__init__.py should exist"
 
   def test_pages_package_exists(self):
     """
-    Test that app/pages/ package directory exists.
+    Test that server/pages/ package directory exists.
 
-    Given: The app/ directory
+    Given: The server directory
     When: Checking for pages/ subdirectory
     Then: Directory exists with __init__.py
     """
-    pages_path = Path(__file__).parent.parent / "app" / "pages"
-    assert pages_path.exists(), "app/pages/ directory should exist"
-    assert pages_path.is_dir(), "app/pages/ should be a directory"
+    pages_path = Path(__file__).parent.parent / "src" / "roomz" / "server" / "pages"
+    assert pages_path.exists(), "src/roomz/server/pages/ directory should exist"
+    assert pages_path.is_dir(), "src/roomz/server/pages/ should be a directory"
 
     init_path = pages_path / "__init__.py"
-    assert init_path.exists(), "app/pages/__init__.py should exist"
+    assert init_path.exists(), "src/roomz/server/pages/__init__.py should exist"
 
   def test_chat_page_directory_exists(self):
     """
     Test that chat page directory exists.
 
-    Given: The app/pages/ directory
+    Given: The pages/ directory
     When: Checking for chat/ subdirectory
     Then: Directory exists with __init__.py and chat.js
     """
-    chat_path = Path(__file__).parent.parent / "app" / "pages" / "chat"
-    assert chat_path.exists(), "app/pages/chat/ directory should exist"
-    assert chat_path.is_dir(), "app/pages/chat/ should be a directory"
+    chat_path = Path(__file__).parent.parent / "src" / "roomz" / "server" / "pages" / "chat"
+    assert chat_path.exists(), "src/roomz/server/pages/chat/ directory should exist"
+    assert chat_path.is_dir(), "src/roomz/server/pages/chat/ should be a directory"
 
     init_path = chat_path / "__init__.py"
-    assert init_path.exists(), "app/pages/chat/__init__.py should exist"
+    assert init_path.exists(), "src/roomz/server/pages/chat/__init__.py should exist"
 
     js_path = chat_path / "chat.js"
-    assert js_path.exists(), "app/pages/chat/chat.js should exist"
+    assert js_path.exists(), "src/roomz/server/pages/chat/chat.js should exist"
 
   def test_chat_js_component_exists(self):
     """
     Test that chat.js Vue component exists.
 
-    Given: The app/pages/chat/ directory
+    Given: The pages/chat/ directory
     When: Checking for chat.js
     Then: File exists and contains Vue component definition
     """
-    js_path = Path(__file__).parent.parent / "app" / "pages" / "chat" / "chat.js"
+    js_path = Path(__file__).parent.parent / "src" / "roomz" / "server" / "pages" / "chat" / "chat.js"
     assert js_path.exists(), "chat.js should exist"
 
     content = js_path.read_text()
@@ -192,13 +192,13 @@ class TestBasewebInitialization:
 
   def test_baseweb_initialization(self):
     """
-    Test that baseweb is correctly initialized in app/__init__.py.
+    Test that baseweb is correctly initialized in server/__init__.py.
 
-    Given: The app/__init__.py module
+    Given: The server/__init__.py module
     When: Importing the module
     Then: Baseweb instance is created with name 'roomz'
     """
-    from app import server
+    from roomz.server import server
 
     assert server is not None, "Server should be initialized"
     assert server.name == "roomz", "Server name should be 'roomz'"
@@ -211,7 +211,7 @@ class TestBasewebInitialization:
     When: Checking SocketIO settings
     Then: SocketIO is enabled for WebSocket support
     """
-    from app import server
+    from roomz.server import server
 
     assert server.socketio is not None, "SocketIO should be enabled"
 
@@ -219,11 +219,11 @@ class TestBasewebInitialization:
     """
     Test that ASGI app entry point is correctly set.
 
-    Given: The app/__init__.py module
+    Given: The server/__init__.py module
     When: Accessing the ASGI entry point
     Then: asgi_app variable is properly defined
     """
-    from app import asgi_app
+    from roomz.server import asgi_app
 
     assert asgi_app is not None, "ASGI app entry point should be defined"
 
@@ -231,15 +231,15 @@ class TestBasewebInitialization:
     """
     Test that pages module is imported for route registration.
 
-    Given: The app/__init__.py module
+    Given: The server/__init__.py module
     When: Examining imports
     Then: from . import pages is present
     """
-    # This test verifies that importing app doesn't raise an error
+    # This test verifies that importing server doesn't raise an error
     # The pages module should be imported successfully
-    import app.pages
+    import roomz.server.pages
 
-    assert app.pages is not None, "Pages module should be imported"
+    assert roomz.server.pages is not None, "Pages module should be imported"
 
 
 class TestChatPageRegistration:
@@ -254,11 +254,11 @@ class TestChatPageRegistration:
     """
     Test that chat page is registered with navigation.
 
-    Given: The app/pages/chat/chat.js component
+    Given: The pages/chat/chat.js component
     When: Examining the component
     Then: Navigation object with path '/' exists
     """
-    js_path = Path(__file__).parent.parent / "app" / "pages" / "chat" / "chat.js"
+    js_path = Path(__file__).parent.parent / "src" / "roomz" / "server" / "pages" / "chat" / "chat.js"
     content = js_path.read_text()
     assert 'path: "/"' in content, "Chat page should have navigation path '/'"
 
@@ -266,11 +266,11 @@ class TestChatPageRegistration:
     """
     Test that chat component has correct name.
 
-    Given: The app/pages/chat/chat.js component
+    Given: The pages/chat/chat.js component
     When: Examining the component definition
     Then: Component name is 'Chat' or 'ChatRoom'
     """
-    js_path = Path(__file__).parent.parent / "app" / "pages" / "chat" / "chat.js"
+    js_path = Path(__file__).parent.parent / "src" / "roomz" / "server" / "pages" / "chat" / "chat.js"
     content = js_path.read_text()
     assert "name: 'Chat'" in content, "Component name should be 'Chat'"
 
@@ -278,11 +278,11 @@ class TestChatPageRegistration:
     """
     Test that chat component has Vue template.
 
-    Given: The app/pages/chat/chat.js component
+    Given: The pages/chat/chat.js component
     When: Examining the component definition
     Then: Template property exists with valid Vue template
     """
-    js_path = Path(__file__).parent.parent / "app" / "pages" / "chat" / "chat.js"
+    js_path = Path(__file__).parent.parent / "src" / "roomz" / "server" / "pages" / "chat" / "chat.js"
     content = js_path.read_text()
     assert "template:" in content, "Chat component should have template property"
     assert "<Page>" in content, "Template should include Page component"
@@ -295,7 +295,7 @@ class TestChatPageRegistration:
     When: Examining navigation settings
     Then: Icon is set to 'mdi-chat'
     """
-    js_path = Path(__file__).parent.parent / "app" / "pages" / "chat" / "chat.js"
+    js_path = Path(__file__).parent.parent / "src" / "roomz" / "server" / "pages" / "chat" / "chat.js"
     content = js_path.read_text()
     assert 'icon: "mdi-chat"' in content, "Chat page should have mdi-chat icon"
 
@@ -312,36 +312,36 @@ class TestSocketIOHandlers:
     """
     Test that 'connect' event handler is registered.
 
-    Given: The app/__init__.py module
+    Given: The server/__init__.py module
     When: Checking SocketIO handlers
     Then: 'connect' event handler exists
     """
-    app_init_path = Path(__file__).parent.parent / "app" / "__init__.py"
-    content = app_init_path.read_text()
+    server_init_path = Path(__file__).parent.parent / "src" / "roomz" / "server" / "__init__.py"
+    content = server_init_path.read_text()
     assert '@server.socketio.on("connect")' in content, "Connect handler should be registered"
 
   def test_disconnect_handler_registered(self):
     """
     Test that 'disconnect' event handler is registered.
 
-    Given: The app/__init__.py module
+    Given: The server/__init__.py module
     When: Checking SocketIO handlers
     Then: 'disconnect' event handler exists
     """
-    app_init_path = Path(__file__).parent.parent / "app" / "__init__.py"
-    content = app_init_path.read_text()
+    server_init_path = Path(__file__).parent.parent / "src" / "roomz" / "server" / "__init__.py"
+    content = server_init_path.read_text()
     assert '@server.socketio.on("disconnect")' in content, "Disconnect handler should be registered"
 
   def test_message_handler_registered(self):
     """
     Test that 'message' event handler is registered.
 
-    Given: The app/__init__.py module
+    Given: The server/__init__.py module
     When: Checking SocketIO handlers
     Then: 'message' event handler exists
     """
-    app_init_path = Path(__file__).parent.parent / "app" / "__init__.py"
-    content = app_init_path.read_text()
+    server_init_path = Path(__file__).parent.parent / "src" / "roomz" / "server" / "__init__.py"
+    content = server_init_path.read_text()
     assert '@server.socketio.on("message")' in content, "Message handler should be registered"
 
 
@@ -357,22 +357,22 @@ class TestApplicationLogging:
     """
     Test that log configuration is called during initialization.
 
-    Given: The app/__init__.py module
+    Given: The server/__init__.py module
     When: Initializing the application
     Then: server.log_config() is called
     """
-    app_init_path = Path(__file__).parent.parent / "app" / "__init__.py"
-    content = app_init_path.read_text()
+    server_init_path = Path(__file__).parent.parent / "src" / "roomz" / "server" / "__init__.py"
+    content = server_init_path.read_text()
     assert "server.log_config()" in content, "log_config() should be called"
 
   def test_log_routes_called(self):
     """
     Test that route logging is called during initialization.
 
-    Given: The app/__init__.py module
+    Given: The server/__init__.py module
     When: Initializing the application
     Then: server.log_routes() is called
     """
-    app_init_path = Path(__file__).parent.parent / "app" / "__init__.py"
-    content = app_init_path.read_text()
+    server_init_path = Path(__file__).parent.parent / "src" / "roomz" / "server" / "__init__.py"
+    content = server_init_path.read_text()
     assert "server.log_routes()" in content, "log_routes() should be called"

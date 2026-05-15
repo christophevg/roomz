@@ -172,7 +172,7 @@ class TestClientConnection:
     When: A client connects
     Then: Client session ID is added to connected_clients set
     """
-    from app import connected_clients
+    from roomz.server import connected_clients
 
     # After socketio_client fixture connects, there should be at least one client
     assert len(connected_clients) >= 1, "At least one client should be tracked"
@@ -185,7 +185,7 @@ class TestClientConnection:
     When: The client disconnects
     Then: Client session ID is removed from connected_clients set
     """
-    from app import connected_clients
+    from roomz.server import connected_clients
 
     # Verify client is initially tracked (socketio_client fixture connects)
     initial_count = len(connected_clients)
@@ -251,7 +251,7 @@ class TestClientConnection:
     When: A new client connects
     Then: Existing clients receive 'user_joined' event
     """
-    from app import server
+    from roomz.server import server
 
     # Clear any queued events from connection
     for client in multiple_socketio_clients:
@@ -289,7 +289,7 @@ class TestClientConnection:
     Then: Connection is rejected with appropriate error
     """
     # This test verifies that MAX_CLIENTS constant exists
-    from app import MAX_CLIENTS
+    from roomz.server import MAX_CLIENTS
 
     assert MAX_CLIENTS == 1000, "MAX_CLIENTS should be configured"
 
@@ -301,7 +301,7 @@ class TestClientConnection:
     When: Connection attempt when limit reached
     Then: Connection is rejected
     """
-    from app import MAX_CLIENTS, connected_clients, server
+    from roomz.server import MAX_CLIENTS, connected_clients, server
 
     # Note: Creating 1000+ real connections would be resource-intensive.
     # Instead, we simulate the condition by filling connected_clients set.
@@ -454,7 +454,7 @@ class TestPresenceEvents:
     When: A new client connects (triggering user_joined event)
     Then: Event contains 'sid' and 'timestamp' fields
     """
-    from app import server
+    from roomz.server import server
 
     # Connect a new client
     new_client = server.socketio.test_client(server._app)
@@ -504,7 +504,7 @@ class TestPresenceEvents:
     When: A new client connects
     Then: The new client does NOT receive its own user_joined event
     """
-    from app import server
+    from roomz.server import server
 
     # Connect a new client
     new_client = server.socketio.test_client(server._app)

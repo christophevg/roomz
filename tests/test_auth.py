@@ -17,7 +17,7 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from app.auth import (
+from roomz.server.auth import (
   allowed_emails_manager,
   generate_jwt,
   is_valid_email,
@@ -630,9 +630,9 @@ class TestMagicLinkSecurity:
     # We verify that the auth module doesn't have hardcoded secrets
     import inspect
 
-    import app.auth
+    import roomz.server.auth
 
-    source = inspect.getsource(app.auth)
+    source = inspect.getsource(roomz.server.auth)
 
     # Check that there are no hardcoded secrets
     # (This is a basic check - in production you'd use more sophisticated tools)

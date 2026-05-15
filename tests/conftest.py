@@ -10,8 +10,8 @@ import secrets
 
 import pytest
 
-from app import connected_clients, server
-from app.auth import (
+from roomz.server import connected_clients, server
+from roomz.server.auth import (
   _token_versions,
   allowed_emails_manager,
   magic_link_limiter,
@@ -147,7 +147,7 @@ def authenticated_session(test_client, sample_email, jwt_secret_key, allowed_ema
   Returns:
     dict: Session data including JWT token and user info
   """
-  from app.auth import generate_jwt
+  from roomz.server.auth import generate_jwt
 
   # Set ALLOWED_EMAILS for this test
   os.environ["ALLOWED_EMAILS"] = ",".join(allowed_emails)

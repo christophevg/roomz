@@ -21,7 +21,7 @@ from datetime import datetime, timedelta, timezone
 import jwt
 import pytest
 
-from app.auth import (
+from roomz.server.auth import (
   JWT_ALGORITHM,
   _token_versions,
   allowed_emails_manager,
@@ -1213,7 +1213,7 @@ class TestSecurityRegression:
 
     # Read auth.py (relative to project root)
     project_root = Path(__file__).parent.parent
-    with open(project_root / "app" / "auth.py") as f:
+    with open(project_root / "src" / "roomz" / "server" / "auth.py") as f:
       content = f.read()
 
     # Check for hardcoded secrets (patterns to avoid)

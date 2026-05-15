@@ -16,8 +16,8 @@ Requirements: FR-1.3.1, FR-1.1.2 (from functional analysis)
 
 import pytest
 
-from app import connected_clients
-from app.auth import generate_jwt
+from roomz.server import connected_clients
+from roomz.server.auth import generate_jwt
 
 # Skip all WebSocket tests until integration test infrastructure is set up
 pytestmark = pytest.mark.skip(
@@ -67,7 +67,7 @@ class TestWebSocketAuthentication:
     When: WebSocket tries to connect
     Then: Connection is rejected with appropriate error
     """
-    from app import server
+    from roomz.server import server
 
     # Create client without session cookie
     client = server.socketio.test_client(server)
@@ -88,7 +88,7 @@ class TestWebSocketAuthentication:
     Then: Connection is rejected, session cleared
     """
 
-    from app import server
+    from roomz.server import server
 
     # Note: JWT expiry is embedded in the token, cannot be manually expired
     # This test would need to generate an already-expired JWT
@@ -110,7 +110,7 @@ class TestWebSocketAuthentication:
     When: WebSocket tries to connect
     Then: Connection is rejected
     """
-    from app import server
+    from roomz.server import server
 
     # Try to connect with invalid token
     client = server.socketio.test_client(
@@ -159,7 +159,7 @@ class TestWebSocketSessionValidation:
     Then: expires_at and last_activity are checked
     """
 
-    from app import server
+    from roomz.server import server
 
     # Create JWT for testing
     token = create_test_jwt("expirycheck@test.com")
@@ -254,7 +254,7 @@ class TestWebSocketUserIdentification:
     client1, session_data1 = authenticated_socketio_client
 
     # Create second client
-    from app import server
+    from roomz.server import server
 
     token2 = create_test_jwt("test@example.com")
     client2 = server.socketio.test_client(
@@ -287,7 +287,7 @@ class TestWebSocketUserIdentification:
     client1, session_data1 = authenticated_socketio_client
 
     # Create second client
-    from app import server
+    from roomz.server import server
 
     token2 = create_test_jwt("test@example.com")
     client2 = server.socketio.test_client(
@@ -352,7 +352,7 @@ class TestWebSocketMessageSecurity:
     When: User tries to send a message
     Then: Message is rejected with error
     """
-    from app import server
+    from roomz.server import server
 
     # Create client without auth
     client = server.socketio.test_client(server)
@@ -484,7 +484,7 @@ class TestWebSocketConnectionLifecycle:
     client1, session_data1 = authenticated_socketio_client
 
     # Create second client
-    from app import server
+    from roomz.server import server
 
     token2 = create_test_jwt("test@example.com")
     client2 = server.socketio.test_client(
@@ -542,7 +542,7 @@ class TestWebSocketReconnection:
     When: User reconnects within session timeout
     Then: Connection succeeds, user identified by session
     """
-    from app import server
+    from roomz.server import server
 
     # Create JWT for testing
     token = create_test_jwt("reconnect@test.com")
@@ -576,7 +576,7 @@ class TestWebSocketReconnection:
     When: User tries to reconnect
     Then: Connection fails, user must re-authenticate
     """
-    from app import server
+    from roomz.server import server
 
     # Create session
     token = create_test_jwt("expiredreconnect@test.com")
@@ -605,7 +605,7 @@ class TestWebSocketReconnection:
     When: User tries to reconnect with old session token
     Then: Connection is rejected
     """
-    from app import server
+    from roomz.server import server
 
     # Create session
     token = create_test_jwt("test@example.com")
@@ -642,7 +642,7 @@ class TestWebSocketEdgeCases:
     When: Connection attempt is made
     Then: Connection rejected with clear error, no crash
     """
-    from app import server
+    from roomz.server import server
 
     # Try various malformed cookies
     malformed_cookies = [
@@ -668,7 +668,7 @@ class TestWebSocketEdgeCases:
     When: Same user connects from another device/tab
     Then: Both connections are allowed (concurrent sessions)
     """
-    from app import server
+    from roomz.server import server
 
     # Create JWT for testing
     token1 = create_test_jwt("multi@test.com")
@@ -714,7 +714,7 @@ class TestWebSocketEdgeCases:
     assert len(set(tokens)) == len(tokens)
 
     # All should be valid
-    from app.auth import validate_jwt
+    from roomz.server.auth import validate_jwt
     for token in tokens:
       validated = validate_jwt(token)
       assert validated is not None
@@ -727,7 +727,7 @@ class TestWebSocketEdgeCases:
     When: Tampered cookie is presented
     Then: Session validation fails, connection rejected
     """
-    from app import server
+    from roomz.server import server
 
     # Create a session
     token = create_test_jwt("test@example.com")
@@ -752,7 +752,7 @@ class TestWebSocketEdgeCases:
     When: Connection attempt is made
     Then: Connection is rejected
     """
-    from app import server
+    from roomz.server import server
 
     client = server.socketio.test_client(server, headers={"Cookie": "session_token="})
 

@@ -53,7 +53,7 @@ def get_email_sender() -> EmailSender:
     sender = get_email_sender()  # ResendEmailSender
   """
   # Import inside function to avoid circular import
-  from app import server
+  from .. import server
 
   sender_type = os.getenv("EMAIL_SENDER", "console").lower()
 

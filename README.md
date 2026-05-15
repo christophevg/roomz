@@ -55,10 +55,10 @@ uv sync --extra dev
 
 ```bash
 # Start the chat server
-uv run gunicorn -k uvicorn.workers.UvicornWorker app:asgi_app
+uv run gunicorn -k uvicorn.workers.UvicornWorker roomz.server:asgi_app
 
 # Or for development with auto-reload:
-uv run uvicorn app:asgi_app --reload --host 0.0.0.0 --port 8000
+uv run uvicorn roomz.server:asgi_app --reload --host 0.0.0.0 --port 8000
 ```
 
 Open [http://localhost:8000](http://localhost:8000) in your browser.
@@ -111,7 +111,7 @@ MAGIC_LINK_RATE_LIMIT=5
 uv run pytest tests/ -v
 
 # Run tests with coverage
-uv run pytest --cov=app --cov-report=term-missing
+uv run pytest --cov=src/roomz --cov-report=term-missing
 
 # Run tests across Python versions
 uv run tox
@@ -265,13 +265,14 @@ Connected Users
 
 ```
 roomz/
-├── app/
-│   ├── __init__.py          # Quart app + SocketIO + Auth endpoints
-│   ├── auth.py             # Magic link and session management
-│   ├── models.py           # Session and magic link models
-│   ├── components/auth/    # AuthDialog Vue component
-│   └── pages/chat/         # Chat page Vue component
 ├── src/roomz/
+│   ├── server/             # Server application
+│   │   ├── __init__.py     # Quart app + SocketIO + Auth endpoints
+│   │   ├── auth.py         # Magic link and session management
+│   │   ├── models.py       # Session and magic link models
+│   │   ├── components/     # Vue components
+│   │   ├── pages/          # Page modules
+│   │   └── static/         # CSS styles
 │   ├── client/             # Python client library
 │   │   ├── async_client.py # AsyncClient implementation
 │   │   ├── sync_client.py  # SyncClient wrapper

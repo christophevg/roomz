@@ -41,7 +41,7 @@ class ConsoleEmailSender:
     # Import inside method to avoid circular import
     import urllib.parse
 
-    from app import server
+    from .. import server
 
     # Extract token from URL for CLI usage
     parsed = urllib.parse.urlparse(magic_link_url)

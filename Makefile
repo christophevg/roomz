@@ -23,19 +23,19 @@ test-all: dev-env
 
 ## test-cov: Run tests with coverage report
 test-cov: dev-env
-	uv run pytest --cov=app --cov-report=term-missing
+	uv run pytest --cov=src/roomz --cov-report=term-missing
 
 ## lint: Run ruff linting
 lint: dev-env
-	uv run ruff check app/ tests/ src/
+	uv run ruff check src/ tests/
 
 ## format: Format code with ruff
 format: dev-env
-	uv run ruff check --fix app/ tests/
+	uv run ruff check --fix src/ tests/
 
 ## typecheck: Run mypy type checking
 typecheck: dev-env
-	uv run mypy app/ src/
+	uv run mypy src/roomz/server/
 
 ## build: Build distribution packages
 build: dev-env
@@ -59,7 +59,7 @@ check: dev-env format lint test typecheck
 
 ## run: Run the development server
 run: run-env
-	uv run gunicorn -k uvicorn.workers.UvicornWorker app:asgi_app --reload
+	uv run gunicorn -k uvicorn.workers.UvicornWorker roomz.server:asgi_app --reload
 
 ## help: Show this help message
 help:

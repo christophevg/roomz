@@ -7,7 +7,7 @@ Tests for:
 """
 
 
-from app import count_user_connections, extract_token_from_cookie
+from roomz.server import count_user_connections, extract_token_from_cookie
 
 
 class TestCountUserConnections:
@@ -15,14 +15,14 @@ class TestCountUserConnections:
 
   def test_count_zero_connections(self, monkeypatch):
     """Count should return 0 when user has no connections."""
-    monkeypatch.setattr("app.connected_clients", {})
+    monkeypatch.setattr("roomz.server.connected_clients", {})
     result = count_user_connections("user@example.com")
     assert result == 0
 
   def test_count_one_connection(self, monkeypatch):
     """Count should return 1 when user has one connection."""
     monkeypatch.setattr(
-      "app.connected_clients",
+      "roomz.server.connected_clients",
       {
         "sid1": {"email": "user@example.com"},
         "sid2": {"email": "other@example.com"},
@@ -34,7 +34,7 @@ class TestCountUserConnections:
   def test_count_multiple_connections(self, monkeypatch):
     """Count should return correct number when user has multiple connections."""
     monkeypatch.setattr(
-      "app.connected_clients",
+      "roomz.server.connected_clients",
       {
         "sid1": {"email": "user@example.com"},
         "sid2": {"email": "user@example.com"},
@@ -48,7 +48,7 @@ class TestCountUserConnections:
   def test_count_after_connection_added(self, monkeypatch):
     """Count should reflect new connections."""
     clients = {}
-    monkeypatch.setattr("app.connected_clients", clients)
+    monkeypatch.setattr("roomz.server.connected_clients", clients)
 
     # Initially 0
     assert count_user_connections("user@example.com") == 0
@@ -67,7 +67,7 @@ class TestCountUserConnections:
       "sid1": {"email": "user@example.com"},
       "sid2": {"email": "user@example.com"},
     }
-    monkeypatch.setattr("app.connected_clients", clients)
+    monkeypatch.setattr("roomz.server.connected_clients", clients)
 
     # Initially 2
     assert count_user_connections("user@example.com") == 2
@@ -83,7 +83,7 @@ class TestCountUserConnections:
   def test_count_case_sensitive(self, monkeypatch):
     """Email comparison should be case-sensitive (emails are normalized at entry)."""
     monkeypatch.setattr(
-      "app.connected_clients",
+      "roomz.server.connected_clients",
       {"sid1": {"email": "user@example.com"}},
     )
     # Exact match

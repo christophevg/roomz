@@ -47,7 +47,7 @@ class ResendEmailSender:
       ValueError: If RESEND_API_KEY environment variable is not set
     """
     # Import inside to avoid circular import
-    from app import server
+    from .. import server
 
     api_key = os.getenv("RESEND_API_KEY")
     if not api_key:
@@ -149,7 +149,7 @@ class ResendEmailSender:
       Response dict with 'id' on success, None on failure
     """
     # Import inside to avoid circular import
-    from app import server
+    from .. import server
 
     try:
       response = resend.Emails.send(
@@ -181,7 +181,7 @@ class ResendEmailSender:
       Never raises exceptions to the caller.
     """
     # Import inside to avoid circular import
-    from app import server
+    from .. import server
 
     try:
       # Run synchronous API call in executor

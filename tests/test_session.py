@@ -20,7 +20,7 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from app.auth import (
+from roomz.server.auth import (
   magic_link_manager,
 )
 

@@ -83,8 +83,7 @@ app.component('AuthDialog', {
           </v-btn>
         </v-card-actions>
       </v-card>
-    </v-dialog>
-  </div>
+    </div>
   `,
   data() {
     return {

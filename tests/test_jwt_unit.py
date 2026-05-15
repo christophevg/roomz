@@ -17,7 +17,7 @@ from datetime import datetime, timedelta, timezone
 import jwt
 import pytest
 
-from app.auth import (
+from roomz.server.auth import (
   JWT_ALGORITHM,
   allowed_emails_manager,
   generate_jwt,

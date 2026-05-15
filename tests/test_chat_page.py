@@ -39,7 +39,7 @@ class TestMessageDisplay:
     When: Parsing for message display component
     Then: Message container element exists
     """
-    js_path = Path(__file__).parent.parent / "app" / "pages" / "chat" / "chat.js"
+    js_path = Path(__file__).parent.parent / "src" / "roomz" / "server" / "pages" / "chat" / "chat.js"
     content = js_path.read_text()
 
     # Check for message display structure
@@ -54,7 +54,7 @@ class TestMessageDisplay:
     When: Examining message elements
     Then: Each message displays a timestamp
     """
-    js_path = Path(__file__).parent.parent / "app" / "pages" / "chat" / "chat.js"
+    js_path = Path(__file__).parent.parent / "src" / "roomz" / "server" / "pages" / "chat" / "chat.js"
     content = js_path.read_text()
 
     # Check for timestamp formatting
@@ -73,7 +73,7 @@ class TestMessageInput:
     When: Parsing for input components
     Then: Text input field for messages exists
     """
-    js_path = Path(__file__).parent.parent / "app" / "pages" / "chat" / "chat.js"
+    js_path = Path(__file__).parent.parent / "src" / "roomz" / "server" / "pages" / "chat" / "chat.js"
     content = js_path.read_text()
 
     # Check for input field
@@ -88,7 +88,7 @@ class TestMessageInput:
     When: Parsing for send button
     Then: Send button exists
     """
-    js_path = Path(__file__).parent.parent / "app" / "pages" / "chat" / "chat.js"
+    js_path = Path(__file__).parent.parent / "src" / "roomz" / "server" / "pages" / "chat" / "chat.js"
     content = js_path.read_text()
 
     # Check for send button/icon
@@ -102,7 +102,7 @@ class TestMessageInput:
     When: User presses Enter key
     Then: Message is sent
     """
-    js_path = Path(__file__).parent.parent / "app" / "pages" / "chat" / "chat.js"
+    js_path = Path(__file__).parent.parent / "src" / "roomz" / "server" / "pages" / "chat" / "chat.js"
     content = js_path.read_text()
 
     # Check for Enter key handler
@@ -120,7 +120,7 @@ class TestConnectionStatus:
     When: Examining connection handling
     Then: Connection status is tracked
     """
-    js_path = Path(__file__).parent.parent / "app" / "pages" / "chat" / "chat.js"
+    js_path = Path(__file__).parent.parent / "src" / "roomz" / "server" / "pages" / "chat" / "chat.js"
     content = js_path.read_text()
 
     # Check for connection status handling
@@ -138,7 +138,7 @@ class TestAccessibility:
     When: Examining ARIA attributes
     Then: Container has role="log" and aria-live="polite"
     """
-    js_path = Path(__file__).parent.parent / "app" / "pages" / "chat" / "chat.js"
+    js_path = Path(__file__).parent.parent / "src" / "roomz" / "server" / "pages" / "chat" / "chat.js"
     content = js_path.read_text()
 
     # Check for ARIA role

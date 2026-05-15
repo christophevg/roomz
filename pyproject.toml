@@ -51,7 +51,7 @@ docs = [
 ]
 
 [project.scripts]
-roomz = "app:asgi_app"
+roomz = "roomz.server:asgi_app"
 roomz-cli = "roomz.cli:main"
 
 [project.urls]
@@ -65,7 +65,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["app", "src/roomz"]
+packages = ["src/roomz"]
 
 [tool.ruff]
 line-length = 100
@@ -109,16 +109,16 @@ commands = [["pytest", "-v"]]
 [tool.tox.env.lint]
 description = "Run linting"
 deps = ["-e .[dev]"]
-commands = [["ruff", "check", "app/", "tests/", "src/"]]
+commands = [["ruff", "check", "src/", "tests/"]]
 
 [tool.tox.env.typecheck]
 description = "Run type checking"
 deps = ["-e .[dev]"]
-commands = [["mypy", "app/"]]
+commands = [["mypy", "src/roomz/server/"]]
 
 [tool.coverage.run]
-source = ["app", "src/roomz"]
-omit = ["app/__init__.py", "src/roomz/__init__.py"]
+source = ["src/roomz"]
+omit = ["src/roomz/__init__.py"]
 
 [tool.coverage.report]
 exclude_lines = [
