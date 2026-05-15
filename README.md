@@ -20,7 +20,7 @@ Roomz is a real-time chat application with secure magic link authentication. Bui
 
 | Login | Magic Link | Chat | CLI |
 |-------|-------------|------|-----|
-| ![Login](media/login.png) | ![Magic Link](media/magic-link.png) | ![Chat](media/chat.png) | ![CLI](media/cli.png) |
+| ![Login](https://raw.githubusercontent.com/christophevg/roomz/master/media/login.png) | ![Magic Link](https://raw.githubusercontent.com/christophevg/roomz/master/media/magic-link.png) | ![Chat](https://raw.githubusercontent.com/christophevg/roomz/master/media/chat.png) | ![CLI](https://raw.githubusercontent.com/christophevg/roomz/master/media/cli.png) |
 
 ## Features
 
