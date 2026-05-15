@@ -1,6 +1,6 @@
 [project]
 name = "roomz"
-version = "0.1.0"
+version = "0.1.1"
 description = "Real-time chatroom web service with magic link authentication"
 authors = [{name = "Christophe VG", email = "contact@christophe.vg"}]
 readme = "README.md"
