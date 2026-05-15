@@ -5,6 +5,7 @@
 [![Python versions](https://img.shields.io/pypi/pyversions/roomz.svg)](https://pypi.org/project/roomz/)
 [![License](https://img.shields.io/github/license/christophevg/roomz.svg)](https://github.com/christophevg/roomz/blob/main/LICENSE)
 [![CI](https://github.com/christophevg/roomz/actions/workflows/ci.yml/badge.svg)](https://github.com/christophevg/roomz/actions/workflows/ci.yml)
+[![Coverage](https://coveralls.io/repos/github/christophevg/roomz/badge.svg)](https://coveralls.io/github/christophevg/roomz)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-blue.svg)](https://github.com/astral-sh/ruff)
 [![Type checked: mypy](https://img.shields.io/badge/type%20checked-mypy-blue.svg)](https://mypy.readthedocs.io/)
 [![Agentic](https://img.shields.io/badge/workflow-agentic-blueviolet?style=flat-square)](https://christophe.vg/about/Coding-Agent)
