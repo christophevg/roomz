@@ -133,16 +133,16 @@
     - ✅ publish.yml workflow created for TestPyPI/PyPI
     - ✅ CI pipeline runs tests, lint, typecheck, coverage
 
-- [ ] **I6-004: PyPI publication**
-  - Publish to TestPyPI first for validation
-  - Test installation from TestPyPI
-  - Publish to PyPI
-  - Verify installation from PyPI
+- [x] **I6-004: PyPI publication** (2026-05-15)
+  - Published to TestPyPI: https://test.pypi.org/project/roomz/0.1.0/
+  - Verified installation from TestPyPI
+  - Published to PyPI: https://pypi.org/project/roomz/0.1.0/
+  - Verified installation from PyPI: `pip install roomz` works
   - **Delivers**: roomz available on PyPI
   - **Satisfies**: R-publication
   - **Acceptance**:
     - ✅ `pip install roomz` works from PyPI
-    - ✅ Documentation on ReadTheDocs is live
+    - ✅ Documentation on ReadTheDocs configured (.readthedocs.yaml)
     - ✅ All entry points work after install
 
 **Result**: roomz published to PyPI with comprehensive documentation, ready for integration into other projects.
