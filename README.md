@@ -17,9 +17,9 @@ Roomz is a real-time chat application with secure magic link authentication. Bui
 
 ## Screenshots
 
-| Login | Magic Link | Chat |
-|-------|-------------|------|
-| ![Login](media/login.png) | ![Magic Link](media/magic-link.png) | ![Chat](media/chat.png) |
+| Login | Magic Link | Chat | CLI |
+|-------|-------------|------|-----|
+| ![Login](media/login.png) | ![Magic Link](media/magic-link.png) | ![Chat](media/chat.png) | ![CLI](media/cli.png) |
 
 ## Features
 
@@ -101,6 +101,97 @@ uv run tox
 4. All tabs see the messages instantly
 5. System messages show when users join or leave
 
+## Python Client Library
+
+Roomz includes a Python client library for programmatic access to the chat service.
+
+### Using the CLI
+
+The easiest way to use Roomz from the command line:
+
+```bash
+# Start the CLI
+uv run roomz-cli
+
+# Or with a custom server
+uv run roomz-cli --server http://your-server:8000
+```
+
+**Commands:**
+- `/login <email>` - Request a magic link
+- `/token <token>` - Connect with magic link token
+- `/logout` - Disconnect and clear session
+- `/quit` - Exit the CLI
+
+**Features:**
+- Session caching (auto-reconnect on restart)
+- Split-screen TUI with message history
+- Color-coded messages (your messages in green)
+- Multiline support (Enter to send, Ctrl+Enter for new line)
+
+### Using the AsyncClient
+
+For programmatic access in your Python applications:
+
+```python
+from roomz.client import AsyncClient
+
+# Create client with session caching
+client = AsyncClient(
+  server_url="http://localhost:8000",
+  session_cache_file="~/.roomz/session.json"
+)
+
+# Register event handlers
+client.on("message", lambda data: print(f"{data['user']['email']}: {data['content']}"))
+client.on("user_joined", lambda data: print(f"{data['user']['email']} joined"))
+
+# Request magic link
+await client.login("user@example.com")
+
+# Connect with magic link token
+await client.connect(token="magic-link-token")
+
+# Or reconnect with cached session
+await client.connect()
+
+# Send message
+result = await client.send("Hello, world!")
+if "error" in result:
+  print(f"Failed: {result['error']}")
+
+# Disconnect
+await client.disconnect()
+client.clear_cached_session()
+```
+
+### Using the SyncClient
+
+For synchronous applications:
+
+```python
+from roomz.client import SyncClient
+
+with SyncClient(server_url="http://localhost:8000", session_token="token") as client:
+  client.on("message", lambda data: print(data['content']))
+  result = client.send("Hello!")
+```
+
+### Session Caching
+
+The client can cache session cookies for automatic reconnection:
+
+```python
+# Enable caching (recommended for CLI apps)
+client = AsyncClient(
+  server_url="http://localhost:8000",
+  session_cache_file=Path.home() / ".roomz" / "session.json"
+)
+
+# Disable caching (default)
+client = AsyncClient(server_url="http://localhost:8000")
+```
+
 ## Technology Stack
 
 | Layer | Technology |
@@ -136,9 +227,18 @@ roomz/
 │   ├── models.py           # Session and magic link models
 │   ├── components/auth/    # AuthDialog Vue component
 │   └── pages/chat/         # Chat page Vue component
+├── src/roomz/
+│   ├── client/             # Python client library
+│   │   ├── async_client.py # AsyncClient implementation
+│   │   ├── sync_client.py  # SyncClient wrapper
+│   │   ├── events.py       # Event emitter
+│   │   └── exceptions.py   # Client exceptions
+│   └── cli/                # Command-line interface
+│       ├── app_tui.py      # Textual TUI application
+│       └── styles/         # TUI stylesheets
 ├── tests/                  # Test suite
 ├── analysis/               # Design documents
-├── reporting/               # Task reports
+├── reporting/              # Task reports
 ├── pyproject.toml          # Project configuration
 └── README.md               # This file
 ```
