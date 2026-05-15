@@ -25,13 +25,14 @@
   - Added `_cached_cookie` for explicit header passing
   - **Delivers**: Reliable Python client authentication
 
-- [ ] **I4-002: User-owned private channels**
+- [x] **I4-002: User-owned private channels** (2026-05-15)
   - Each user gets personal channel: `user:{email}`
-  - Channel requires matching channel_token from JWT
+  - Channel membership assigned server-side from JWT email claim
   - Web client joins user's channel on connect
   - Python client joins same channel with same JWT
   - Broadcast messages only to user's channel
-  - Global channel optional (for public chat)
+  - Presence events scoped to user's channel
+  - Connection counts in presence events for multi-device awareness
   - **Delivers**: Private chat per user across multiple clients
   - **Satisfies**: R7, R14, R15
   - **Acceptance**:
