@@ -39,6 +39,22 @@ connected_clients: dict = {}
 MAX_MESSAGE_LENGTH = 1000
 MAX_CLIENTS = 1000
 
+# Channel name format constant
+USER_CHANNEL_FORMAT = "user:{}"
+
+
+def count_user_connections(email: str) -> int:
+  """
+  Count the number of active connections for a specific user.
+
+  Args:
+    email: User's email address to count connections for
+
+  Returns:
+    Number of active connections for this user
+  """
+  return sum(1 for client in connected_clients.values() if client.get("email") == email)
+
 
 async def cleanup_task():
   """
@@ -335,7 +351,6 @@ async def on_connect(sid: str, environ: dict, auth_data: dict | None) -> bool:
 
   # Extract user info from JWT
   email = payload.get("email")
-  channel_token = payload.get("channel_token")
   user_id = payload.get("sub", f"user:{email}")
 
   # Connection limit check
@@ -346,7 +361,6 @@ async def on_connect(sid: str, environ: dict, auth_data: dict | None) -> bool:
   # Register authenticated connection
   connected_clients[sid] = {
     "email": email,
-    "channel_token": channel_token,
     "user_id": user_id,
     "ip": environ.get("REMOTE_ADDR"),
     "connected_at": datetime.now(timezone.utc),
@@ -355,7 +369,7 @@ async def on_connect(sid: str, environ: dict, auth_data: dict | None) -> bool:
   server.logger.info(f"Client connected: {email} (total: {len(connected_clients)})")
 
   # Join user's private channel
-  user_channel = f"user:{email}"
+  user_channel = USER_CHANNEL_FORMAT.format(email)
   await server.socketio.enter_room(sid, user_channel)
 
   # Send authenticated event to the connected client
@@ -369,13 +383,16 @@ async def on_connect(sid: str, environ: dict, auth_data: dict | None) -> bool:
     to=sid,
   )
 
-  # Broadcast user joined event
+  # Broadcast user joined event to user's private channel only
+  total_connections = count_user_connections(email)
   await server.socketio.emit(
     "user_joined",
     {
       "user": {"id": user_id, "email": email},
       "timestamp": datetime.now(timezone.utc).isoformat(),
+      "total_connections": total_connections,
     },
+    room=user_channel,
     skip_sid=sid,
   )
 
@@ -402,20 +419,26 @@ async def on_disconnect(sid: str) -> None:
     if email:
       server.logger.info(f"Client disconnected: {email} (total: {len(connected_clients)})")
 
-      # Notify remaining clients with user email
+      # Count remaining connections for this user after this disconnect
+      remaining_connections = count_user_connections(email)
+      user_channel = USER_CHANNEL_FORMAT.format(email)
+
+      # Notify remaining connections in user's private channel only
       await server.socketio.emit(
         "user_left",
         {
           "user": {"id": user_id, "email": email},
           "timestamp": datetime.now(timezone.utc).isoformat(),
+          "remaining_connections": remaining_connections,
         },
+        room=user_channel,
       )
 
 
 @server.socketio.on("message")
 async def on_message(sid: str, data: dict) -> dict:
   """
-  Receive message from client and broadcast to all connected clients.
+  Receive message from client and broadcast to user's private channel.
 
   Args:
     sid: Socket session ID (unique per connection)
@@ -451,8 +474,9 @@ async def on_message(sid: str, data: dict) -> dict:
     "timestamp": datetime.now(timezone.utc).isoformat(),
   }
 
-  # Broadcast to all clients
-  await server.socketio.emit("message", message)
+  # Broadcast to user's private channel only
+  user_channel = USER_CHANNEL_FORMAT.format(email)
+  await server.socketio.emit("message", message, room=user_channel)
 
   # Return acknowledgment
   return {"status": "ok", "message_id": message["id"], "timestamp": message["timestamp"]}
