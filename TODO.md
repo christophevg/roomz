@@ -1,209 +1,156 @@
 # TODO
 
-### Iteration 4: Rooms
+## Backlog
 
-**Goal**: Multiple conversation spaces
+### Iteration 4: JWT Sessions & Private Channels
 
-- [ ] **I4-001: Room creation and listing**
-  - POST /rooms endpoint to create room
-  - GET /rooms endpoint to list public rooms
-  - Room model: id, name, owner_id, visibility, max_occupants
-  - Web UI: room list component
-  - Web UI: room creation form
-  - Python client: create_room(), list_rooms() methods
-  - **Delivers**: Multiple conversation spaces
-  - **Satisfies**: R7, R8, R9, R10, R11, R12, R62, R63
-  - **Acceptance**: Create multiple rooms, see them listed, different messages in different rooms
+**Goal**: Stateless authentication with user-owned private channels
 
-- [ ] **I4-002: Room join/leave**
-  - WebSocket message: "join" with room_id
-  - WebSocket message: "leave" with room_id
-  - Broadcast presence update to room participants
-  - Track room membership per connection
-  - Only broadcast messages to room members
-  - Web UI: join/leave room buttons
-  - Python client: join_room(), leave_room() methods
-  - **Delivers**: Room-specific messaging with presence
-  - **Satisfies**: R14, R15, R26, R27, R28
-  - **Acceptance**: Join room A, see presence notification. Send message, only room A members see it. Leave room A, see presence notification.
-
-**Result**: Multiple chat rooms. Users can join different rooms. Messages go to the right room. Presence updates when joining/leaving.
-
----
-
-### Iteration 5: Real Authentication
-
-**Goal**: Proper magic link authentication
-
-- [ ] **I5-001: Magic link endpoints**
-  - POST /auth/magic-link endpoint accepts email
-  - Generate cryptographically secure token
-  - Store token hash in memory (MongoDB in I7)
-  - POST /auth/verify endpoint accepts token
-  - Validate token, return session token
-  - Rate limiting: 5 requests per email per hour
-  - **Delivers**: Real authentication API
-  - **Satisfies**: R1, R2, R4, R5, R6
-  - **Acceptance**: Request magic link for email, receive token, verify token, get authenticated session
-
-- [ ] **I5-002: Email integration**
-  - Integrate email service (SendGrid or simple-email-gw)
-  - Create email template for magic link
-  - Send magic link email with verification URL
-  - Development mode: log link instead of sending
-  - **Delivers**: Users receive magic links via email
-  - **Satisfies**: R1 (complete)
-  - **Acceptance**: Request magic link, receive email, click link, get authenticated
-
-- [ ] **I5-003: Token persistence**
-  - Store session token in localStorage (web client)
-  - Token management in Python client
-  - Validate token on WebSocket connection
-  - Token refresh mechanism for extended sessions
-  - Logout functionality (token invalidation)
-  - **Delivers**: Persistent login across sessions
+- [ ] **I4-001: JWT session tokens**
+  - Replace in-memory session storage with JWT tokens
+  - Add PyJWT dependency
+  - Create JWT with claims: email, exp, channel_token
+  - Validate JWT on WebSocket connection
+  - Check email against ALLOWED_EMAILS env var on every request
+  - Session "caching" becomes JWT storage
+  - **Delivers**: Stateless sessions, server restart tolerance
   - **Satisfies**: R3, R29, R30, R33, R58, R59, R60, R61
-  - **Acceptance**: Log in, close browser, reopen, still authenticated. Log out, cannot access protected endpoints.
+  - **Acceptance**: 
+    - ✅ Login with magic link, get JWT
+    - ✅ Server restart, reconnect still works
+    - ✅ Remove email from ALLOWED_EMAILS, access denied
 
-**Result**: Full magic link authentication. Users authenticate via email. Login persists across sessions.
+- [ ] **I4-002: User-owned private channels**
+  - Each user gets personal channel: `user:{email}`
+  - Channel requires matching channel_token from JWT
+  - Web client joins user's channel on connect
+  - Python client joins same channel with same JWT
+  - Broadcast messages only to user's channel
+  - Global channel optional (for public chat)
+  - **Delivers**: Private chat per user across multiple clients
+  - **Satisfies**: R7, R14, R15
+  - **Acceptance**:
+    - ✅ User A's web and Python clients see each other's messages
+    - ✅ User B cannot join User A's channel without valid token
+    - ✅ Multiple users have separate, private conversations
 
----
-
-### Iteration 6: Plugin System
-
-**Goal**: Extensible architecture
-
-- [ ] **I6-001: Plugin framework**
-  - Create Plugin abstract base class in src/roomz/plugins/base.py
-  - Define lifecycle hooks: on_init, on_join, on_leave, on_message, on_shutdown
-  - Create PluginManager class
-  - Plugin registration: register_plugin(room_id, plugin)
-  - Execute hooks in defined order
-  - Plugin error isolation (don't crash server)
-  - **Delivers**: Extension capability for custom behavior
-  - **Satisfies**: R37, R38, R39, R40, R44
-  - **Acceptance**: Create simple test plugin, register with room, see hooks fire on events, plugin errors don't crash server
-
-- [ ] **I6-002: Presence plugin**
-  - Create PresencePlugin class
-  - Track online/offline status in memory (MongoDB in I7)
-  - on_join: record user as online in room
-  - on_leave: record user as offline in room
-  - Provide presence query API: GET /rooms/<room_id>/presence
-  - Last seen timestamp per user
-  - **Delivers**: Modular presence tracking
-  - **Satisfies**: R27, R28, R43
-  - **Acceptance**: Join room, query presence API, see yourself as online. Leave room, see yourself as offline with last seen timestamp.
-
-**Result**: Plugin architecture ready for extensions. Presence feature extracted as plugin.
+**Result**: Users have private channels. JWT enables stateless auth. Server restarts don't force re-login.
 
 ---
 
-### Iteration 7: Persistence Plugin
+### Iteration 5: Email Authentication
 
-**Goal**: Optional message history
+**Goal**: Production-ready magic link delivery
 
-- [ ] **I7-001: MongoDB integration**
-  - Configure MongoDB connection with Motor (async driver)
-  - Create database and collections: users, rooms, messages, sessions
-  - Create indexes: room_id, user_id, created_at
-  - Connection pooling and error handling
-  - Health check includes MongoDB status
-  - **Delivers**: Database backend for persistence
-  - **Satisfies**: Data layer foundation
-  - **Acceptance**: MongoDB connection established, indexes created, health check reports MongoDB status
+- [ ] **I5-001: SendGrid integration**
+  - Add SendGrid dependency
+  - Create EmailSender abstraction
+  - Implement SendGridEmailSender
+  - Implement ConsoleEmailSender (development mode)
+  - Environment-based selection: EMAIL_SENDER=console|sendgrid
+  - Email template for magic link
+  - **Delivers**: Real email delivery for magic links
+  - **Satisfies**: R1 (complete)
+  - **Acceptance**:
+    - ✅ Development mode: magic link logged to console
+    - ✅ Production mode: SendGrid sends email
+    - ✅ User receives magic link, clicks, authenticates
 
-- [ ] **I7-002: History plugin**
-  - Create HistoryPlugin class
-  - on_message: store message in MongoDB
-  - on_join: retrieve recent messages (configurable limit, default 50)
-  - Configure plugin per room: enable/disable history
-  - Message retention via MongoDB TTL index (default 30 days)
-  - Web UI: display message history on room join
-  - Python client: receive history on join_room()
-  - **Delivers**: Optional message persistence
-  - **Satisfies**: R14, R22, R23, R42
-  - **Acceptance**: Join room, see last 50 messages. Send message, close browser, reopen, see message in history. After 30 days, messages auto-delete.
+- [ ] **I5-002: Email allow-list**
+  - ALLOWED_EMAILS env var (comma-separated)
+  - Validate email against allow-list on magic link request
+  - Validate email against allow-list on JWT verification
+  - Clear error message for non-allowed emails
+  - **Delivers**: Access control via email allow-list
+  - **Satisfies**: Security requirement
+  - **Acceptance**:
+    - ✅ Only allowed emails can request magic links
+    - ✅ Removing email from allow-list revokes access immediately
+    - ✅ Non-allowed emails get "not authorized" message
 
-**Result**: Persistence is a plugin. Enable/disable per room. Core product remains real-time chat. History survives server restart.
+**Result**: Production authentication with SendGrid. Email allow-list for access control.
 
 ---
 
-### Iteration 8: Production Readiness
+### Iteration 6: Deploy & Polish
 
-**Goal**: Deployable, tested, documented
+**Goal**: Production-ready deployment
 
-- [ ] **I8-001: Unit and integration tests**
-  - Configure pytest with async support
-  - Test fixtures for Quart test client and MongoDB
-  - Authentication tests: magic link flow, token validation, rate limiting
-  - WebSocket tests: connection, message broadcast, room join/leave
-  - Room tests: create, list, join, leave
-  - Plugin tests: registration, lifecycle hooks, error isolation
-  - Integration tests: end-to-end message flow
-  - Coverage reporting (>80% target)
-  - **Delivers**: Confidence in stability, regression prevention
-  - **Satisfies**: R90
-  - **Acceptance**: pytest runs, all tests pass, coverage >80%
-
-- [ ] **I8-002: API documentation**
-  - OpenAPI/Swagger specification for HTTP endpoints
-  - WebSocket message protocol documentation
-  - Plugin development guide
-  - Python client usage guide
-  - Web client usage guide
-  - **Delivers**: Self-service onboarding for developers
-  - **Satisfies**: R91, R92
-  - **Acceptance**: New developer can understand API from docs alone. Swagger UI available at /docs.
-
-- [ ] **I8-003: Deployment configuration**
+- [ ] **I6-001: Docker setup**
   - Dockerfile for server
-  - Dockerfile for web client
   - docker-compose.yml for development
   - Environment-based configuration
-  - Health check endpoints: /health, /ready
-  - Graceful shutdown handling
-  - Basic Kubernetes manifest (optional)
+  - Health check endpoints
   - **Delivers**: One-command deployment
-  - **Satisfies**: R89, deployment needs
-  - **Acceptance**: docker-compose up runs full stack. Health checks work. Graceful shutdown doesn't drop messages.
+  - **Acceptance**: docker-compose up runs full stack
 
-- [ ] **I8-004: Observability**
+- [ ] **I6-002: Observability basics**
   - Structured JSON logging
   - Request/response logging
-  - WebSocket connection metrics: active connections, messages/second
+  - WebSocket connection metrics
   - Error rate tracking
-  - Prometheus metrics endpoint: /metrics
   - **Delivers**: Production visibility
-  - **Satisfies**: R93, R94, R95, R96, R97, R98, R99
-  - **Acceptance**: Logs are structured JSON. Metrics endpoint returns Prometheus format. Can see connection count, message rate, error rate.
+  - **Acceptance**: Logs are structured, metrics visible
 
-**Result**: Production-ready chatroom service. Deployable, tested, documented, observable.
+**Result**: Deployable service with basic observability.
+
+---
+
+## Postponed to 2.0
+
+### Rooms (Named Conversation Spaces)
+- Room creation and listing
+- Room join/leave
+- Named public/private rooms
+- **Reason**: User-owned channels cover primary use case
+
+### Plugin System
+- Plugin framework
+- Presence plugin
+- History plugin
+- **Reason**: Core features prioritized first
+
+### Persistence
+- MongoDB integration
+- Message history
+- **Reason**: Real-time focus, history not critical for MVP
 
 ---
 
 ## Done
 
-### Iteration 1: Minimal Chat Broadcast
+### Iteration 3: Python Client
 
-**Goal**: Working real-time chat with web client
+**Goal**: Complete ecosystem with both client channels
 
-- [x] **I1-001: Minimal Chat Broadcast** (2026-05-14)
-  - Created complete baseweb project with SocketIO support
-  - Backend: Quart app with SocketIO broadcast endpoint
-  - Frontend: Chat UI page with Vuetify 4 (message display, input, send button)
-  - Followed hello-world example pattern (pyproject.toml, app/, pages/)
-  - No authentication - open connection
-  - No persistence - messages in memory only
-  - Complete Python package setup (uv-based)
-  - **Delivers**: Working real-time chat with web client
-  - **Satisfies**: R18, R22, R23, R54, R56, R57, R66, R67, R68, R69, R70
-  - **Acceptance**:
-    - ✅ Open web app, see chat UI with message area and input
-    - ✅ Type message, press Enter or click send, see message appear
-    - ✅ Open second browser tab, send message in one, see it appear in both
-    - ✅ Connection status visible in UI
-    - ✅ Works on mobile (responsive layout)
+- [x] **I3-001: Python client library** (2026-05-15)
+  - Created src/roomz/client/ package with AsyncClient and SyncClient
+  - AsyncClient with python-socketio for WebSocket communication
+  - SyncClient wraps AsyncClient with background thread
+  - Event emitter pattern: on('message'), on('authenticated'), on('user_joined'), on('user_left'), on('disconnect'), on('error')
+  - Connection state management (DISCONNECTED, CONNECTING, CONNECTED, RECONNECTING)
+  - Session caching for automatic reconnection
+  - login() method to request magic links
+  - connect(session_token) for authentication
+  - send() with acknowledgment callback
+  - Comprehensive test suite (46 tests)
+  - **Delivers**: Programmatic access to chat via Python
+  - **Satisfies**: R47, R48, R49, R51
+  - **Acceptance**: ✅ Python script can connect, send message, receive messages from web client
+
+- [x] **I3-002: Python client packaging** (2026-05-15)
+  - Client library included in roomz package (src/roomz/)
+  - pyproject.toml updated with dependencies: python-socketio, aiohttp, textual
+  - CLI entry point: roomz-cli command
+  - TUI application with Textual for terminal UI
+  - README with usage examples for AsyncClient, SyncClient, and CLI
+  - **Delivers**: Installable client library with CLI
+  - **Satisfies**: R48
+  - **Acceptance**: ✅ uv run roomz-cli starts TUI, Python client works programmatically
+
+**Result**: Complete minimal ecosystem. Both web and Python clients working. CLI provides terminal access with session caching.
+
+---
 
 ### Iteration 2: Temporary Authentication (Partial)
 
@@ -244,7 +191,11 @@
   - **Satisfies**: R1 (partial)
   - **Acceptance**: ✅ Copy logged link to browser, get authenticated
 
-**Result**: Iteration 2 complete. Users authenticate via magic link (logged to console in dev mode). Session persists with httpOnly cookies.
+---
+
+### Iteration 1: Minimal Chat Broadcast
+
+**Goal**: Working real-time chat with web client
 
 - [x] **I1-001: Minimal Chat Broadcast** (2026-05-14)
   - Created complete baseweb project with SocketIO support
@@ -264,34 +215,3 @@
     - ✅ Works on mobile (responsive layout)
 
 **Result**: Open the web app, type a message, see it appear on all connected browsers. Pure real-time chat, no auth, no persistence, no rooms.
-
-### Iteration 3: Python Client
-
-**Goal**: Complete ecosystem with both client channels
-
-- [x] **I3-001: Python client library** (2026-05-15)
-  - Created src/roomz/client/ package with AsyncClient and SyncClient
-  - AsyncClient with python-socketio for WebSocket communication
-  - SyncClient wraps AsyncClient with background thread
-  - Event emitter pattern: on('message'), on('authenticated'), on('user_joined'), on('user_left'), on('disconnect'), on('error')
-  - Connection state management (DISCONNECTED, CONNECTING, CONNECTED, RECONNECTING)
-  - Session caching for automatic reconnection
-  - login() method to request magic links
-  - connect(session_token) for authentication
-  - send() with acknowledgment callback
-  - Comprehensive test suite (46 tests)
-  - **Delivers**: Programmatic access to chat via Python
-  - **Satisfies**: R47, R48, R49, R51
-  - **Acceptance**: ✅ Python script can connect, send message, receive messages from web client
-
-- [x] **I3-002: Python client packaging** (2026-05-15)
-  - Client library included in roomz package (src/roomz/)
-  - pyproject.toml updated with dependencies: python-socketio, aiohttp, textual
-  - CLI entry point: roomz-cli command
-  - TUI application with Textual for terminal UI
-  - README with usage examples for AsyncClient, SyncClient, and CLI
-  - **Delivers**: Installable client library with CLI
-  - **Satisfies**: R48
-  - **Acceptance**: ✅ uv run roomz-cli starts TUI, Python client works programmatically
-
-**Result**: Complete minimal ecosystem. Both web and Python clients working. CLI provides terminal access with session caching.
