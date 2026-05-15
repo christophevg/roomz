@@ -6,13 +6,13 @@
 
 **Goal**: Stateless authentication with user-owned private channels
 
-- [ ] **I4-001: JWT session tokens**
-  - Replace in-memory session storage with JWT tokens
-  - Add PyJWT dependency
-  - Create JWT with claims: email, exp, channel_token
+- [x] **I4-001: JWT session tokens** (2026-05-15)
+  - Replaced in-memory session storage with JWT tokens
+  - Added PyJWT dependency
+  - Created JWT with claims: sub, email, iat, exp, channel_token, ver
   - Validate JWT on WebSocket connection
   - Check email against ALLOWED_EMAILS env var on every request
-  - Session "caching" becomes JWT storage
+  - Token version strategy for session revocation
   - **Delivers**: Stateless sessions, server restart tolerance
   - **Satisfies**: R3, R29, R30, R33, R58, R59, R60, R61
   - **Acceptance**: 
@@ -41,6 +41,9 @@
 ### Iteration 5: Email Authentication
 
 **Goal**: Production-ready magic link delivery
+
+- NOTE: Change of plan: we'll use Resend
+  - minimal test implemented in resend_email_test.py
 
 - [ ] **I5-001: SendGrid integration**
   - Add SendGrid dependency

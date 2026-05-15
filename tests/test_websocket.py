@@ -2,7 +2,7 @@
 Tests for WebSocket Authentication functionality.
 
 This module tests WebSocket connection authentication,
-session validation, and user identification.
+JWT validation, and user identification.
 
 Note: These tests require a running server (integration tests).
 AsyncServer doesn't support test_client() like sync Server.
@@ -10,14 +10,14 @@ To run these tests, start the server and run integration tests separately.
 
 Requirements: FR-1.3.1, FR-1.1.2 (from functional analysis)
 - Persistent WebSocket connection per authenticated user
-- Token validation on each WebSocket connection
+- JWT validation on each WebSocket connection
 - Connection handles network interruptions gracefully
 """
 
 import pytest
 
 from app import connected_clients
-from app.auth import session_manager
+from app.auth import generate_jwt, validate_jwt, allowed_emails_manager
 
 # Skip all WebSocket tests until integration test infrastructure is set up
 pytestmark = pytest.mark.skip(

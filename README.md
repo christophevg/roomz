@@ -62,6 +62,34 @@ uv run uvicorn app:asgi_app --reload --host 0.0.0.0 --port 8000
 
 Open [http://localhost:8000](http://localhost:8000) in your browser.
 
+### Configuration
+
+Roomz uses environment variables for configuration. Create a `.env` file in the project root:
+
+```bash
+# Required: JWT secret key (minimum 32 characters)
+# Generate with: python -c "import secrets; print(secrets.token_urlsafe(32))"
+JWT_SECRET_KEY=your-256-bit-secret-key-here
+
+# Required: Comma-separated list of allowed email addresses
+ALLOWED_EMAILS=user@example.com,other@example.com
+
+# Optional: JWT token expiration in days (default: 30)
+JWT_EXPIRY_DAYS=30
+
+# Optional: Magic link expiration in minutes (default: 15)
+MAGIC_LINK_EXPIRY_MINUTES=15
+
+# Optional: Rate limit for magic link requests per email per hour (default: 5)
+MAGIC_LINK_RATE_LIMIT=5
+```
+
+**Security Notes:**
+- `JWT_SECRET_KEY` must be at least 32 characters (256 bits)
+- `ALLOWED_EMAILS` controls who can authenticate
+- Removing an email from `ALLOWED_EMAILS` immediately revokes their access
+- Session cookies are httpOnly and SameSite=Strict
+
 ### Testing
 
 ```bash
@@ -210,12 +238,14 @@ Browser (Vue 3 + Vuetify 4)
     ↓ HTTP POST /auth/request-magic-link
     Magic Link Email (or console in dev)
     ↓ HTTP GET /auth/verify?token=...
-    httpOnly Cookie Set
-    ↓ WebSocket with cookie auth
+    JWT Cookie Set (httpOnly, SameSite=Strict)
+    ↓ WebSocket with JWT cookie auth
 Quart Server + SocketIO
-    ↓ In-Memory Sessions
+    ↓ JWT Validation + ALLOWED_EMAILS check
 Connected Users
 ```
+
+**Stateless Authentication**: Sessions use JWT tokens, enabling server restarts without losing sessions. Access is controlled by the `ALLOWED_EMAILS` environment variable.
 
 ## Project Structure
 

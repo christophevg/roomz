@@ -28,6 +28,9 @@ dependencies = [
   "aiohttp>=3.9.0",
   "rich>=13.0.0",
   "textual>=0.47.0",
+  "resend>=2.30.1",
+  "PyJWT>=2.8.0",
+  "python-dotenv>=1.2.2",
 ]
 
 [project.optional-dependencies]

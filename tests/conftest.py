@@ -5,12 +5,20 @@ This module provides test fixtures for SocketIO testing, Quart test client,
 and mock configurations.
 """
 
+import os
 import secrets
 
+import jwt
 import pytest
 
 from app import connected_clients, server
-from app.auth import magic_link_limiter, magic_link_manager, session_manager
+from app.auth import (
+  JWT_EXPIRY_DAYS,
+  _token_versions,
+  allowed_emails_manager,
+  magic_link_limiter,
+  magic_link_manager,
+)
 
 
 @pytest.fixture
@@ -105,25 +113,30 @@ def sample_magic_link_token():
 
 
 @pytest.fixture
-def authenticated_session(test_client, sample_email):
+def authenticated_session(test_client, sample_email, jwt_secret_key, allowed_emails):
   """
   Creates an authenticated session for testing.
 
   This fixture simulates a user who has completed the magic link
-  authentication flow and has a valid session.
+  authentication flow and has a valid JWT token.
 
   Returns:
-    dict: Session data including token and user info
+    dict: Session data including JWT token and user info
   """
-  # Create a session directly
-  session_data = session_manager.create_session(
-    email=sample_email, client_ip="127.0.0.1", user_agent_hash="test_ua_hash"
-  )
+  from app.auth import generate_jwt
 
-  yield session_data
+  # Set ALLOWED_EMAILS for this test
+  os.environ["ALLOWED_EMAILS"] = ",".join(allowed_emails)
+  allowed_emails_manager.clear_cache()
+
+  # Generate JWT
+  jwt_token = generate_jwt(sample_email)
+
+  yield {"token": jwt_token, "email": sample_email}
 
   # Cleanup
-  session_manager.revoke_session(session_data["token"])
+  _token_versions.clear()
+  allowed_emails_manager.clear_cache()
 
 
 @pytest.fixture
@@ -151,18 +164,113 @@ def cleanup_auth_state():
   """
   Auto-cleanup fixture for authentication state.
 
-  Cleans up sessions, magic links, and rate limiter after each test.
+  Cleans up magic links, rate limiter, and token versions after each test.
   """
   # Setup: Clear all auth state
   connected_clients.clear()
-  session_manager._sessions.clear()
   magic_link_manager._magic_links.clear()
   magic_link_limiter.reset()
+  _token_versions.clear()
+  allowed_emails_manager.clear_cache()
 
   yield
 
   # Teardown: Clear all auth state
   connected_clients.clear()
-  session_manager._sessions.clear()
   magic_link_manager._magic_links.clear()
   magic_link_limiter.reset()
+  _token_versions.clear()
+  allowed_emails_manager.clear_cache()
+
+
+# =============================================================================
+# JWT Session Fixtures (I4-001 JWT Session Tokens)
+# =============================================================================
+
+
+@pytest.fixture
+def jwt_secret_key():
+  """
+  JWT secret key for testing.
+
+  Returns:
+    str: A test secret key (256 bits, minimum for HS256)
+  """
+  return "test-secret-key-minimum-32-characters-long-for-security"
+
+
+@pytest.fixture
+def allowed_emails():
+  """
+  List of allowed emails for testing.
+
+  Returns:
+    list: List of allowed email addresses
+  """
+  return ["alice@example.com", "bob@example.com", "charlie@example.com"]
+
+
+@pytest.fixture
+def sample_jwt_payload(sample_email):
+  """
+  Sample JWT payload for testing.
+
+  Returns:
+    dict: A sample JWT payload with standard claims
+  """
+  from datetime import datetime, timedelta, timezone
+
+  return {
+    "sub": f"user:{sample_email}",
+    "email": sample_email,
+    "iat": int(datetime.now(timezone.utc).timestamp()),
+    "exp": int((datetime.now(timezone.utc) + timedelta(days=30)).timestamp()),
+    "channel_token": secrets.token_urlsafe(32),
+  }
+
+
+@pytest.fixture
+def expired_jwt_payload(sample_email):
+  """
+  Expired JWT payload for testing.
+
+  Returns:
+    dict: An expired JWT payload (expired 1 hour ago)
+  """
+  from datetime import datetime, timedelta, timezone
+
+  return {
+    "sub": f"user:{sample_email}",
+    "email": sample_email,
+    "iat": int((datetime.now(timezone.utc) - timedelta(days=31)).timestamp()),
+    "exp": int((datetime.now(timezone.utc) - timedelta(hours=1)).timestamp()),
+    "channel_token": secrets.token_urlsafe(32),
+  }
+
+
+@pytest.fixture
+def token_version_manager():
+  """
+  Token version manager for testing JWT revocation.
+
+  Returns:
+    dict: A simple in-memory token version tracker
+  """
+  # Token version strategy: {email: int}
+  versions = {}
+
+  def get_version(email: str) -> int:
+    """Get current token version for email."""
+    return versions.get(email.lower().strip(), 1)
+
+  def increment_version(email: str) -> int:
+    """Increment token version for email (revoke all tokens)."""
+    email = email.lower().strip()
+    versions[email] = versions.get(email, 1) + 1
+    return versions[email]
+
+  return {
+    "get_version": get_version,
+    "increment_version": increment_version,
+    "versions": versions,
+  }

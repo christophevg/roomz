@@ -2,17 +2,20 @@
 Authentication module for Roomz.
 
 Implements magic link authentication flow with rate limiting,
-session management, and security features.
+JWT session tokens, and security features.
 """
 
 import hashlib
 import logging
+import os
 import re
 import secrets
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 
-from .models import MagicLink, Session
+import jwt
+
+from .models import MagicLink
 
 logger = logging.getLogger(__name__)
 
@@ -20,9 +23,10 @@ logger = logging.getLogger(__name__)
 # Configuration Constants
 # =============================================================================
 
-# Session configuration
-SESSION_TIMEOUT_DAYS = 30
-INACTIVITY_TIMEOUT_DAYS = 7
+# JWT configuration
+JWT_ALGORITHM = "HS256"
+JWT_EXPIRY_DAYS = int(os.environ.get("JWT_EXPIRY_DAYS", "30"))
+JWT_SECRET_KEY_MIN_LENGTH = 32
 
 # Magic link configuration
 MAGIC_LINK_EXPIRY_MINUTES = 15
@@ -56,6 +60,314 @@ def is_valid_email(email: str) -> bool:
     return False
 
   return True
+
+
+# =============================================================================
+# JWT Secret Key Management
+# =============================================================================
+
+
+def get_jwt_secret_key() -> str:
+  """
+  Get JWT secret key from environment variable.
+
+  The key must be at least 32 characters (256 bits) for HS256 security.
+
+  Returns:
+    JWT secret key from environment.
+
+  Raises:
+    ValueError: If JWT_SECRET_KEY is not set or too short.
+  """
+  secret_key = os.environ.get("JWT_SECRET_KEY")
+
+  if not secret_key:
+    raise ValueError(
+      "JWT_SECRET_KEY environment variable must be set. "
+      "Generate with: python -c \"import secrets; print(secrets.token_urlsafe(32))\""
+    )
+
+  if len(secret_key) < JWT_SECRET_KEY_MIN_LENGTH:
+    raise ValueError(
+      f"JWT_SECRET_KEY must be at least {JWT_SECRET_KEY_MIN_LENGTH} characters. "
+      f"Current length: {len(secret_key)}"
+    )
+
+  return secret_key
+
+
+# =============================================================================
+# Allowed Emails Management
+# =============================================================================
+
+
+class AllowedEmailsManager:
+  """
+  Manages allowed emails list with caching and validation.
+
+  Security considerations:
+  - Cached for performance, but refreshed periodically
+  - Case-insensitive comparison
+  - Validated on every request (not cached in JWT)
+  """
+
+  def __init__(self, cache_ttl_seconds: int = 60):
+    """
+    Initialize allowed emails manager.
+
+    Args:
+      cache_ttl_seconds: Time-to-live for cache in seconds.
+    """
+    self.cache_ttl = timedelta(seconds=cache_ttl_seconds)
+    self._cache_time: datetime | None = None
+    self._cached_emails: set[str] = set()
+
+  def get_allowed_emails(self) -> set[str]:
+    """
+    Get allowed emails with caching.
+
+    Returns:
+      Set of allowed email addresses (lowercase).
+    """
+    now = datetime.now(timezone.utc)
+
+    # Check if cache is stale
+    if self._cache_time is None or (now - self._cache_time) > self.cache_ttl:
+      self._refresh_cache()
+
+    return self._cached_emails
+
+  def _refresh_cache(self):
+    """Refresh cache from environment variable."""
+    emails_str = os.environ.get("ALLOWED_EMAILS", "")
+
+    # Parse and normalize
+    self._cached_emails = set(
+      email.strip().lower() for email in emails_str.split(",") if email.strip()
+    )
+
+    self._cache_time = datetime.now(timezone.utc)
+
+    logger.debug(f"Refreshed ALLOWED_EMAILS cache: {len(self._cached_emails)} emails")
+
+  def is_allowed(self, email: str) -> bool:
+    """
+    Check if email is allowed.
+
+    Args:
+      email: Email address to check.
+
+    Returns:
+      True if email is in allowed list.
+    """
+    if not email:
+      return False
+
+    # Case-insensitive comparison
+    return email.strip().lower() in self.get_allowed_emails()
+
+  def clear_cache(self):
+    """Force cache refresh on next request."""
+    self._cache_time = None
+
+
+# Global instance
+allowed_emails_manager = AllowedEmailsManager()
+
+
+def is_email_allowed(email: str) -> bool:
+  """
+  Check if email is in ALLOWED_EMAILS.
+
+  Args:
+    email: Email address to check.
+
+  Returns:
+    True if email is in allowed list.
+  """
+  return allowed_emails_manager.is_allowed(email)
+
+
+# =============================================================================
+# Token Version Management (for Revocation)
+# =============================================================================
+
+# In-memory token version storage: {email: version}
+# Note: This is ephemeral - versions reset on server restart
+# For production, use persistent storage (Redis, database)
+_token_versions: dict[str, int] = {}
+
+
+def get_token_version(email: str) -> int:
+  """
+  Get current token version for user.
+
+  The token version is used for revocation - incrementing the version
+  invalidates all existing tokens for that user.
+
+  Args:
+    email: User's email address.
+
+  Returns:
+    Current token version (defaults to 1 for new users).
+  """
+  return _token_versions.get(email.lower().strip(), 1)
+
+
+def increment_token_version(email: str) -> int:
+  """
+  Increment token version for user (revokes all existing tokens).
+
+  Args:
+    email: User's email address.
+
+  Returns:
+    New token version.
+  """
+  email_lower = email.lower().strip()
+  current_version = _token_versions.get(email_lower, 1)
+  new_version = current_version + 1
+  _token_versions[email_lower] = new_version
+
+  logger.info(f"Token version incremented for {email}: {current_version} -> {new_version}")
+
+  return new_version
+
+
+# =============================================================================
+# JWT Generation and Validation
+# =============================================================================
+
+
+def generate_jwt(email: str) -> str:
+  """
+  Generate JWT for authenticated user.
+
+  JWT includes:
+  - sub: Subject identifier (user:{email})
+  - email: User's email address
+  - iat: Issued at timestamp
+  - exp: Expiration timestamp (30 days)
+  - channel_token: UUID for private channel access
+  - ver: Token version for revocation
+
+  Args:
+    email: User's email address.
+
+  Returns:
+    JWT token string.
+
+  Raises:
+    ValueError: If JWT_SECRET_KEY is not set or too short.
+  """
+  secret_key = get_jwt_secret_key()
+  now = datetime.now(timezone.utc)
+
+  # Normalize email
+  email_lower = email.lower().strip()
+
+  # Generate unique channel token
+  channel_token = secrets.token_urlsafe(32)
+
+  payload = {
+    "sub": f"user:{email_lower}",
+    "email": email_lower,
+    "iat": int(now.timestamp()),
+    "exp": int((now + timedelta(days=JWT_EXPIRY_DAYS)).timestamp()),
+    "channel_token": channel_token,
+    "ver": get_token_version(email_lower),
+  }
+
+  # SECURITY: Algorithm is hardcoded, never from token header
+  token = jwt.encode(payload, secret_key, algorithm=JWT_ALGORITHM)
+
+  logger.info(f"Generated JWT for {email_lower}")
+
+  return token
+
+
+def validate_jwt(token: str) -> dict | None:
+  """
+  Validate JWT session token.
+
+  Security checks:
+  - Algorithm is hardcoded to HS256 (never from token header)
+  - "none" algorithm is explicitly rejected
+  - Signature verification
+  - Expiration check
+  - ALLOWED_EMAILS validation
+  - Token version check
+
+  Args:
+    token: JWT token string to validate.
+
+  Returns:
+    JWT payload dict if valid, None otherwise.
+  """
+  if not token:
+    return None
+
+  try:
+    # Check for "none" algorithm explicitly (defense in depth)
+    # Note: PyJWT already rejects "none" when algorithms=["HS256"]
+    # This is an additional security check
+    try:
+      header = jwt.get_unverified_header(token)
+      if header.get("alg", "").lower() == "none":
+        logger.warning("Rejected JWT with 'none' algorithm")
+        return None
+    except Exception:
+      # If we can't decode the header, proceed to regular validation
+      pass
+
+    # SECURITY: algorithms parameter forces algorithm verification
+    # Library will reject token if alg header differs from allowed list
+    secret_key = get_jwt_secret_key()
+    payload = jwt.decode(
+      token,
+      secret_key,
+      algorithms=[JWT_ALGORITHM],  # ONLY allow HS256
+      options={
+        "verify_exp": True,
+        "verify_iat": True,
+        "require": ["exp", "iat", "email", "channel_token"],
+      },
+    )
+
+    # Extract email
+    email = payload.get("email")
+    if not email:
+      logger.warning("JWT missing email claim")
+      return None
+
+    # SECURITY: Check ALLOWED_EMAILS on every request
+    if not is_email_allowed(email):
+      logger.warning(f"Email not in ALLOWED_EMAILS: {email}")
+      return None
+
+    # Check token version for revocation
+    current_version = get_token_version(email)
+    token_version = payload.get("ver", 1)
+
+    if token_version != current_version:
+      logger.info(f"Token version mismatch for {email}: {token_version} != {current_version}")
+      return None
+
+    return payload
+
+  except jwt.ExpiredSignatureError:
+    logger.debug("JWT expired")
+    return None
+  except jwt.InvalidTokenError as e:
+    logger.warning(f"Invalid JWT: {e}")
+    return None
+  except ValueError as e:
+    # JWT_SECRET_KEY validation error
+    logger.error(f"JWT secret key error: {e}")
+    return None
+  except Exception as e:
+    logger.error(f"Unexpected error validating JWT: {e}")
+    return None
 
 
 class RateLimiter:
@@ -136,169 +448,6 @@ class RateLimiter:
       self._requests.pop(email.lower(), None)
     else:
       self._requests.clear()
-
-
-class SessionManager:
-  """
-  Manages user sessions.
-
-  Handles session creation, validation, revocation, and cleanup.
-  """
-
-  def __init__(
-    self,
-    session_timeout_days: int = SESSION_TIMEOUT_DAYS,
-    inactivity_timeout_days: int = INACTIVITY_TIMEOUT_DAYS,
-  ):
-    """
-    Initialize session manager.
-
-    Args:
-      session_timeout_days: Maximum session lifetime in days
-      inactivity_timeout_days: Days of inactivity before expiration
-    """
-    self.session_timeout = timedelta(days=session_timeout_days)
-    self.inactivity_timeout = timedelta(days=inactivity_timeout_days)
-    # In-memory storage: {token_hash: Session}
-    self._sessions: dict[str, Session] = {}
-
-  def create_session(
-    self, email: str, client_ip: str | None = None, user_agent_hash: str | None = None
-  ) -> dict:
-    """
-    Create a new session for authenticated user.
-
-    Args:
-      email: User's email address
-      client_ip: Optional client IP address
-      user_agent_hash: Optional hash of user agent string
-
-    Returns:
-      Session data including token (only returned on creation)
-    """
-    # Generate secure token
-    token = secrets.token_urlsafe(32)
-    token_hash = hashlib.sha256(token.encode()).hexdigest()
-
-    # Create session
-    now = datetime.now(timezone.utc)
-    session = Session(
-      token_hash=token_hash,
-      email=email.lower().strip(),
-      created_at=now,
-      expires_at=now + self.session_timeout,
-      last_activity=now,
-      client_ip=client_ip,
-      user_agent_hash=user_agent_hash,
-    )
-
-    # Store session
-    self._sessions[token_hash] = session
-
-    logger.info(f"Created session for {email}")
-
-    # Return session with token (only time token is available)
-    return {
-      "token": token,
-      "token_hash": token_hash,
-      "email": session.email,
-      "created_at": session.created_at.isoformat(),
-      "expires_at": session.expires_at.isoformat(),
-    }
-
-  def validate_token(self, token: str) -> Session | None:
-    """
-    Validate session token and return session if valid.
-
-    Also checks expiration and inactivity timeout.
-
-    Args:
-      token: Session token to validate
-
-    Returns:
-      Session if valid, None otherwise
-    """
-    if not token:
-      return None
-
-    # Hash token
-    token_hash = hashlib.sha256(token.encode()).hexdigest()
-
-    # Look up session
-    session = self._sessions.get(token_hash)
-    if not session:
-      return None
-
-    # Check expiration
-    now = datetime.now(timezone.utc)
-    if now > session.expires_at:
-      logger.info(f"Session expired for {session.email}")
-      self._sessions.pop(token_hash, None)
-      return None
-
-    # Check inactivity timeout
-    if now - session.last_activity > self.inactivity_timeout:
-      logger.info(f"Session inactive for {session.email}")
-      self._sessions.pop(token_hash, None)
-      return None
-
-    # Update last activity
-    session.last_activity = now
-
-    return session
-
-  def revoke_session(self, token: str) -> bool:
-    """
-    Revoke (delete) a session.
-
-    Args:
-      token: Session token to revoke
-
-    Returns:
-      True if session was revoked, False if not found
-    """
-    if not token:
-      return False
-
-    token_hash = hashlib.sha256(token.encode()).hexdigest()
-
-    if token_hash in self._sessions:
-      session = self._sessions.pop(token_hash)
-      logger.info(f"Revoked session for {session.email}")
-      return True
-
-    return False
-
-  def get_session_by_hash(self, token_hash: str) -> Session | None:
-    """
-    Get session by token hash (for WebSocket authentication).
-
-    Args:
-      token_hash: SHA-256 hash of session token
-
-    Returns:
-      Session if found, None otherwise
-    """
-    return self._sessions.get(token_hash)
-
-  def cleanup_expired(self):
-    """
-    Remove expired sessions from storage.
-
-    Should be called periodically to prevent memory leaks.
-    """
-    now = datetime.now(timezone.utc)
-    expired_hashes = [
-      token_hash
-      for token_hash, session in self._sessions.items()
-      if now > session.expires_at or now - session.last_activity > self.inactivity_timeout
-    ]
-
-    for token_hash in expired_hashes:
-      self._sessions.pop(token_hash, None)
-
-    if expired_hashes:
-      logger.info(f"Cleaned up {len(expired_hashes)} expired sessions")
 
 
 class MagicLinkManager:
@@ -422,5 +571,4 @@ class MagicLinkManager:
 magic_link_limiter = RateLimiter(
   max_requests=MAGIC_LINK_RATE_LIMIT, window_hours=RATE_LIMIT_WINDOW_HOURS
 )
-session_manager = SessionManager()
 magic_link_manager = MagicLinkManager()

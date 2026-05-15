@@ -17,11 +17,13 @@ from quart import jsonify, redirect, request
 # Import authentication module (for side effects)
 from . import auth as auth
 from .auth import (
-  SESSION_TIMEOUT_DAYS,
+  JWT_EXPIRY_DAYS,
+  generate_jwt,
+  is_email_allowed,
   is_valid_email,
   magic_link_limiter,
   magic_link_manager,
-  session_manager,
+  validate_jwt,
 )
 
 # Create baseweb app with SocketIO support
@@ -40,17 +42,16 @@ MAX_CLIENTS = 1000
 
 async def cleanup_task():
   """
-  Periodically clean up expired sessions and magic links.
+  Periodically clean up expired magic links.
 
   Runs every 5 minutes to prevent memory leaks from accumulating
-  expired sessions and used magic links.
+  expired and used magic links.
   """
   while True:
     await asyncio.sleep(300)  # 5 minutes
     try:
-      session_manager.cleanup_expired()
       magic_link_manager.cleanup_expired()
-      server.logger.debug("Completed periodic cleanup of expired sessions and magic links")
+      server.logger.debug("Completed periodic cleanup of expired magic links")
     except Exception as e:
       server.logger.error(f"Error during cleanup: {e}")
 
@@ -109,6 +110,18 @@ async def request_magic_link():
         }
       ), 400
 
+    # Check if email is allowed
+    if not is_email_allowed(email):
+      return jsonify(
+        {
+          "type": "https://roomz.local/errors/not-authorized",
+          "title": "Not Authorized",
+          "status": 403,
+          "detail": "This email is not authorized to access this service.",
+          "instance": "/auth/request-magic-link",
+        }
+      ), 403
+
     # Check rate limit
     if not magic_link_limiter.is_allowed(email, client_ip):
       return jsonify(
@@ -149,12 +162,12 @@ async def request_magic_link():
 @server.route("/auth/verify", methods=["GET"])
 async def verify_magic_link():
   """
-  Verify magic link token and create session.
+  Verify magic link token and issue JWT.
 
   Tokens are single-use and expire after 15 minutes.
 
   Returns:
-    Redirect to /chat on success, /?error=... on failure
+    Redirect to / on success, /?error=... on failure
   """
   token = request.args.get("token")
 
@@ -167,14 +180,12 @@ async def verify_magic_link():
   if not magic_link:
     return redirect("/?error=invalid_token")
 
-  # Create session
-  client_ip = request.remote_addr
-  user_agent = request.headers.get("User-Agent", "")
-  user_agent_hash = hashlib.sha256(user_agent.encode()).hexdigest()
+  # Check if email is still allowed (double-check)
+  if not is_email_allowed(magic_link.email):
+    return redirect("/?error=unauthorized")
 
-  session_data = session_manager.create_session(
-    email=magic_link.email, client_ip=client_ip, user_agent_hash=user_agent_hash
-  )
+  # Generate JWT
+  jwt_token = generate_jwt(magic_link.email)
 
   # Clean up magic link
   magic_link_manager.remove_token(magic_link.token_hash)
@@ -184,11 +195,11 @@ async def verify_magic_link():
   response = redirect("/")
   response.set_cookie(
     "session_token",
-    session_data["token"],
+    jwt_token,
     httponly=True,
     secure=False,  # Set to True in production with HTTPS
     samesite="Strict",
-    max_age=SESSION_TIMEOUT_DAYS * 24 * 3600,  # SESSION_TIMEOUT_DAYS in seconds
+    max_age=JWT_EXPIRY_DAYS * 24 * 3600,  # JWT_EXPIRY_DAYS in seconds
   )
 
   server.logger.info(f"User authenticated: {magic_link.email}")
@@ -199,19 +210,15 @@ async def verify_magic_link():
 @server.route("/auth/logout", methods=["POST"])
 async def logout():
   """
-  Logout and clear session.
+  Logout and clear JWT cookie.
+
+  Note: JWT is stateless, so there's no server-side session to revoke.
+  The client simply clears the cookie.
 
   Returns:
     JSON response with status
   """
   try:
-    # Extract token from cookie
-    cookies = request.headers.get("Cookie", "")
-    token = extract_token_from_cookie(cookies)
-
-    if token:
-      session_manager.revoke_session(token)
-
     response = jsonify({"status": "ok"})
     response.delete_cookie("session_token")
 
@@ -233,7 +240,7 @@ async def logout():
 @server.route("/auth/me", methods=["GET"])
 async def get_current_user():
   """
-  Get current user info.
+  Get current user info from JWT.
 
   Returns:
     JSON response with user info or error
@@ -254,10 +261,10 @@ async def get_current_user():
         }
       ), 401
 
-    # Validate session
-    session = session_manager.validate_token(token)
+    # Validate JWT
+    payload = validate_jwt(token)
 
-    if not session:
+    if not payload:
       return jsonify(
         {
           "type": "https://roomz.local/errors/unauthorized",
@@ -271,7 +278,10 @@ async def get_current_user():
     return jsonify(
       {
         "status": "ok",
-        "user": {"email": session.email, "created_at": session.created_at.isoformat()},
+        "user": {
+          "email": payload.get("email"),
+          "created_at": datetime.fromtimestamp(payload.get("iat", 0), timezone.utc).isoformat(),
+        },
       }
     )
 
@@ -296,14 +306,14 @@ async def get_current_user():
 @server.socketio.on("connect")
 async def on_connect(sid: str, environ: dict, auth_data: dict | None) -> bool:
   """
-  Handle new client connection with session validation.
+  Handle new client connection with JWT validation.
 
-  Session token is extracted from httpOnly cookie.
+  JWT is extracted from httpOnly cookie and validated.
 
   Args:
     sid: Socket session ID (unique per connection)
     environ: WSGI environment dict
-    auth: Optional authentication data
+    auth_data: Optional authentication data
 
   Returns:
     True to accept connection, False to reject
@@ -313,20 +323,20 @@ async def on_connect(sid: str, environ: dict, auth_data: dict | None) -> bool:
   token = extract_token_from_cookie(cookies)
 
   if not token:
-    server.logger.warning(f"Rejecting connection {sid}: no session token")
+    server.logger.warning(f"Rejecting connection {sid}: no JWT token")
     return False
 
-  # Validate session
-  session = session_manager.validate_token(token)
+  # Validate JWT
+  payload = validate_jwt(token)
 
-  if not session:
-    server.logger.warning(f"Rejecting connection {sid}: invalid or expired token")
+  if not payload:
+    server.logger.warning(f"Rejecting connection {sid}: invalid or expired JWT")
     return False
 
-  # Check session expiration
-  if datetime.now(timezone.utc) > session.expires_at:
-    server.logger.warning(f"Rejecting connection {sid}: session expired")
-    return False
+  # Extract user info from JWT
+  email = payload.get("email")
+  channel_token = payload.get("channel_token")
+  user_id = payload.get("sub", f"user:{email}")
 
   # Connection limit check
   if len(connected_clients) >= MAX_CLIENTS:
@@ -335,28 +345,35 @@ async def on_connect(sid: str, environ: dict, auth_data: dict | None) -> bool:
 
   # Register authenticated connection
   connected_clients[sid] = {
-    "session": session,
+    "email": email,
+    "channel_token": channel_token,
+    "user_id": user_id,
     "ip": environ.get("REMOTE_ADDR"),
     "connected_at": datetime.now(timezone.utc),
   }
 
-  server.logger.info(f"Client connected: {session.email} (total: {len(connected_clients)})")
+  server.logger.info(f"Client connected: {email} (total: {len(connected_clients)})")
+
+  # Join user's private channel
+  user_channel = f"user:{email}"
+  await server.socketio.enter_room(sid, user_channel)
 
   # Send authenticated event to the connected client
   await server.socketio.emit(
     "authenticated",
     {
-      "user": {"id": session.token_hash[:8], "email": session.email},
+      "user": {"id": user_id, "email": email},
+      "channel": user_channel,
       "server_time": datetime.now(timezone.utc).isoformat(),
     },
     to=sid,
   )
 
-  # Broadcast with user info
+  # Broadcast user joined event
   await server.socketio.emit(
     "user_joined",
     {
-      "user": {"id": session.token_hash[:8], "email": session.email},
+      "user": {"id": user_id, "email": email},
       "timestamp": datetime.now(timezone.utc).isoformat(),
     },
     skip_sid=sid,
@@ -379,14 +396,17 @@ async def on_disconnect(sid: str) -> None:
   client_info = connected_clients.pop(sid, None)
 
   if client_info:
-    session = client_info.get("session")
-    if session:
-      server.logger.info(f"Client disconnected: {session.email} (total: {len(connected_clients)})")
+    email = client_info.get("email")
+    user_id = client_info.get("user_id")
+
+    if email:
+      server.logger.info(f"Client disconnected: {email} (total: {len(connected_clients)})")
+
       # Notify remaining clients with user email
       await server.socketio.emit(
         "user_left",
         {
-          "user": {"id": session.token_hash[:8], "email": session.email},
+          "user": {"id": user_id, "email": email},
           "timestamp": datetime.now(timezone.utc).isoformat(),
         },
       )
@@ -404,12 +424,13 @@ async def on_message(sid: str, data: dict) -> dict:
   Returns:
     Acknowledgment with message ID and timestamp, or error dict
   """
-  # Get user info from session
+  # Get user info from connection
   client_info = connected_clients.get(sid)
   if not client_info:
     return {"error": "Not authenticated", "code": 401}
 
-  session = client_info.get("session")
+  email = client_info.get("email")
+  user_id = client_info.get("user_id")
 
   # Validate message structure
   if not isinstance(data, dict):
@@ -425,7 +446,7 @@ async def on_message(sid: str, data: dict) -> dict:
   # Create broadcast message with user info
   message = {
     "id": str(uuid.uuid4()),
-    "user": {"id": session.token_hash[:8], "email": session.email},
+    "user": {"id": user_id, "email": email},
     "content": content,
     "timestamp": datetime.now(timezone.utc).isoformat(),
   }

@@ -11,10 +11,21 @@ Requirements: FR-1.1.1, FR-1.1.2 (from functional analysis)
 - Rate limiting on magic link requests to prevent abuse
 """
 
+import os
 import re
 from datetime import datetime, timedelta, timezone
 
-from app.auth import is_valid_email, magic_link_limiter, magic_link_manager, session_manager
+import pytest
+
+from app.auth import (
+  is_valid_email,
+  is_email_allowed,
+  magic_link_limiter,
+  magic_link_manager,
+  allowed_emails_manager,
+  generate_jwt,
+  validate_jwt,
+)
 
 
 class TestMagicLinkRequest:
@@ -631,56 +642,65 @@ class TestLogout:
   """
   Test suite for logout functionality.
 
-  Tests verify session termination and cookie clearing.
+  Tests verify JWT cookie clearing (stateless - no server-side session).
   """
 
-  async def test_logout_clears_session_cookie(self, test_client):
+  async def test_logout_clears_jwt_cookie(self, test_client, jwt_secret_key, allowed_emails):
     """
-    Test that logout clears session cookie.
+    Test that logout clears JWT cookie.
 
-    Given: An authenticated user with session cookie
+    Given: An authenticated user with JWT cookie
     When: User calls POST /auth/logout
-    Then: Session cookie is cleared
+    Then: JWT cookie is cleared
     """
-    # Create a session
-    session_data = session_manager.create_session("logout@test.com")
-    token = session_data["token"]
+    # Set environment
+    os.environ["JWT_SECRET_KEY"] = jwt_secret_key
+    os.environ["ALLOWED_EMAILS"] = ",".join(allowed_emails)
+    allowed_emails_manager.clear_cache()
 
-    # Logout with session cookie
-    response = await test_client.post("/auth/logout", headers={"Cookie": f"session_token={token}"})
+    # Generate JWT
+    email = allowed_emails[0]
+    jwt_token = generate_jwt(email)
+
+    # Logout with JWT cookie
+    response = await test_client.post("/auth/logout", headers={"Cookie": f"session_token={jwt_token}"})
 
     assert response.status_code == 200
 
     # Cookie should be cleared (Set-Cookie with empty value or expires)
     _ = response.headers.getlist("Set-Cookie")
-    # Either there's a clear cookie or no cookie at all
-    # (depends on implementation)
 
-  async def test_logout_invalidates_session(self, test_client):
+  async def test_logout_stateless_no_server_side_revocation(self, test_client, jwt_secret_key, allowed_emails):
     """
-    Test that logout invalidates session server-side.
+    Test that logout is stateless (no server-side session revocation).
 
     Given: An authenticated user
     When: User logs out
-    Then: Session token is invalidated and cannot be reused
+    Then: JWT is still technically valid (stateless nature)
+
+    Note: This tests the stateless nature of JWT - logout only clears cookie.
     """
-    # Create a session
-    session_data = session_manager.create_session("invalidate@test.com")
-    token = session_data["token"]
+    # Set environment
+    os.environ["JWT_SECRET_KEY"] = jwt_secret_key
+    os.environ["ALLOWED_EMAILS"] = ",".join(allowed_emails)
+    allowed_emails_manager.clear_cache()
+
+    # Generate JWT
+    email = allowed_emails[0]
+    jwt_token = generate_jwt(email)
 
     # Logout
-    await test_client.post("/auth/logout", headers={"Cookie": f"session_token={token}"})
+    await test_client.post("/auth/logout", headers={"Cookie": f"session_token={jwt_token}"})
 
-    # Try to use the session
-    response = await test_client.get("/auth/me", headers={"Cookie": f"session_token={token}"})
-
-    assert response.status_code == 401
+    # JWT should still be valid (stateless)
+    payload = validate_jwt(jwt_token)
+    assert payload is not None
 
   async def test_logout_without_session_no_error(self, test_client):
     """
-    Test that logout without session doesn't cause error.
+    Test that logout without JWT doesn't cause error.
 
-    Given: A request without session cookie
+    Given: A request without JWT cookie
     When: User calls POST /auth/logout
     Then: Request succeeds without error
     """
@@ -688,30 +708,35 @@ class TestLogout:
 
     assert response.status_code == 200
 
-  async def test_get_current_user_with_valid_session(self, test_client):
+  async def test_get_current_user_with_valid_jwt(self, test_client, jwt_secret_key, allowed_emails):
     """
-    Test getting current user info with valid session.
+    Test getting current user info with valid JWT.
 
-    Given: An authenticated user with valid session
+    Given: An authenticated user with valid JWT
     When: User calls GET /auth/me
     Then: Returns user info including email
     """
-    # Create a session
-    session_data = session_manager.create_session("current@test.com")
-    token = session_data["token"]
+    # Set environment
+    os.environ["JWT_SECRET_KEY"] = jwt_secret_key
+    os.environ["ALLOWED_EMAILS"] = ",".join(allowed_emails)
+    allowed_emails_manager.clear_cache()
 
-    response = await test_client.get("/auth/me", headers={"Cookie": f"session_token={token}"})
+    # Generate JWT
+    email = allowed_emails[0]
+    jwt_token = generate_jwt(email)
+
+    response = await test_client.get("/auth/me", headers={"Cookie": f"session_token={jwt_token}"})
 
     assert response.status_code == 200
     data = await response.get_json()
     assert data["status"] == "ok"
-    assert data["user"]["email"] == "current@test.com"
+    assert data["user"]["email"] == email.lower()
 
-  async def test_get_current_user_without_session_returns_error(self, test_client):
+  async def test_get_current_user_without_jwt_returns_error(self, test_client):
     """
-    Test getting current user info without session.
+    Test getting current user info without JWT.
 
-    Given: A request without session cookie
+    Given: A request without JWT cookie
     When: User calls GET /auth/me
     Then: Returns 401 Unauthorized
     """

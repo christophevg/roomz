@@ -1726,6 +1726,18 @@ wheels = [
 ]
 
 [[package]]
+name = "pyjwt"
+version = "2.12.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c2/27/a3b6e5bf6ff856d2509292e95c8f57f0df7017cf5394921fc4e4ef40308a/pyjwt-2.12.1.tar.gz", hash = "sha256:c74a7a2adf861c04d002db713dd85f84beb242228e671280bf709d765b03672b", size = 102564, upload-time = "2026-03-13T19:27:37.25Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e5/7a/8dd906bd22e79e47397a61742927f6747fe93242ef86645ee9092e610244/pyjwt-2.12.1-py3-none-any.whl", hash = "sha256:28ca37c070cad8ba8cd9790cd940535d40274d22f80ab87f3ac6a713e6e8454c", size = 29726, upload-time = "2026-03-13T19:27:35.677Z" },
+]
+
+[[package]]
 name = "pyproject-api"
 version = "1.10.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1978,6 +1990,19 @@ wheels = [
 ]
 
 [[package]]
+name = "resend"
+version = "2.30.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/80/c7/b4c5bee252a2690cadb41063f280f4c09aac663e050e4425df545d28403d/resend-2.30.1.tar.gz", hash = "sha256:a529a019e83be285d855ecf135475dc6a6b9fa1c24f9b710686988e021a535ec", size = 43216, upload-time = "2026-05-13T15:39:18.172Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a7/46/f2f5da31f7359dd39672a279f654e6eb86fb1a27aa9c90d0d9efbb962ebb/resend-2.30.1-py2.py3-none-any.whl", hash = "sha256:45da25b86940307e130f8a44d2bac889574362400843e9cd98b49b79a7b3db63", size = 68393, upload-time = "2026-05-13T15:39:17.114Z" },
+]
+
+[[package]]
 name = "rfc3986"
 version = "2.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2007,7 +2032,10 @@ dependencies = [
     { name = "aiohttp" },
     { name = "baseweb" },
     { name = "gunicorn" },
+    { name = "pyjwt" },
+    { name = "python-dotenv" },
     { name = "python-socketio" },
+    { name = "resend" },
     { name = "rich" },
     { name = "textual" },
     { name = "uvicorn", extra = ["standard"] },
@@ -2031,10 +2059,13 @@ requires-dist = [
     { name = "baseweb", specifier = ">=0.5.2" },
     { name = "gunicorn", specifier = ">=21.0.0" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.9.0" },
+    { name = "pyjwt", specifier = ">=2.8.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0.0" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.21.0" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.1.0" },
+    { name = "python-dotenv", specifier = ">=1.2.2" },
     { name = "python-socketio", extras = ["asyncio"], specifier = ">=5.10.0" },
+    { name = "resend", specifier = ">=2.30.1" },
     { name = "rich", specifier = ">=13.0.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.4.0" },
     { name = "textual", specifier = ">=0.47.0" },

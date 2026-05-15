@@ -41,11 +41,11 @@
 
 ### Session Management
 
-- [ ] R29: Create new session endpoint
-- [ ] R30: End session endpoint
+- [x] R29: Create new session endpoint (Iteration 4 - I4-001 - JWT created on magic link verification)
+- [x] R30: End session endpoint (Iteration 4 - I4-001 - POST /auth/logout clears JWT cookie)
 - [ ] R31: Resume session endpoint
 - [ ] R32: Session tracks: rooms joined, unread messages, last active timestamp
-- [ ] R33: Sessions persist across browser sessions
+- [x] R33: Sessions persist across browser sessions (Iteration 4 - I4-001 - JWT in httpOnly cookie persists)
 - [ ] R34: User can resume previous session on new device/browser
 - [ ] R35: Session includes context: room memberships, preferences
 - [ ] R36: Session cleanup after configurable inactivity period (default: 30 days)
