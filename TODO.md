@@ -149,6 +149,29 @@
 
 ---
 
+### Iteration 7: Display Names
+
+**Goal**: Allow users to set custom display names per device/session
+
+- [ ] **I7-001: Per-device display names**
+  - `/name <name>` command to set display name at any time
+  - Web client stores in localStorage (or cookie)
+  - Python client stores in `~/.roomz/config.toml` or `ROOMZ_DISPLAY_NAME` env var
+  - Client sends name to server after connection (same mechanism as `/name`)
+  - Server broadcasts display name in presence events
+  - Message display: `"{display name} ({email})"` when set, just `email` when not
+  - No server storage - fully stateless
+  - Standard user input sanitization (no newlines)
+  - **Delivers**: Device identification in multi-session scenarios
+  - **Acceptance**:
+    - ✅ User can set display name via `/name` command
+    - ✅ Display name persists across page reloads (web) / restarts (Python)
+    - ✅ Messages show `{display name} ({email})` format
+    - ✅ Multiple devices for same user can have different names
+    - ✅ Unsetting name reverts to email-only display
+
+---
+
 ### Postponed: Observability
 
 - Structured JSON logging
