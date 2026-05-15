@@ -1,0 +1,40 @@
+/* Roomz Chat TUI Styles - Light Theme */
+
+Screen {
+  layout: vertical;
+  background: #ffffff;
+}
+
+#messages {
+  height: 1fr;
+  padding: 1 2;
+  background: #ffffff;
+  color: #000000;
+}
+
+#input {
+  height: 2;
+  padding: 0 2;
+  background: #f5f5f5;
+  color: #000000;
+  border: none;
+  outline: none;
+}
+
+TextArea {
+  border: none;
+  outline: none;
+  background: #f5f5f5;
+  color: #000000;
+}
+
+TextArea:focus {
+  border: none;
+  outline: none;
+}
+
+/* Ensure messages container scrolls properly */
+VerticalScroll {
+  scrollbar-size: 1 1;
+  scrollbar-gutter: stable;
+}

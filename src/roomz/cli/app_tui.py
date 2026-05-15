@@ -1,0 +1,365 @@
+"""
+Example TUI chat client demonstrating the Roomz Python client library.
+
+This example shows how to:
+1. Create and configure an AsyncClient
+2. Register event handlers for real-time updates
+3. Connect with or without session caching
+4. Send messages and handle responses
+5. Manage the connection lifecycle
+
+Basic usage:
+    client = AsyncClient(server_url="http://localhost:8000")
+    client.on("message", handle_message)
+    await client.login("user@example.com")  # Request magic link
+    await client.connect(token="magic-link-token")  # Connect
+    result = await client.send("Hello!")
+"""
+
+from __future__ import annotations
+
+import asyncio
+from datetime import datetime
+from pathlib import Path
+
+from textual.app import App, ComposeResult
+from textual.containers import VerticalScroll
+from textual.reactive import reactive
+from textual.widgets import Static, TextArea
+
+from roomz.client import AsyncClient
+
+# =============================================================================
+# UI Components (implementation details)
+# =============================================================================
+
+
+class MessageWidget(Static):
+  """A single message in the chat (UI widget)."""
+
+  def __init__(
+    self,
+    email: str,
+    content: str,
+    timestamp: str,
+    is_system: bool = False,
+    is_error: bool = False,
+    is_success: bool = False,
+    current_user: str | None = None,
+  ):
+    self.email = email
+    self.timestamp = timestamp
+    self.is_system = is_system
+    self.is_error = is_error
+    self.is_success = is_success
+    self.current_user = current_user
+    super().__init__(content)
+
+  def _format_timestamp(self, iso_timestamp: str) -> str:
+    """Format ISO timestamp to readable time."""
+    if not iso_timestamp:
+      return datetime.now().strftime("%H:%M:%S")
+
+    try:
+      dt = datetime.fromisoformat(iso_timestamp.replace("Z", "+00:00"))
+      return dt.strftime("%H:%M:%S")
+    except (ValueError, AttributeError):
+      return datetime.now().strftime("%H:%M:%S")
+
+  def render(self) -> str:
+    ts = self._format_timestamp(self.timestamp)
+
+    if self.is_system:
+      return f"[dim italic]{self.content}[/dim italic]"
+    elif self.is_error:
+      return f"[red]✗[/red] {self.content}"
+    elif self.is_success:
+      return f"[green]✓[/green] {self.content}"
+    else:
+      # Use different color for own messages vs others
+      if self.email == self.current_user:
+        color = "green"
+      else:
+        color = "blue"
+      return f"[dim]{ts}[/dim] [{color} bold]{self.email}[/{color} bold]: {self.content}"
+
+
+class ChatInput(TextArea):
+  """Custom TextArea that sends on Enter, newlines on Ctrl+Enter."""
+
+  def __init__(self, *args, **kwargs):
+    super().__init__(*args, **kwargs)
+    self._chat_app = None
+
+  def on_key(self, event) -> None:
+    """Handle key events."""
+    if event.key == "ctrl+enter":
+      event.stop()
+      self.insert("\n")
+    elif event.key == "enter":
+      event.stop()
+      event.prevent_default()
+      if self._chat_app:
+        text = self.text.strip()
+        if text:
+          self.load_text("")
+          asyncio.create_task(self._chat_app.handle_input(text))
+
+
+# =============================================================================
+# Client Usage Example
+# =============================================================================
+
+
+class ChatApp(App):
+  """
+  Example chat application using the Roomz AsyncClient.
+
+  This demonstrates the typical flow:
+  1. Create client with optional session caching
+  2. Register event handlers
+  3. Login (request magic link)
+  4. Connect with token (or use cached session)
+  5. Send/receive messages
+  6. Logout (disconnect and clear session)
+  """
+
+  CSS_PATH = "styles/chat.tcss"
+  TITLE = "Roomz Chat"
+
+  messages: reactive[list[MessageWidget]] = reactive(list)
+
+  def __init__(self, server_url: str = "http://localhost:8000"):
+    super().__init__()
+    self.server_url = server_url
+    self.email: str | None = None
+
+    # Create client instance once
+    # Session caching: store session cookie to auto-reconnect
+    # Set to None to disable caching
+    self.client = AsyncClient(
+      server_url=self.server_url,
+      session_cache_file=Path.home() / ".roomz" / "session.json",
+    )
+
+    # Register all event handlers
+    self._setup_client_handlers()
+
+  def compose(self) -> ComposeResult:
+    with VerticalScroll(id="messages"):
+      pass
+    yield ChatInput(id="input")
+
+  def _show_welcome_messages(self) -> None:
+    """Display welcome messages."""
+    self.add_system_message("Welcome to Roomz Chat!")
+    self.add_system_message("Commands: /login <email>, /token <token>, /logout, /quit")
+    self.add_system_message("Enter to send, Ctrl+Enter for new line")
+
+  def on_mount(self) -> None:
+    self._show_welcome_messages()
+    input_widget = self.query_one("#input", ChatInput)
+    input_widget._chat_app = self
+    input_widget.focus()
+
+    # Automatically try to connect using cached session
+    asyncio.create_task(self._connect())
+
+  def _setup_client_handlers(self) -> None:
+    """
+    Register event handlers for the client.
+
+    This is the core pattern for handling real-time events:
+    - 'authenticated': Connection established, user info available
+    - 'message': Chat message received
+    - 'user_joined': Another user joined
+    - 'user_left': Another user left
+    - 'disconnect': Connection lost
+    - 'error': Error occurred
+    """
+    self.client.on("authenticated", self._handle_authenticated)
+    self.client.on("message", self._handle_message)
+    self.client.on("user_joined", self._handle_user_joined)
+    self.client.on("user_left", self._handle_user_left)
+    self.client.on("disconnect", self._handle_disconnect)
+    self.client.on("error", self._handle_error)
+
+  async def _connect(self) -> None:
+    """
+    Try to connect to the server using cached session.
+
+    If no cached session exists, the connection fails silently and the
+    user must authenticate with /login and /token.
+    """
+    try:
+      await self.client.connect()
+    except Exception:
+      # Failed to connect, user needs to authenticate
+      pass
+
+  async def handle_input(self, text: str) -> None:
+    """Handle user input (commands and messages)."""
+    if text == "/quit":
+      self.exit()
+      return
+
+    if text == "/logout":
+      await self.logout()
+      return
+
+    if text.startswith("/login "):
+      email = text[7:].strip()
+      if email:
+        await self.login(email)
+      else:
+        self.add_error_message("Usage: /login <email>")
+      return
+
+    if text.startswith("/token "):
+      token = text[7:].strip()
+      if token:
+        await self.connect_with_token(token)
+      else:
+        self.add_error_message("Usage: /token <token>")
+      return
+
+    if text.startswith("/"):
+      self.add_error_message(f"Unknown command: {text}")
+      return
+
+    # Send chat message
+    if self.client.connected:
+      result = await self.client.send(text)
+      if "error" in result:
+        self.add_error_message(f"Failed to send: {result['error']}")
+    else:
+      self.add_error_message("Not connected. Use /login <email> then /token <token>")
+
+  def add_message(self, widget: MessageWidget) -> None:
+    messages_container = self.query_one("#messages", VerticalScroll)
+    messages_container.mount(widget)
+    messages_container.scroll_end(animate=False)
+
+  def add_chat_message(self, email: str, content: str, timestamp: str) -> None:
+    self.add_message(MessageWidget(email, content, timestamp, current_user=self.email))
+
+  def add_system_message(self, content: str) -> None:
+    self.add_message(MessageWidget("", content, "", is_system=True))
+
+  def add_error_message(self, content: str) -> None:
+    self.add_message(MessageWidget("", content, "", is_error=True))
+
+  def add_success_message(self, content: str) -> None:
+    self.add_message(MessageWidget("", content, "", is_success=True))
+
+  async def login(self, email: str) -> None:
+    """Request a magic link for authentication."""
+    try:
+      await self.client.login(email)
+      self.add_success_message(f"Magic link requested for: {email}")
+      self.add_system_message("Check the server console for the magic link URL")
+    except Exception as e:
+      self.add_error_message(f"Failed to request magic link: {e}")
+
+  async def connect_with_token(self, token: str) -> None:
+    """
+    Connect using a magic link token.
+
+    This exchanges the token for a session cookie and establishes
+    the WebSocket connection. The session cookie is cached for
+    automatic reconnection on restart.
+    """
+    try:
+      # Disconnect if already connected
+      if self.client.connected:
+        await self.client.disconnect()
+
+      self.add_system_message("Connecting to chat...")
+      await self.client.connect(session_token=token)
+
+    except Exception as e:
+      self.add_error_message(f"Connection failed: {e}")
+
+  async def logout(self) -> None:
+    """Logout: disconnect and clear cached session."""
+    await self.client.disconnect()
+    self.client.clear_cached_session()
+    self.email = None
+
+    # Clear message history
+    messages_container = self.query_one("#messages", VerticalScroll)
+    for child in messages_container.children:
+      child.remove()
+
+    self.add_system_message("Logged out successfully")
+    self._show_welcome_messages()
+
+  # ===========================================================================
+  # Event Handlers
+  # ===========================================================================
+
+  async def _handle_authenticated(self, data: dict) -> None:
+    """Handle successful authentication."""
+    user = data.get("user", {})
+    self.email = user.get("email", "unknown")
+    self.add_success_message(f"Authenticated as: {self.email}")
+    self.add_system_message("Type messages and press Enter to send.")
+
+  async def _handle_message(self, data: dict) -> None:
+    """Handle incoming chat message."""
+    user = data.get("user", {})
+    email = user.get("email", "unknown")
+    content = data.get("content", "")
+    timestamp = data.get("timestamp", "")
+    self.add_chat_message(email, content, timestamp)
+
+  async def _handle_user_joined(self, data: dict) -> None:
+    """Handle user joined event."""
+    user = data.get("user", {})
+    email = user.get("email", "unknown")
+    self.add_system_message(f"{email} joined the chat")
+
+  async def _handle_user_left(self, data: dict) -> None:
+    """Handle user left event."""
+    user = data.get("user", {})
+    email = user.get("email", "unknown")
+    self.add_system_message(f"{email} left the chat")
+
+  async def _handle_disconnect(self, data: dict) -> None:
+    """Handle disconnection."""
+    self.add_error_message("Disconnected from server")
+    self.client.clear_cached_session()
+
+  async def _handle_error(self, data: dict) -> None:
+    """Handle error event."""
+    error = data.get("error", "Unknown error")
+    code = data.get("code", 0)
+    self.add_error_message(f"Error {code}: {error}")
+    # Clear session on authentication errors
+    if code == 401:
+      self.client.clear_cached_session()
+
+  async def on_unmount(self) -> None:
+    """Cleanup on app exit."""
+    await self.client.disconnect()
+
+
+def run_tui(server_url: str = "http://localhost:8000") -> None:
+  """Run the TUI chat application."""
+  app = ChatApp(server_url=server_url)
+  app.run()
+
+
+if __name__ == "__main__":
+  import argparse
+
+  parser = argparse.ArgumentParser(description="Roomz Chat TUI")
+  parser.add_argument(
+    "--server",
+    "-s",
+    default="http://localhost:8000",
+    help="Server URL (default: http://localhost:8000)",
+  )
+  args = parser.parse_args()
+
+  run_tui(server_url=args.server)
