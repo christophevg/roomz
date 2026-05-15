@@ -1205,9 +1205,11 @@ class TestSecurityRegression:
     Security: Prevents credential exposure in source code.
     """
     import re
+    from pathlib import Path
 
-    # Read auth.py
-    with open("/Users/xtof/Workspace/agentic/roomz/app/auth.py") as f:
+    # Read auth.py (relative to project root)
+    project_root = Path(__file__).parent.parent
+    with open(project_root / "app" / "auth.py") as f:
       content = f.read()
 
     # Check for hardcoded secrets (patterns to avoid)
