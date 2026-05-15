@@ -41,6 +41,9 @@ coverage.xml
 .ruff_cache/
 .tox/
 
+# Documentation
+docs/_build/
+
 # Project specific
 *.log
 

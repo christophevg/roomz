@@ -80,27 +80,73 @@
 
 ---
 
-### Iteration 6: Deploy & Polish
+### Iteration 6: PyPI Publication
 
-**Goal**: Production-ready deployment
+**Goal**: Publish roomz to PyPI with comprehensive documentation
 
-- [ ] **I6-001: Docker setup**
-  - Dockerfile for server
-  - docker-compose.yml for development
-  - Environment-based configuration
-  - Health check endpoints
-  - **Delivers**: One-command deployment
-  - **Acceptance**: docker-compose up runs full stack
+- [ ] **I6-001: Documentation infrastructure**
+  - Create docs/ folder with Sphinx configuration
+  - Create .readthedocs.yaml for ReadTheDocs hosting
+  - Add docs dependencies to pyproject.toml (sphinx, sphinx-rtd-theme, myst-parser)
+  - Create docs/index.md with overview and quick start
+  - Create docs/api.md with client library API reference
+  - Create docs/server.md with server deployment guide
+  - Create docs/configuration.md with environment variables
+  - **Delivers**: Sphinx documentation site ready for ReadTheDocs
+  - **Satisfies**: R-documentation
+  - **Acceptance**:
+    - ✅ `make docs` builds HTML documentation
+    - ✅ docs/ includes installation, API reference, configuration
+    - ✅ .readthedocs.yaml configured for automatic builds
 
-- [ ] **I6-002: Observability basics**
-  - Structured JSON logging
-  - Request/response logging
-  - WebSocket connection metrics
-  - Error rate tracking
-  - **Delivers**: Production visibility
-  - **Acceptance**: Logs are structured, metrics visible
+- [ ] **I6-002: Code quality review**
+  - Review source code for publication readiness
+  - Ensure all public APIs have docstrings
+  - Check type hints completeness
+  - Remove any debug code or TODO comments
+  - Verify LICENSE file is correct
+  - **Delivers**: Clean, professional codebase
+  - **Satisfies**: R-quality
+  - **Acceptance**:
+    - ✅ All public functions/classes have docstrings
+    - ✅ mypy passes with no errors
+    - ✅ ruff passes with no errors
+    - ✅ Code review approved
 
-**Result**: Deployable service with basic observability.
+- [ ] **I6-003: CI/CD polish**
+  - Add Coveralls integration for coverage reporting
+  - Update README badges with correct URLs
+  - Verify TestPyPI publication workflow works
+  - **Delivers**: Automated quality checks and coverage visibility
+  - **Satisfies**: R-ci
+  - **Acceptance**:
+    - ✅ Coverage badge shows actual coverage
+    - ✅ TestPyPI publication works (make publish-test)
+    - ✅ CI pipeline runs tests, lint, typecheck, coverage
+
+- [ ] **I6-004: PyPI publication**
+  - Publish to TestPyPI first for validation
+  - Test installation from TestPyPI
+  - Publish to PyPI
+  - Verify installation from PyPI
+  - **Delivers**: roomz available on PyPI
+  - **Satisfies**: R-publication
+  - **Acceptance**:
+    - ✅ `pip install roomz` works from PyPI
+    - ✅ Documentation on ReadTheDocs is live
+    - ✅ All entry points work after install
+
+**Result**: roomz published to PyPI with comprehensive documentation, ready for integration into other projects.
+
+---
+
+### Postponed: Observability
+
+- Structured JSON logging
+- Request/response logging
+- WebSocket connection metrics
+- Error rate tracking
+- **Reason**: Focus on publication first; observability can be added post-publication
 
 ---
 
