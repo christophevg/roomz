@@ -27,7 +27,7 @@ test-cov: dev-env
 
 ## lint: Run ruff linting
 lint: dev-env
-	uv run ruff check app/ tests/
+	uv run ruff check app/ tests/ src/
 
 ## format: Format code with ruff
 format: dev-env
@@ -35,7 +35,7 @@ format: dev-env
 
 ## typecheck: Run mypy type checking
 typecheck: dev-env
-	uv run mypy app/
+	uv run mypy app/ src/
 
 ## build: Build distribution packages
 build: dev-env
@@ -59,7 +59,7 @@ check: dev-env format lint test typecheck
 
 ## run: Run the development server
 run: run-env
-	uv run uvicorn app:asgi_app --reload --host 0.0.0.0 --port 8000
+	uv run gunicorn -k uvicorn.workers.UvicornWorker app:asgi_app --reload
 
 ## help: Show this help message
 help:
