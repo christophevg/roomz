@@ -66,6 +66,7 @@ class AsyncClient:
     self._max_reconnect_attempts = max_reconnect_attempts
     self._connection_timeout = connection_timeout
     self._session_cache_file = Path(session_cache_file) if session_cache_file else None
+    self._cached_cookie: str | None = None  # Cached JWT cookie for reconnection
 
     self._connection_state = ConnectionState.DISCONNECTED
     self._user: dict | None = None
@@ -202,10 +203,12 @@ class AsyncClient:
       if not token:
         cached_cookie = self._load_session_cookie()
         if cached_cookie:
-          # Set the cached session cookie
+          # Set the cached session cookie in the cookie jar
           self._session.cookie_jar.update_cookies(
             {"session_token": cached_cookie}
           )
+          # Also store for explicit header passing if needed
+          self._cached_cookie = cached_cookie
 
       # Verify magic link token if provided (skip for session resumption)
       if token:
@@ -224,6 +227,7 @@ class AsyncClient:
           session_cookie = cookies.get("session_token")
           if session_cookie:
             self._save_session_cookie(session_cookie.value)
+            self._cached_cookie = session_cookie.value
 
       # Create Socket.IO client with shared session
       self._sio = socketio.AsyncClient(
@@ -239,9 +243,15 @@ class AsyncClient:
       self._sio.on("user_joined", self._on_user_joined)
       self._sio.on("user_left", self._on_user_left)
 
+      # Build headers with cookie for WebSocket handshake
+      headers = {}
+      if hasattr(self, "_cached_cookie") and self._cached_cookie:
+        headers["Cookie"] = f"session_token={self._cached_cookie}"
+
       # Connect to WebSocket
       await self._sio.connect(
         self._server_url,
+        headers=headers if headers else {},
         wait_timeout=self._connection_timeout,
       )
 
@@ -356,15 +366,19 @@ class AsyncClient:
 
   async def _on_message(self, data: dict) -> None:
     """Handle message event from server."""
-    await self._events.emit("message", data)
+    # Only process if connected (prevent duplicate events during reconnection)
+    if self._connection_state == ConnectionState.CONNECTED:
+      await self._events.emit("message", data)
 
   async def _on_user_joined(self, data: dict) -> None:
     """Handle user_joined event from server."""
-    await self._events.emit("user_joined", data)
+    if self._connection_state == ConnectionState.CONNECTED:
+      await self._events.emit("user_joined", data)
 
   async def _on_user_left(self, data: dict) -> None:
     """Handle user_left event from server."""
-    await self._events.emit("user_left", data)
+    if self._connection_state == ConnectionState.CONNECTED:
+      await self._events.emit("user_left", data)
 
   async def _attempt_reconnection(self) -> None:
     """Attempt to reconnect with exponential backoff."""
@@ -409,9 +423,15 @@ class AsyncClient:
         self._sio.on("user_joined", self._on_user_joined)
         self._sio.on("user_left", self._on_user_left)
 
+        # Build headers with cookie for WebSocket handshake
+        headers = {}
+        if hasattr(self, "_cached_cookie") and self._cached_cookie:
+          headers["Cookie"] = f"session_token={self._cached_cookie}"
+
         # Connect (session cookie from original auth is still in self._session)
         await self._sio.connect(
           self._server_url,
+          headers=headers if headers else {},
           wait_timeout=self._connection_timeout,
         )
 
