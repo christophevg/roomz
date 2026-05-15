@@ -18,14 +18,66 @@ from datetime import datetime, timedelta, timezone
 import pytest
 
 from app.auth import (
-  is_valid_email,
-  is_email_allowed,
-  magic_link_limiter,
-  magic_link_manager,
   allowed_emails_manager,
   generate_jwt,
+  is_valid_email,
+  magic_link_limiter,
+  magic_link_manager,
   validate_jwt,
 )
+
+# Allowed emails for testing
+TEST_ALLOWED_EMAILS = [
+  "test@example.com",
+  "alice@example.com",
+  "bob@example.com",
+  "charlie@example.com",
+  "token@test.com",
+  "hash@test.com",
+  "rate@test.com",
+  "test1@example.com",
+  "test2@example.com",
+  "expired@test.com",
+  "expirycheck@test.com",
+  "user@example.com",
+  "verify@test.com",
+  "new@test.com",
+  "session@test.com",
+  "cookie@test.com",
+  "secure@test.com",
+  "samesite@test.com",
+  "maxage@test.com",
+  "john@test.com",
+  "jane@test.com",
+  "concurrent@test.com",
+  "concurrent1@test.com",
+  "concurrent2@test.com",
+  "testuser@example.com",
+  "spam@test.com",
+  "limit@test.com",
+  "reset@test.com",
+  "brute@test.com",
+  "usera@test.com",
+  "userb@test.com",
+  "timeout@test.com",
+  "length@test.com",
+]
+
+
+@pytest.fixture(autouse=True)
+def setup_allowed_emails():
+  """
+  Setup ALLOWED_EMAILS and JWT_SECRET_KEY for all auth tests.
+
+  This ensures that the email allow-list check passes for test emails
+  and JWT token generation works.
+  """
+  os.environ["ALLOWED_EMAILS"] = ",".join(TEST_ALLOWED_EMAILS)
+  os.environ["JWT_SECRET_KEY"] = "test-secret-key-minimum-32-characters-long-for-security"
+  allowed_emails_manager.clear_cache()
+  yield
+  # Cleanup
+  allowed_emails_manager.clear_cache()
 
 
 class TestMagicLinkRequest:
@@ -584,9 +636,19 @@ class TestMagicLinkSecurity:
 
     # Check that there are no hardcoded secrets
     # (This is a basic check - in production you'd use more sophisticated tools)
-    assert "SECRET_KEY" not in source
-    assert "API_KEY" not in source
-    assert "PASSWORD" not in source
+    # Note: We check for hardcoded VALUES, not the variable names
+    # SECRET_KEY is loaded from environment variable, not hardcoded
+    import re
+
+    # Pattern to find hardcoded secret values (not env var lookups)
+    # Matches patterns like SECRET_KEY = "value" but not os.getenv("SECRET_KEY")
+    hardcoded_patterns = [
+      r'SECRET_KEY\s*=\s*["\'][^"\']+["\']',  # SECRET_KEY = "value"
+      r'API_KEY\s*=\s*["\'][^"\']+["\']',  # API_KEY = "value"
+      r'PASSWORD\s*=\s*["\'][^"\']+["\']',  # PASSWORD = "value"
+    ]
+    for pattern in hardcoded_patterns:
+      assert not re.search(pattern, source), f"Found hardcoded secret matching {pattern}"
 
   def test_email_validation_rfc5322_compliant(self, test_client):
     """

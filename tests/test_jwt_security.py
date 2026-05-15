@@ -23,7 +23,6 @@ import pytest
 
 from app.auth import (
   JWT_ALGORITHM,
-  JWT_SECRET_KEY_MIN_LENGTH,
   _token_versions,
   allowed_emails_manager,
   generate_jwt,
@@ -899,7 +898,7 @@ class TestSecretKeySecurity:
     os.environ["JWT_SECRET_KEY"] = jwt_secret_key
 
     # Use key (trigger potential logging)
-    key = get_jwt_secret_key()
+    get_jwt_secret_key()
 
     # Check logs
     for record in caplog.records:
@@ -1208,7 +1207,7 @@ class TestSecurityRegression:
     import re
 
     # Read auth.py
-    with open("/Users/xtof/Workspace/agentic/roomz/app/auth.py", "r") as f:
+    with open("/Users/xtof/Workspace/agentic/roomz/app/auth.py") as f:
       content = f.read()
 
     # Check for hardcoded secrets (patterns to avoid)

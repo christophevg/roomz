@@ -48,24 +48,23 @@
 
 **Goal**: Production-ready magic link delivery
 
-- NOTE: Change of plan: we'll use Resend
-  - minimal test implemented in resend_email_test.py
-
-- [ ] **I5-001: SendGrid integration**
-  - Add SendGrid dependency
-  - Create EmailSender abstraction
-  - Implement SendGridEmailSender
-  - Implement ConsoleEmailSender (development mode)
-  - Environment-based selection: EMAIL_SENDER=console|sendgrid
-  - Email template for magic link
+- [x] **I5-001: Resend email integration** (2026-05-15)
+  - Created EmailSender protocol with ConsoleEmailSender and ResendEmailSender
+  - Environment-based selection: EMAIL_SENDER=console|resend
+  - ConsoleEmailSender logs magic links to server console (development)
+  - ResendEmailSender sends HTML emails via Resend API (production)
+  - Factory pattern: get_email_sender() returns appropriate implementation
+  - Email includes magic link URL and CLI token instructions
+  - Fixed circular import by importing email module after server creation
+  - Added comprehensive test fixtures for EMAIL_SENDER environment
   - **Delivers**: Real email delivery for magic links
   - **Satisfies**: R1 (complete)
   - **Acceptance**:
     - ✅ Development mode: magic link logged to console
-    - ✅ Production mode: SendGrid sends email
+    - ✅ Production mode: Resend sends email
     - ✅ User receives magic link, clicks, authenticates
 
-- [ ] **I5-002: Email allow-list**
+- [x] **I5-002: Email allow-list** (2026-05-15)
   - ALLOWED_EMAILS env var (comma-separated)
   - Validate email against allow-list on magic link request
   - Validate email against allow-list on JWT verification
@@ -77,7 +76,7 @@
     - ✅ Removing email from allow-list revokes access immediately
     - ✅ Non-allowed emails get "not authorized" message
 
-**Result**: Production authentication with SendGrid. Email allow-list for access control.
+**Result**: Production authentication with Resend. Email allow-list for access control.
 
 ---
 

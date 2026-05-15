@@ -74,6 +74,15 @@ JWT_SECRET_KEY=your-256-bit-secret-key-here
 # Required: Comma-separated list of allowed email addresses
 ALLOWED_EMAILS=user@example.com,other@example.com
 
+# Email Configuration (choose one)
+# Development: Log magic links to console (default)
+EMAIL_SENDER=console
+
+# Production: Send emails via Resend
+# EMAIL_SENDER=resend
+# RESEND_API_KEY=re_your_api_key_here
+# EMAIL_FROM=noreply@yourdomain.com  # Optional, defaults to no-reply@example.com
+
 # Optional: JWT token expiration in days (default: 30)
 JWT_EXPIRY_DAYS=30
 
@@ -89,6 +98,10 @@ MAGIC_LINK_RATE_LIMIT=5
 - `ALLOWED_EMAILS` controls who can authenticate
 - Removing an email from `ALLOWED_EMAILS` immediately revokes their access
 - Session cookies are httpOnly and SameSite=Strict
+
+**Email Setup:**
+- **Development**: Set `EMAIL_SENDER=console` (or leave unset). Magic links are logged to the server console.
+- **Production**: Set `EMAIL_SENDER=resend` and provide `RESEND_API_KEY`. Get your API key from [resend.com](https://resend.com).
 
 ### Testing
 

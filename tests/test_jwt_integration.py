@@ -11,22 +11,14 @@ Requirements: I4-001 - JWT Session Tokens
 """
 
 import os
-import secrets
 from datetime import datetime, timedelta, timezone
 
 import jwt
 import pytest
 
-from app import connected_clients
 from app.auth import (
-  JWT_EXPIRY_DAYS,
-  _token_versions,
   allowed_emails_manager,
   generate_jwt,
-  get_token_version,
-  increment_token_version,
-  is_email_allowed,
-  magic_link_limiter,
   magic_link_manager,
   validate_jwt,
 )

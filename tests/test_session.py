@@ -22,9 +22,6 @@ import pytest
 
 from app.auth import (
   magic_link_manager,
-  allowed_emails_manager,
-  generate_jwt,
-  validate_jwt,
 )
 
 # All session tests are skipped - SessionManager has been replaced with JWT

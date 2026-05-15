@@ -19,8 +19,6 @@ import pytest
 
 from app.auth import (
   JWT_ALGORITHM,
-  JWT_SECRET_KEY_MIN_LENGTH,
-  _token_versions,
   allowed_emails_manager,
   generate_jwt,
   get_jwt_secret_key,

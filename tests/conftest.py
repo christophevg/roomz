@@ -8,17 +8,41 @@ and mock configurations.
 import os
 import secrets
 
-import jwt
 import pytest
 
 from app import connected_clients, server
 from app.auth import (
-  JWT_EXPIRY_DAYS,
   _token_versions,
   allowed_emails_manager,
   magic_link_limiter,
   magic_link_manager,
 )
+
+
+@pytest.fixture(autouse=True)
+def reset_environment():
+  """
+  Reset environment variables for each test.
+
+  This ensures tests run in isolation with predictable settings.
+  """
+  # Save original values
+  original_values = {}
+  env_vars = ["EMAIL_SENDER", "RESEND_API_KEY", "EMAIL_FROM"]
+  for var in env_vars:
+    original_values[var] = os.environ.get(var)
+
+  # Set test defaults - use console email sender for tests
+  os.environ["EMAIL_SENDER"] = "console"
+
+  yield
+
+  # Restore original values
+  for var, value in original_values.items():
+    if value is None:
+      os.environ.pop(var, None)
+    else:
+      os.environ[var] = value
 
 
 @pytest.fixture

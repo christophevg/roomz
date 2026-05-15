@@ -5,7 +5,6 @@ A minimal chat application with SocketIO support for real-time message broadcast
 """
 
 import asyncio
-import hashlib
 import html
 import uuid
 from datetime import datetime, timezone
@@ -28,6 +27,9 @@ from .auth import (
 
 # Create baseweb app with SocketIO support
 server = Baseweb("roomz", settings={"main_template": "minimal.html"})
+
+# Import email module after server is created (avoids circular import)
+from .email import get_email_sender  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
 server.register_stylesheet("roomz.css", HERE / "static" / "css")
@@ -156,11 +158,22 @@ async def request_magic_link():
     # Generate magic link URL
     magic_link_url = f"{request.host_url}auth/verify?token={token}"
 
-    # DEVELOPMENT: Log to console
-    # PRODUCTION: Send email via email service
-    server.logger.info(f"\n{'=' * 60}\nMAGIC LINK for {email}\n{magic_link_url}\n{'=' * 60}\n")
+    # Send magic link email
+    email_sender = get_email_sender()
+    email_sent = await email_sender.send_magic_link(email, magic_link_url)
 
-    return jsonify({"status": "ok", "message": "Magic link generated. Check server console."})
+    if not email_sent:
+      return jsonify(
+        {
+          "type": "https://roomz.local/errors/email-failed",
+          "title": "Email Delivery Failed",
+          "status": 500,
+          "detail": "Failed to send magic link email. Please try again.",
+          "instance": "/auth/request-magic-link",
+        }
+      ), 500
+
+    return jsonify({"status": "ok", "message": "Magic link sent. Check your email."})
 
   except Exception as e:
     server.logger.error(f"Error creating magic link: {e}")
@@ -351,6 +364,10 @@ async def on_connect(sid: str, environ: dict, auth_data: dict | None) -> bool:
 
   # Extract user info from JWT
   email = payload.get("email")
+  if not email:
+    server.logger.warning(f"Rejecting connection {sid}: JWT missing email claim")
+    return False
+
   user_id = payload.get("sub", f"user:{email}")
 
   # Connection limit check
