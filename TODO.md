@@ -19,6 +19,15 @@
     - ✅ Login with magic link, get JWT
     - ✅ Server restart, reconnect still works
     - ✅ Remove email from ALLOWED_EMAILS, access denied
+  - **Known Issues** (to fix):
+    - Python client: messages show twice after server reconnection
+    - Python client: auto-reconnection fails after CLI restart (cookie not sent)
+
+- [ ] **I4-001b: Fix Python client JWT issues**
+  - Fix duplicate event handlers after reconnection
+  - Fix cookie not being sent in WebSocket handshake
+  - Ensure cached JWT session works on CLI restart
+  - **Delivers**: Reliable Python client authentication
 
 - [ ] **I4-002: User-owned private channels**
   - Each user gets personal channel: `user:{email}`
