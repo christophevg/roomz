@@ -7,6 +7,7 @@ Primary async WebSocket client implementation for Roomz.
 import asyncio
 import json
 import logging
+import os
 import random
 from pathlib import Path
 
@@ -19,6 +20,51 @@ from roomz.client.exceptions import AuthenticationError, ConnectionError
 from roomz.client.state import ConnectionState
 
 logger = logging.getLogger(__name__)
+
+
+def _load_display_name_from_config() -> str | None:
+  """
+  Load display name from environment variable or config file.
+
+  Priority:
+    1. ROOMZ_DISPLAY_NAME environment variable
+    2. ~/.roomz/config.toml file
+
+  Returns:
+    Display name if configured, None otherwise
+  """
+  # Check environment variable first
+  env_name = os.environ.get("ROOMZ_DISPLAY_NAME")
+  if env_name:
+    return env_name.strip() or None
+
+  # Check config file
+  config_file = Path.home() / ".roomz" / "config.toml"
+  if config_file.exists():
+    try:
+      # Simple TOML parsing (only need [client] section)
+      content = config_file.read_text()
+      in_client_section = False
+      for line in content.splitlines():
+        line = line.strip()
+        if line == "[client]":
+          in_client_section = True
+        elif line.startswith("[") and line.endswith("]"):
+          in_client_section = False
+        elif in_client_section and line.startswith("display_name"):
+          # Parse: display_name = "value" or display_name = 'value'
+          if "=" in line:
+            value = line.split("=", 1)[1].strip()
+            # Remove quotes
+            if (value.startswith('"') and value.endswith('"')) or (
+              value.startswith("'") and value.endswith("'")
+            ):
+              value = value[1:-1]
+            return value or None
+    except Exception as e:
+      logger.warning(f"Failed to load display name from config: {e}")
+
+  return None
 
 
 class AsyncClient:
@@ -46,6 +92,7 @@ class AsyncClient:
     max_reconnect_attempts: int = 5,
     connection_timeout: float = 10.0,
     session_cache_file: str | Path | None = None,
+    display_name: str | None = None,
   ):
     """
     Initialize async client.
@@ -58,6 +105,7 @@ class AsyncClient:
       max_reconnect_attempts: Maximum reconnection attempts (default: 5)
       connection_timeout: Timeout for connection in seconds (default: 10.0)
       session_cache_file: Path to cache session cookie (None to disable caching)
+      display_name: Optional display name (loaded from env/config if not provided)
     """
     self._server_url = server_url
     self._session_token = session_token
@@ -67,6 +115,12 @@ class AsyncClient:
     self._connection_timeout = connection_timeout
     self._session_cache_file = Path(session_cache_file) if session_cache_file else None
     self._cached_cookie: str | None = None  # Cached JWT cookie for reconnection
+
+    # Display name: explicit > env var > config file
+    if display_name is not None:
+      self._display_name = display_name.strip() or None
+    else:
+      self._display_name = _load_display_name_from_config()
 
     self._connection_state = ConnectionState.DISCONNECTED
     self._user: dict | None = None
@@ -89,6 +143,11 @@ class AsyncClient:
   def connection_state(self) -> ConnectionState:
     """Current connection state."""
     return self._connection_state
+
+  @property
+  def display_name(self) -> str | None:
+    """Current display name (loaded from config/env, may be overridden by server)."""
+    return self._display_name
 
   def on(self, event: str, handler: EventHandler) -> None:
     """
@@ -242,6 +301,7 @@ class AsyncClient:
       self._sio.on("message", self._on_message)
       self._sio.on("user_joined", self._on_user_joined)
       self._sio.on("user_left", self._on_user_left)
+      self._sio.on("display_name_changed", self._on_display_name_changed)
 
       # Build headers with cookie for WebSocket handshake
       headers = {}
@@ -334,6 +394,59 @@ class AsyncClient:
       logger.error(f"Error sending message: {e}")
       return {"error": str(e), "code": 500}
 
+  async def set_display_name(self, display_name: str | None) -> dict:
+    """
+    Set display name for this connection.
+
+    Display names are per-connection and ephemeral - not stored server-side.
+    Each device/session can have its own display name.
+
+    Args:
+      display_name: Display name to set, or None/empty to clear
+
+    Returns:
+      dict with 'status', 'display_name' on success
+      dict with 'error', 'code' on failure
+
+    Raises:
+      ConnectionError: If not connected
+    """
+    if not self._sio or not self._sio.connected:
+      raise ConnectionError("Not connected")
+
+    # Normalize: empty string becomes None
+    if display_name is not None:
+      display_name = display_name.strip() or None
+
+    # Create a future to receive the acknowledgment
+    ack_future: asyncio.Future[dict] = asyncio.get_running_loop().create_future()
+
+    def ack_callback(response: dict) -> None:
+      """Handle acknowledgment from server."""
+      if not ack_future.done():
+        ack_future.set_result(response)
+
+    try:
+      # Emit set_display_name event with acknowledgment callback
+      await self._sio.emit(
+        "set_display_name", {"display_name": display_name}, callback=ack_callback
+      )
+
+      # Wait for acknowledgment
+      result = await asyncio.wait_for(ack_future, timeout=5.0)
+
+      # Update local display name on success
+      if result.get("status") == "ok":
+        self._display_name = result.get("display_name")
+
+      return result
+
+    except asyncio.TimeoutError:
+      return {"error": "Display name acknowledgment timeout", "code": 408}
+    except Exception as e:
+      logger.error(f"Error setting display name: {e}")
+      return {"error": str(e), "code": 500}
+
   # Socket.IO event handlers
 
   async def _on_socket_connect(self) -> None:
@@ -361,6 +474,11 @@ class AsyncClient:
     # Update state
     self._connection_state = ConnectionState.CONNECTED
 
+    # Send display name if configured
+    if self._display_name:
+      logger.debug(f"Sending display name: {self._display_name}")
+      await self.set_display_name(self._display_name)
+
     # Emit authenticated event
     await self._events.emit("authenticated", data)
 
@@ -379,6 +497,11 @@ class AsyncClient:
     """Handle user_left event from server."""
     if self._connection_state == ConnectionState.CONNECTED:
       await self._events.emit("user_left", data)
+
+  async def _on_display_name_changed(self, data: dict) -> None:
+    """Handle display_name_changed event from server."""
+    if self._connection_state == ConnectionState.CONNECTED:
+      await self._events.emit("display_name_changed", data)
 
   async def _attempt_reconnection(self) -> None:
     """Attempt to reconnect with exponential backoff."""
@@ -422,6 +545,7 @@ class AsyncClient:
         self._sio.on("message", self._on_message)
         self._sio.on("user_joined", self._on_user_joined)
         self._sio.on("user_left", self._on_user_left)
+        self._sio.on("display_name_changed", self._on_display_name_changed)
 
         # Build headers with cookie for WebSocket handshake
         headers = {}

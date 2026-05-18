@@ -200,6 +200,31 @@ export MAGIC_LINK_RATE_LIMIT=3
 
 ## Client Configuration
 
+### Display Name
+
+Set a custom display name that appears in chat messages as `"Display Name (email)"`.
+
+**Environment Variable:**
+
+```bash
+export ROOMZ_DISPLAY_NAME="Alice"
+```
+
+**Config File (`~/.roomz/config.toml`):**
+
+```toml
+[client]
+display_name = "Alice"
+```
+
+**Priority:**
+1. Environment variable `ROOMZ_DISPLAY_NAME`
+2. Config file `~/.roomz/config.toml`
+
+**Note:** Display names can also be set dynamically using the `/name` command in the CLI or the `set_display_name()` method in the AsyncClient.
+
+---
+
 ### AsyncClient Parameters
 
 ```python
@@ -213,6 +238,7 @@ client = AsyncClient(
   max_reconnect_attempts=5,              # Max reconnection attempts
   connection_timeout=10.0,               # Connection timeout in seconds
   session_cache_file=None,               # Cache file path for session
+  display_name=None,                     # Optional: Display name (or use ROOMZ_DISPLAY_NAME)
 )
 ```
 

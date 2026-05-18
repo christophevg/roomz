@@ -103,6 +103,11 @@ class SyncClient:
     """Current connection state."""
     return self._async_client.connection_state
 
+  @property
+  def display_name(self) -> str | None:
+    """Current display name."""
+    return self._async_client.display_name
+
   def connect(self) -> None:
     """
     Establish WebSocket connection.
@@ -156,6 +161,22 @@ class SyncClient:
       ConnectionError: If not connected
     """
     return cast(dict, self._run_coroutine(self._async_client.send(content)))
+
+  def set_display_name(self, display_name: str | None) -> dict:
+    """
+    Set display name for this connection.
+
+    Args:
+      display_name: Display name to set, or None/empty to clear
+
+    Returns:
+      dict with 'status', 'display_name' on success
+      dict with 'error', 'code' on failure
+
+    Raises:
+      ConnectionError: If not connected
+    """
+    return cast(dict, self._run_coroutine(self._async_client.set_display_name(display_name)))
 
   def on(self, event: str, handler: EventHandler) -> None:
     """

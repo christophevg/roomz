@@ -46,6 +46,7 @@ class MessageWidget(Static):
     is_error: bool = False,
     is_success: bool = False,
     current_user: str | None = None,
+    display_name: str | None = None,
   ):
     self.email = email
     self.timestamp = timestamp
@@ -53,6 +54,7 @@ class MessageWidget(Static):
     self.is_error = is_error
     self.is_success = is_success
     self.current_user = current_user
+    self.display_name = display_name
     super().__init__(content)
 
   def _format_timestamp(self, iso_timestamp: str) -> str:
@@ -66,6 +68,12 @@ class MessageWidget(Static):
     except (ValueError, AttributeError):
       return datetime.now().strftime("%H:%M:%S")
 
+  def _format_user_display(self) -> str:
+    """Format user display name and email."""
+    if self.display_name and self.display_name.strip():
+      return f"{self.display_name.strip()} ({self.email})"
+    return self.email
+
   def render(self) -> str:
     ts = self._format_timestamp(self.timestamp)
 
@@ -77,11 +85,12 @@ class MessageWidget(Static):
       return f"[green]✓[/green] {self.content}"
     else:
       # Use different color for own messages vs others
+      user_display = self._format_user_display()
       if self.email == self.current_user:
         color = "green"
       else:
         color = "blue"
-      return f"[dim]{ts}[/dim] [{color} bold]{self.email}[/{color} bold]: {self.content}"
+      return f"[dim]{ts}[/dim] [{color} bold]{user_display}[/{color} bold]: {self.content}"
 
 
 class ChatInput(TextArea):
@@ -153,7 +162,9 @@ class ChatApp(App):
   def _show_welcome_messages(self) -> None:
     """Display welcome messages."""
     self.add_system_message("Welcome to Roomz Chat!")
-    self.add_system_message("Commands: /login <email>, /token <token>, /logout, /quit")
+    self.add_system_message(
+      "Commands: /login <email>, /token <token>, /name <name>, /name, /logout, /quit"
+    )
     self.add_system_message("Enter to send, Ctrl+Enter for new line")
 
   def on_mount(self) -> None:
@@ -183,6 +194,7 @@ class ChatApp(App):
     self.client.on("user_left", self._handle_user_left)
     self.client.on("disconnect", self._handle_disconnect)
     self.client.on("error", self._handle_error)
+    self.client.on("display_name_changed", self._handle_display_name_changed)
 
   async def _connect(self) -> None:
     """
@@ -223,6 +235,20 @@ class ChatApp(App):
         self.add_error_message("Usage: /token <token>")
       return
 
+    if text == "/name":
+      # Clear display name
+      await self.set_display_name(None)
+      return
+
+    if text.startswith("/name "):
+      # Set display name
+      name = text[6:].strip()
+      if name:
+        await self.set_display_name(name)
+      else:
+        self.add_error_message("Usage: /name <display name>")
+      return
+
     if text.startswith("/"):
       self.add_error_message(f"Unknown command: {text}")
       return
@@ -240,8 +266,12 @@ class ChatApp(App):
     messages_container.mount(widget)
     messages_container.scroll_end(animate=False)
 
-  def add_chat_message(self, email: str, content: str, timestamp: str) -> None:
-    self.add_message(MessageWidget(email, content, timestamp, current_user=self.email))
+  def add_chat_message(
+    self, email: str, content: str, timestamp: str, display_name: str | None = None
+  ) -> None:
+    self.add_message(
+      MessageWidget(email, content, timestamp, current_user=self.email, display_name=display_name)
+    )
 
   def add_system_message(self, content: str) -> None:
     self.add_message(MessageWidget("", content, "", is_system=True))
@@ -294,6 +324,24 @@ class ChatApp(App):
     self.add_system_message("Logged out successfully")
     self._show_welcome_messages()
 
+  async def set_display_name(self, name: str | None) -> None:
+    """Set display name for this connection."""
+    if not self.client.connected:
+      self.add_error_message("Not connected. Use /login <email> then /token <token>")
+      return
+
+    result = await self.client.set_display_name(name)
+
+    if result.get("status") == "ok":
+      display_name = result.get("display_name")
+      if display_name:
+        self.add_success_message(f"Display name set to: {display_name}")
+      else:
+        self.add_success_message("Display name cleared. Messages will show your email only.")
+    else:
+      error = result.get("error", "Unknown error")
+      self.add_error_message(f"Failed to set display name: {error}")
+
   # ===========================================================================
   # Event Handlers
   # ===========================================================================
@@ -309,21 +357,30 @@ class ChatApp(App):
     """Handle incoming chat message."""
     user = data.get("user", {})
     email = user.get("email", "unknown")
+    display_name = user.get("display_name")
     content = data.get("content", "")
     timestamp = data.get("timestamp", "")
-    self.add_chat_message(email, content, timestamp)
+    self.add_chat_message(email, content, timestamp, display_name=display_name)
+
+  def _format_user_display(self, user: dict) -> str:
+    """Format user display name and email."""
+    email = user.get("email", "unknown")
+    display_name = user.get("display_name")
+    if display_name and display_name.strip():
+      return f"{display_name.strip()} ({email})"
+    return email
 
   async def _handle_user_joined(self, data: dict) -> None:
     """Handle user joined event."""
     user = data.get("user", {})
-    email = user.get("email", "unknown")
-    self.add_system_message(f"{email} joined the chat")
+    user_display = self._format_user_display(user)
+    self.add_system_message(f"{user_display} joined the chat")
 
   async def _handle_user_left(self, data: dict) -> None:
     """Handle user left event."""
     user = data.get("user", {})
-    email = user.get("email", "unknown")
-    self.add_system_message(f"{email} left the chat")
+    user_display = self._format_user_display(user)
+    self.add_system_message(f"{user_display} left the chat")
 
   async def _handle_disconnect(self, data: dict) -> None:
     """Handle disconnection."""
@@ -338,6 +395,12 @@ class ChatApp(App):
     # Clear session on authentication errors
     if code == 401:
       self.client.clear_cached_session()
+
+  async def _handle_display_name_changed(self, data: dict) -> None:
+    """Handle display_name_changed event."""
+    user = data.get("user", {})
+    user_display = self._format_user_display(user)
+    self.add_system_message(f"{user_display} changed their display name")
 
   async def on_unmount(self) -> None:
     """Cleanup on app exit."""

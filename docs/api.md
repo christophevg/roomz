@@ -65,7 +65,7 @@ def user() -> dict | None
 
 Returns current user info or `None` if not authenticated.
 
-**Returns:** `{"id": str, "email": str}` or `None`
+**Returns:** `{"id": str, "email": str, "display_name": str | None}` or `None`
 
 #### `connection_state` (property)
 
@@ -245,6 +245,54 @@ Clear cached session cookie.
 client.clear_cached_session()
 ```
 
+#### `set_display_name(name)`
+
+```python
+async def set_display_name(name: str | None) -> dict
+```
+
+Set or clear the display name for the current user.
+
+**Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `name` | `str \| None` | Display name to set, or `None` to clear |
+
+**Returns:**
+
+On success:
+```python
+{
+  "status": "ok",
+  "display_name": "Alice"  # or null if cleared
+}
+```
+
+On failure:
+```python
+{
+  "error": "Error message",
+  "code": 400
+}
+```
+
+**Raises:** `ConnectionError` if not connected
+
+**Example:**
+
+```python
+# Set display name
+result = await client.set_display_name("Alice")
+print(f"Display name set to: {result['display_name']}")
+
+# Clear display name
+result = await client.set_display_name(None)
+print("Display name cleared")
+```
+
+**Note:** Display names appear as `"Display Name (email)"` in chat. When cleared, only the email is shown.
+
 ### Context Manager
 
 `AsyncClient` supports async context manager:
@@ -349,7 +397,7 @@ Emitted when successfully authenticated.
 **Data:**
 ```python
 {
-  "user": {"id": "user:email@example.com", "email": "email@example.com"},
+  "user": {"id": "user:email@example.com", "email": "email@example.com", "display_name": null},
   "channel": "user:email@example.com",
   "server_time": "2024-01-01T12:00:00Z"
 }
@@ -363,7 +411,7 @@ Emitted when a message is received.
 ```python
 {
   "id": "uuid",
-  "user": {"id": "user:email@example.com", "email": "email@example.com"},
+  "user": {"id": "user:email@example.com", "email": "email@example.com", "display_name": "Alice"},
   "content": "Message text",
   "timestamp": "2024-01-01T12:00:00Z"
 }
@@ -376,7 +424,7 @@ Emitted when a user joins the channel.
 **Data:**
 ```python
 {
-  "user": {"id": "user:email@example.com", "email": "email@example.com"},
+  "user": {"id": "user:email@example.com", "email": "email@example.com", "display_name": "Alice"},
   "timestamp": "2024-01-01T12:00:00Z",
   "total_connections": 1
 }
@@ -389,9 +437,22 @@ Emitted when a user leaves the channel.
 **Data:**
 ```python
 {
-  "user": {"id": "user:email@example.com", "email": "email@example.com"},
+  "user": {"id": "user:email@example.com", "email": "email@example.com", "display_name": "Alice"},
   "timestamp": "2024-01-01T12:00:00Z",
   "remaining_connections": 0
+}
+```
+
+### `display_name_changed`
+
+Emitted when a user changes their display name.
+
+**Data:**
+```python
+{
+  "user": {"id": "user:email@example.com", "email": "email@example.com"},
+  "display_name": "Alice",
+  "timestamp": "2024-01-01T12:00:00Z"
 }
 ```
 
@@ -437,5 +498,7 @@ roomz-cli [--server URL]
 |---------|-------------|
 | `/login <email>` | Request magic link |
 | `/token <token>` | Connect with token |
+| `/name <name>` | Set display name (shown as "Name (email)") |
+| `/name` | Clear display name (show email only) |
 | `/logout` | Disconnect and clear session |
 | `/quit` | Exit the CLI |

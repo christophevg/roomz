@@ -153,7 +153,7 @@
 
 **Goal**: Allow users to set custom display names per device/session
 
-- [ ] **I7-001: Per-device display names**
+- [x] **I7-001: Per-device display names** (2026-05-18)
   - `/name <name>` command to set display name at any time
   - Web client stores in localStorage (or cookie)
   - Python client stores in `~/.roomz/config.toml` or `ROOMZ_DISPLAY_NAME` env var
@@ -163,6 +163,7 @@
   - No server storage - fully stateless
   - Standard user input sanitization (no newlines)
   - **Delivers**: Device identification in multi-session scenarios
+  - **Satisfies**: R27 (presence includes display name), R35 (session includes preferences)
   - **Acceptance**:
     - ✅ User can set display name via `/name` command
     - ✅ Display name persists across page reloads (web) / restarts (Python)

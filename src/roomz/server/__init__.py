@@ -34,12 +34,50 @@ from .email import get_email_sender  # noqa: E402
 HERE = Path(__file__).resolve().parent
 server.register_stylesheet("roomz.css", HERE / "static" / "css")
 
-# In-memory connection tracking: {sid: {session: Session, ip: str, connected_at: datetime}}
+# In-memory connection tracking: {sid: {email, user_id, ip, connected_at, display_name, connection_id}}
 connected_clients: dict = {}
 
 # Message sanitization constants
 MAX_MESSAGE_LENGTH = 1000
 MAX_CLIENTS = 1000
+
+# Display name constraints
+MAX_DISPLAY_NAME_LENGTH = 50
+
+
+def validate_display_name(name: str | None) -> str | None:
+  """
+  Validate and sanitize display name.
+
+  Args:
+    name: Display name to validate
+
+  Returns:
+    Validated display name, or None if invalid/empty
+  """
+  if not name:
+    return None
+
+  # Trim whitespace
+  name = name.strip()
+
+  # Length check
+  if not (1 <= len(name) <= MAX_DISPLAY_NAME_LENGTH):
+    return None
+
+  # No newlines
+  if "\n" in name or "\r" in name:
+    return None
+
+  # No control characters (ASCII 0-31, except tab)
+  for char in name:
+    if ord(char) < 32 and char != "\t":
+      return None
+
+  # HTML escape for XSS prevention
+  name = html.escape(name)
+
+  return name
 
 # Channel name format constant
 USER_CHANNEL_FORMAT = "user:{}"
@@ -381,6 +419,8 @@ async def on_connect(sid: str, environ: dict, auth_data: dict | None) -> bool:
     "user_id": user_id,
     "ip": environ.get("REMOTE_ADDR"),
     "connected_at": datetime.now(timezone.utc),
+    "display_name": None,  # Per-connection display name
+    "connection_id": str(uuid.uuid4()),  # Unique identifier for this connection
   }
 
   server.logger.info(f"Client connected: {email} (total: {len(connected_clients)})")
@@ -393,7 +433,7 @@ async def on_connect(sid: str, environ: dict, auth_data: dict | None) -> bool:
   await server.socketio.emit(
     "authenticated",
     {
-      "user": {"id": user_id, "email": email},
+      "user": {"id": user_id, "email": email, "display_name": None},
       "channel": user_channel,
       "server_time": datetime.now(timezone.utc).isoformat(),
     },
@@ -405,7 +445,7 @@ async def on_connect(sid: str, environ: dict, auth_data: dict | None) -> bool:
   await server.socketio.emit(
     "user_joined",
     {
-      "user": {"id": user_id, "email": email},
+      "user": {"id": user_id, "email": email, "display_name": None},
       "timestamp": datetime.now(timezone.utc).isoformat(),
       "total_connections": total_connections,
     },
@@ -441,10 +481,12 @@ async def on_disconnect(sid: str) -> None:
       user_channel = USER_CHANNEL_FORMAT.format(email)
 
       # Notify remaining connections in user's private channel only
+      # Get display_name before removing from connected_clients
+      display_name = client_info.get("display_name")
       await server.socketio.emit(
         "user_left",
         {
-          "user": {"id": user_id, "email": email},
+          "user": {"id": user_id, "email": email, "display_name": display_name},
           "timestamp": datetime.now(timezone.utc).isoformat(),
           "remaining_connections": remaining_connections,
         },
@@ -471,6 +513,7 @@ async def on_message(sid: str, data: dict) -> dict:
 
   email = client_info.get("email")
   user_id = client_info.get("user_id")
+  display_name = client_info.get("display_name")
 
   # Validate message structure
   if not isinstance(data, dict):
@@ -486,7 +529,7 @@ async def on_message(sid: str, data: dict) -> dict:
   # Create broadcast message with user info
   message = {
     "id": str(uuid.uuid4()),
-    "user": {"id": user_id, "email": email},
+    "user": {"id": user_id, "email": email, "display_name": display_name},
     "content": content,
     "timestamp": datetime.now(timezone.utc).isoformat(),
   }
@@ -497,6 +540,65 @@ async def on_message(sid: str, data: dict) -> dict:
 
   # Return acknowledgment
   return {"status": "ok", "message_id": message["id"], "timestamp": message["timestamp"]}
+
+
+@server.socketio.on("set_display_name")
+async def on_set_display_name(sid: str, data: dict) -> dict:
+  """
+  Handle display name setting from client.
+
+  Display names are per-connection and ephemeral - not stored server-side.
+  Each device/session can have its own display name.
+
+  Args:
+    sid: Socket session ID
+    data: {display_name: str | null}
+
+  Returns:
+    {"status": "ok", "display_name": str | null} on success
+    {"error": str, "code": int} on failure
+  """
+  # Get client info
+  client_info = connected_clients.get(sid)
+  if not client_info:
+    return {"error": "Not authenticated", "code": 401}
+
+  # Validate display name
+  display_name = data.get("display_name")
+  validated = validate_display_name(display_name) if display_name else None
+
+  # If name was provided but invalid, return error
+  if display_name and validated is None:
+    return {
+      "error": f"Invalid display name: must be 1-{MAX_DISPLAY_NAME_LENGTH} characters, no newlines",
+      "code": 400,
+    }
+
+  # Store display name on connection (in-memory only)
+  client_info["display_name"] = validated
+
+  # Broadcast to user's channel (same user's other connections)
+  email = client_info.get("email")
+  user_id = client_info.get("user_id")
+  connection_id = client_info.get("connection_id")
+  user_channel = USER_CHANNEL_FORMAT.format(email)
+
+  await server.socketio.emit(
+    "display_name_changed",
+    {
+      "user": {
+        "id": user_id,
+        "email": email,
+        "display_name": validated,
+      },
+      "timestamp": datetime.now(timezone.utc).isoformat(),
+      "connection_id": connection_id,
+    },
+    room=user_channel,
+    skip_sid=sid,
+  )
+
+  return {"status": "ok", "display_name": validated}
 
 
 # Import components (for side effects - registers Vue components)

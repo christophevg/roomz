@@ -68,6 +68,40 @@ roomz
 - Messages appear instantly to all connected users
 - System messages show when users join or leave
 
+### Setting a Display Name
+
+You can set a custom display name that appears in chat as "Display Name (email)":
+
+**In the CLI:**
+```
+/name Alice
+```
+
+**Clear your display name:**
+```
+/name
+```
+
+**In Python:**
+```python
+# Set display name
+await client.set_display_name("Alice")
+
+# Clear display name
+await client.set_display_name(None)
+```
+
+**Via environment variable:**
+```bash
+export ROOMZ_DISPLAY_NAME="Alice"
+```
+
+**Via config file (`~/.roomz/config.toml`):**
+```toml
+[client]
+display_name = "Alice"
+```
+
 ## Using the Python Client
 
 ### AsyncClient (Recommended)
@@ -152,6 +186,8 @@ roomz-cli --server http://your-server:8000
 |---------|-------------|
 | `/login <email>` | Request a magic link |
 | `/token <token>` | Connect with magic link token |
+| `/name <name>` | Set display name (shown as "Name (email)") |
+| `/name` | Clear display name (show email only) |
 | `/logout` | Disconnect and clear session |
 | `/quit` | Exit the CLI |
 
@@ -161,6 +197,7 @@ roomz-cli --server http://your-server:8000
 - Split-screen TUI with message history
 - Color-coded messages (your messages in green)
 - Multiline support (Enter to send, Ctrl+Enter for new line)
+- Display names (set via `/name` command or config file)
 
 ## Multiple Users
 
@@ -183,6 +220,7 @@ To test with multiple users:
 | `JWT_EXPIRY_DAYS` | No | `30` | JWT token lifetime in days |
 | `MAGIC_LINK_EXPIRY_MINUTES` | No | `15` | Magic link lifetime in minutes |
 | `MAGIC_LINK_RATE_LIMIT` | No | `5` | Max requests per email per hour |
+| `ROOMZ_DISPLAY_NAME` | No | - | Display name for Python client (shown as "Name (email)") |
 
 ## Next Steps
 

@@ -36,7 +36,7 @@
 - [ ] R24: Message ordering guaranteed within room
 - [ ] R25: Delivery confirmation (optional, configurable per message)
 - [ ] R26: Users receive notifications when others join/leave rooms
-- [ ] R27: Presence includes: user identifier, join/leave timestamp, display name
+- [x] R27: Presence includes: user identifier, join/leave timestamp, display name (Iteration 7 - I7-001 - display name added)
 - [ ] R28: Online/offline status tracking per room
 
 ### Session Management

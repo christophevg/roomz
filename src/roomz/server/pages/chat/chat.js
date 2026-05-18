@@ -27,7 +27,7 @@ var Chat = {
             <template v-slot:activator="{ props }">
               <v-btn v-bind="props" variant="text">
                 <v-icon start>mdi-account</v-icon>
-                {{ currentUser.email }}
+                {{ currentUserDisplay }}
                 <v-icon end>mdi-chevron-down</v-icon>
               </v-btn>
             </template>
@@ -61,7 +61,7 @@ var Chat = {
                 >
                   <div class="text-caption text-medium-emphasis" style="margin-bottom: 4px;">
                     <span v-if="!message.system">
-                      <strong>{{ message.user ? message.user.email : 'Unknown' }}</strong>
+                      <strong>{{ formatUserDisplayName(message.user) }}</strong>
                       <span style="margin-left: 8px; opacity: 0.7;">
                         {{ formatTime(message.timestamp) }}
                       </span>
@@ -125,7 +125,8 @@ var Chat = {
       connected: false,
       messages: [],
       messageInput: '',
-      sending: false
+      sending: false,
+      displayName: null  // Per-device display name
     };
   },
   computed: {
@@ -137,6 +138,15 @@ var Chat = {
     },
     currentUser() {
       return this.authenticated ? store.getters.session.user : null;
+    },
+    currentUserDisplay() {
+      if (!this.currentUser) return 'User';
+      const email = this.currentUser.email;
+      const name = this.displayName;
+      if (name && name.trim()) {
+        return `${name.trim()} (${email})`;
+      }
+      return email;
     }
   },
   methods: {
@@ -144,10 +154,34 @@ var Chat = {
       if (!timestamp) return '';
       return new Date(timestamp).toLocaleTimeString();
     },
+    formatUserDisplayName(user) {
+      if (!user) return 'Unknown';
+      const email = user.email || 'Unknown';
+      const displayName = user.display_name;
+      if (displayName && displayName.trim()) {
+        return `${displayName.trim()} (${email})`;
+      }
+      return email;
+    },
     sendMessage() {
       if (!this.messageInput.trim() || !this.connected) return;
 
       const content = this.messageInput.trim();
+
+      // Handle /name command
+      if (content.startsWith('/name ')) {
+        const name = content.slice(6).trim();
+        this.setDisplayName(name);
+        this.messageInput = '';
+        return;
+      }
+
+      // Handle /name command (clear)
+      if (content === '/name') {
+        this.setDisplayName(null);
+        this.messageInput = '';
+        return;
+      }
 
       this.sending = true;
       socket.emit('message', { content }, (ack) => {
@@ -158,6 +192,40 @@ var Chat = {
           console.error('Failed to send message:', ack.error);
         }
       });
+    },
+    setDisplayName(name) {
+      if (name === null || name === '') {
+        // Clear display name
+        socket.emit('set_display_name', { display_name: null }, (ack) => {
+          if (ack && ack.status === 'ok') {
+            this.displayName = null;
+            localStorage.removeItem('roomz_display_name');
+            this.addSystemMessage('Display name cleared. Messages will show your email only.');
+          } else {
+            this.addSystemMessage(`Failed to clear display name: ${ack?.error || 'Unknown error'}`);
+          }
+        });
+      } else {
+        // Set display name
+        socket.emit('set_display_name', { display_name: name }, (ack) => {
+          if (ack && ack.status === 'ok') {
+            this.displayName = ack.display_name;
+            localStorage.setItem('roomz_display_name', ack.display_name);
+            this.addSystemMessage(`Display name set to: ${ack.display_name}`);
+          } else {
+            this.addSystemMessage(`Failed to set display name: ${ack?.error || 'Unknown error'}`);
+          }
+        });
+      }
+    },
+    addSystemMessage(content) {
+      this.messages.push({
+        id: `system-${Date.now()}`,
+        system: true,
+        content: content,
+        timestamp: new Date().toISOString()
+      });
+      this.scrollToBottom();
     },
     scrollToBottom() {
       // TODO: also call this function when the window is resized
@@ -183,12 +251,20 @@ var Chat = {
   mounted() {
     // TODO: also move this to a messages Store to avoid complexity and have flexibility
 
+    // Load display name from localStorage
+    const storedName = localStorage.getItem('roomz_display_name');
+    if (storedName) {
+      this.displayName = storedName;
+    }
+
     // Clean up any existing listeners first (in case of reconnection)
     socket.off('message');
     socket.off('user_joined');
     socket.off('user_left');
     socket.off('connect');
     socket.off('disconnect');
+    socket.off('authenticated');
+    socket.off('display_name_changed');
 
     // Listen for incoming messages
     socket.on('message', (message) => {
@@ -197,31 +273,57 @@ var Chat = {
 
     // Listen for user joined events
     socket.on('user_joined', (data) => {
-      const email = data.user ? data.user.email : 'Unknown';
+      const userDisplay = this.formatUserDisplayName(data.user);
       this.addMessage({
         id: `system-${Date.now()}`,
         system: true,
-        content: `${email} joined`,
+        content: `${userDisplay} joined`,
         timestamp: data.timestamp
       });
     });
 
     // Listen for user left events
     socket.on('user_left', (data) => {
-      const email = data.user ? data.user.email : 'Unknown';
+      const userDisplay = this.formatUserDisplayName(data.user);
       this.addMessage({
         id: `system-${Date.now()}`,
         system: true,
-        content: `${email} left`,
+        content: `${userDisplay} left`,
         timestamp: data.timestamp
       });
+    });
+
+    // Listen for authenticated event
+    socket.on('authenticated', (data) => {
+      console.log("Authenticated as", data.user?.email);
+      // Send display name if stored
+      if (this.displayName) {
+        this.setDisplayName(this.displayName);
+      }
+    });
+
+    // Listen for display name changed events
+    socket.on('display_name_changed', (data) => {
+      // Only show system message for other users' name changes
+      if (data.user && data.user.email !== this.currentUser?.email) {
+        const userDisplay = this.formatUserDisplayName(data.user);
+        this.addMessage({
+          id: `system-${Date.now()}`,
+          system: true,
+          content: `${userDisplay} changed their display name`,
+          timestamp: data.timestamp
+        });
+      }
     });
 
     // Connection established
     socket.on('connect', () => {
       this.connected = true;
       console.log("Connected to chat server. Authenticated as", this.currentUser);
-      // TODO: re-establish session, to ensure we're still actually authenticated
+      // Send display name if stored
+      if (this.displayName) {
+        this.setDisplayName(this.displayName);
+      }
     });
 
     // Handle disconnection
@@ -237,6 +339,8 @@ var Chat = {
     socket.off('user_left');
     socket.off('connect');
     socket.off('disconnect');
+    socket.off('authenticated');
+    socket.off('display_name_changed');
   }
 };
 

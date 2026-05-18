@@ -27,6 +27,7 @@ Roomz is a real-time chat application with secure magic link authentication. Bui
 - **Magic Link Authentication**: Passwordless login via email
 - **Instant Messaging**: Messages appear instantly across all connected users
 - **Real-time Updates**: See when users join or leave
+- **Display Names**: Set a custom display name shown as "Name (email)" in chat
 - **Responsive Design**: Works on desktop, tablet, and mobile
 - **Connection Status**: Visual indicator shows when disconnected
 - **Accessibility**: Keyboard navigation and screen reader support
@@ -162,6 +163,8 @@ uv run roomz-cli --server http://your-server:8000
 **Commands:**
 - `/login <email>` - Request a magic link
 - `/token <token>` - Connect with magic link token
+- `/name <name>` - Set display name (shown as "Name (email)")
+- `/name` - Clear display name (show email only)
 - `/logout` - Disconnect and clear session
 - `/quit` - Exit the CLI
 
@@ -170,6 +173,7 @@ uv run roomz-cli --server http://your-server:8000
 - Split-screen TUI with message history
 - Color-coded messages (your messages in green)
 - Multiline support (Enter to send, Ctrl+Enter for new line)
+- Display names (set via `/name` command or config file)
 
 ### Using the AsyncClient
 
@@ -233,6 +237,34 @@ client = AsyncClient(
 # Disable caching (default)
 client = AsyncClient(server_url="http://localhost:8000")
 ```
+
+### Display Names
+
+Set a custom display name that appears in chat messages:
+
+**Python Client:**
+```python
+# Set display name
+result = await client.set_display_name("Alice")
+# Messages show as: "Alice (alice@example.com)"
+
+# Clear display name
+await client.set_display_name(None)
+# Messages show as: "alice@example.com"
+```
+
+**Environment Variable:**
+```bash
+export ROOMZ_DISPLAY_NAME="Alice"
+```
+
+**Config File (`~/.roomz/config.toml`):**
+```toml
+[client]
+display_name = "Alice"
+```
+
+**Format:** Messages display as `"Display Name (email)"` when set, or just `"email"` when not set.
 
 ## Technology Stack
 
