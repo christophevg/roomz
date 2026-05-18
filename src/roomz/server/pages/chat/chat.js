@@ -27,7 +27,7 @@ var Chat = {
             <template v-slot:activator="{ props }">
               <v-btn v-bind="props" variant="text">
                 <v-icon start>mdi-account</v-icon>
-                {{ currentUserDisplay }}
+                <span class="d-none d-sm-inline">{{ currentUserDisplay }}</span>
                 <v-icon end>mdi-chevron-down</v-icon>
               </v-btn>
             </template>

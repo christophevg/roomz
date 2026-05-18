@@ -180,7 +180,7 @@
     - ✅ "user joined" messages are clearly visible
     - ✅ Works on both light and dark themes
 
-- [ ] **I7-003: Fix mobile title truncation**
+- [x] **I7-003: Fix mobile title truncation** (2026-05-18)
   - Title "Roomz" truncates to "Ro..." on narrow screens
   - Reduce user dropdown size (replace email with icon-only on mobile)
   - **Delivers**: Full title visibility on mobile
