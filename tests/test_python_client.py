@@ -1011,7 +1011,7 @@ class TestDisplayNameConfigLoading:
       async_client_module.Path.home = lambda: Path(tmpdir)
 
       try:
-        client = AsyncClient(
+        _ = AsyncClient(
           server_url="http://localhost:5000",
           session_token="test-token",
         )
@@ -1314,7 +1314,6 @@ class TestTUINameCommand:
     And: Argument is "My Laptop"
     """
     # Import here to avoid issues if Textual is not installed
-    from roomz.cli.app_tui import ChatApp
 
     # The command parsing is in handle_input method
     # We can test the logic directly
