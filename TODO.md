@@ -170,6 +170,83 @@
     - ✅ Multiple devices for same user can have different names
     - ✅ Unsetting name reverts to email-only display
 
+- [ ] **I7-002: Fix "user joined" message styling**
+  - Current styling has dark text on dark background
+  - Update color/styling for better visibility
+  - **Delivers**: Visible presence messages
+  - **Satisfies**: R68 (mobile-responsive usability)
+  - **Acceptance**:
+    - ✅ "user joined" messages are clearly visible
+    - ✅ Works on both light and dark themes
+
+- [ ] **I7-003: Fix mobile title truncation**
+  - Title "Roomz" truncates to "Ro..." on narrow screens
+  - Reduce user dropdown size (replace email with icon-only on mobile)
+  - **Delivers**: Full title visibility on mobile
+  - **Satisfies**: R68 (mobile-responsive at 320px width)
+  - **Acceptance**:
+    - ✅ Full title visible on mobile (320px width)
+    - ✅ User dropdown uses icon-only on narrow screens
+
+---
+
+### Iteration 8: Mobile Experience
+
+**Goal**: Improve mobile reliability and PWA support
+
+- [ ] **I8-001: PWA support**
+  - Enable Progressive Web App support for improved mobile experience
+  - Review and improve PWA support in baseweb first, then apply here
+  - Add service worker for offline capability
+  - Add manifest for installability
+  - **Delivers**: Installable PWA with offline support
+  - **Satisfies**: R75, R76, R77 (PWA support)
+  - **Acceptance**:
+    - ✅ App can be installed on mobile home screen
+    - ✅ Basic offline functionality works
+    - ✅ PWA passes Lighthouse audit
+
+- [ ] **I8-002: Investigate mobile message loss on refresh**
+  - Investigate bug: messages disappear when app has been open for a while
+  - Determine root cause (WebSocket reconnection? Server restart? Browser behavior?)
+  - Document findings for I8-003 solution
+  - **Delivers**: Understanding of message loss issue
+  - **Acceptance**:
+    - ✅ Root cause identified
+    - ✅ Solution approach documented
+
+- [ ] **I8-003: Local message caching**
+  - Cache room messages in browser storage (localStorage/IndexedDB)
+  - Messages need unique IDs for incremental sync
+  - On reconnect, inform backend of last known message to receive new messages
+  - Note: Full sync requires backend persistence (postponed to 2.0)
+  - Initial implementation: frontend caching for immediate display after refresh
+  - **Delivers**: Messages persist across app refreshes
+  - **Satisfies**: R33 (session persistence), R89 (automatic reconnection)
+  - **Acceptance**:
+    - ✅ Messages visible immediately after page refresh
+    - ✅ Messages cached locally
+    - ✅ New messages received after reconnect (when backend persistence available)
+
+---
+
+### Postponed: Developer Experience
+
+- Enable repository as a plugin and create a skill for using/developing clients with the roomz module (cfr ../baseweb)
+  - Create Claude Code skill for roomz module usage
+  - Document client development patterns
+  - **Reason**: Developer experience improvement, not user-facing feature
+
+- Add installable `roomz-skills` script for skill discovery
+  - List available skills with descriptions: `roomz-skills`
+  - Show full skill content: `roomz-skills <skill name>`
+  - If uv/pyproject.toml supports stdout message on install, add message explaining skills are included
+  - **Reason**: Experimental feature for agent skill discovery
+
+- Extract magic link sending functionality into standalone PyPI package
+  - Reusable in other projects (baseweb/vuetify based and simple Flask/Quart apps)
+  - **Reason**: Infrastructure refactoring, not a roomz user feature
+
 ---
 
 ### Postponed: Observability

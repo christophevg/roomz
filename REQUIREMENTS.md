@@ -102,45 +102,51 @@
 - [ ] R73: Support 10,000 concurrent connections per server instance
 - [ ] R74: Handle 1,000 messages per second per room
 
+### Mobile Experience
+
+- [ ] R75: Progressive Web App (PWA) support for installability
+- [ ] R76: Offline capability for cached messages
+- [ ] R77: Service worker for background sync
+
 ### Scalability
 
-- [ ] R75: Horizontal scaling via load balancer
-- [ ] R76: Sticky sessions not required (stateless server design)
-- [ ] R77: Redis for distributed state (optional)
-- [ ] R78: Database connection pooling
+- [ ] R78: Horizontal scaling via load balancer
+- [ ] R79: Sticky sessions not required (stateless server design)
+- [ ] R80: Redis for distributed state (optional)
+- [ ] R81: Database connection pooling
 
 ### Security
 
-- [ ] R79: HTTPS required for all connections
-- [ ] R80: WebSocket Secure (WSS) required
-- [ ] R81: Token validation on every WebSocket message
-- [ ] R82: Rate limiting on all endpoints
-- [ ] R83: Input sanitization for all user content
-- [ ] R84: CORS configuration for allowed origins
+- [ ] R82: HTTPS required for all connections
+- [ ] R83: WebSocket Secure (WSS) required
+- [ ] R84: Token validation on every WebSocket message
+- [ ] R85: Rate limiting on all endpoints
+- [ ] R86: Input sanitization for all user content
+- [ ] R87: CORS configuration for allowed origins
 
 ### Reliability
 
-- [ ] R85: 99.9% uptime target
-- [ ] R86: Automatic reconnection on disconnect
-- [ ] R87: Message queuing during reconnection (configurable timeout)
-- [ ] R88: Graceful degradation on Redis/database failure
-- [ ] R89: Health check endpoints
+- [ ] R88: 99.9% uptime target
+- [ ] R89: Automatic reconnection on disconnect
+- [ ] R90: Message queuing during reconnection (configurable timeout)
+- [ ] R91: Graceful degradation on Redis/database failure
+- [ ] R92: Health check endpoints
 
 ### Maintainability
 
-- [ ] R90: Comprehensive test coverage (>80%)
-- [ ] R91: API documentation (OpenAPI/Swagger)
-- [ ] R92: Plugin API documentation
-- [ ] R93: Logging with structured output (JSON)
-- [ ] R94: Metrics collection (Prometheus compatible)
+- [ ] R93: Comprehensive test coverage (>80%)
+- [ ] R94: API documentation (OpenAPI/Swagger)
+- [ ] R95: Plugin API documentation
+- [ ] R96: Logging with structured output (JSON)
+- [ ] R97: Metrics collection (Prometheus compatible)
 
 ### Observability
 
-- [ ] R95: Request/response logging
-- [ ] R96: WebSocket connection metrics
-- [ ] R97: Message throughput metrics
-- [ ] R98: Error rate tracking
-- [ ] R99: Performance profiling endpoints
+- [ ] R98: Request/response logging
+- [ ] R99: WebSocket connection metrics
+- [ ] R100: Message throughput metrics
+- [ ] R101: Error rate tracking
+- [ ] R102: Performance profiling endpoints
 
 ## Completed
 
