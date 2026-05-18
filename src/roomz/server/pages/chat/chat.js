@@ -59,7 +59,7 @@ var Chat = {
                   style="margin-bottom: 12px; padding: 8px; border-radius: 8px;"
                   :style="{'background-color': message.system ? 'rgba(var(--v-theme-surface-variant))' : 'rgba(var(--v-theme-primary), 0.1)'}"
                 >
-                  <div class="text-caption text-medium-emphasis" style="margin-bottom: 4px;">
+                  <div class="text-caption text-high-emphasis" style="margin-bottom: 4px;">
                     <span v-if="!message.system">
                       <strong>{{ formatUserDisplayName(message.user) }}</strong>
                       <span style="margin-left: 8px; opacity: 0.7;">
@@ -70,7 +70,7 @@ var Chat = {
                       {{ formatTime(message.timestamp) }}
                     </span>
                   </div>
-                  <div v-if="message.system" class="text-body-2 font-italic">
+                  <div v-if="message.system" class="text-body-2 font-italic text-high-emphasis">
                     {{ message.content }}
                   </div>
                   <div v-else class="text-body-1">

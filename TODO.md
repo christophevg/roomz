@@ -171,7 +171,7 @@
     - ✅ Multiple devices for same user can have different names
     - ✅ Unsetting name reverts to email-only display
 
-- [ ] **I7-002: Fix "user joined" message styling**
+- [x] **I7-002: Fix "user joined" message styling** (2026-05-18)
   - Current styling has dark text on dark background
   - Update color/styling for better visibility
   - **Delivers**: Visible presence messages
