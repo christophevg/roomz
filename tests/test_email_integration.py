@@ -136,12 +136,12 @@ class TestConsoleEmailSender:
     Then: Magic link is logged to console in formatted output
     """
     sender = ConsoleEmailSender()
-    with patch("roomz.server.server") as mock_server:
+    with patch("roomz.server.email.console.logger") as mock_logger:
       await sender.send_magic_link("test@example.com", "https://example.com/token")
-      # Verify server.logger.info was called
-      mock_server.logger.info.assert_called_once()
+      # Verify logger.info was called
+      mock_logger.info.assert_called_once()
       # Verify the log output contains the magic link
-      call_args = mock_server.logger.info.call_args[0][0]
+      call_args = mock_logger.info.call_args[0][0]
       assert "test@example.com" in call_args
       assert "https://example.com/token" in call_args
 
@@ -158,12 +158,12 @@ class TestConsoleEmailSender:
     email = "test@example.com"
     url = "https://example.com/auth/verify?token=abc123"
 
-    with patch("roomz.server.server") as mock_server:
+    with patch("roomz.server.email.console.logger") as mock_logger:
       result = await sender.send_magic_link(email, url)
 
       assert result is True
-      mock_server.logger.info.assert_called_once()
-      log_output = mock_server.logger.info.call_args[0][0]
+      mock_logger.info.assert_called_once()
+      log_output = mock_logger.info.call_args[0][0]
       assert email in log_output
       assert url in log_output
       assert "MAGIC LINK" in log_output
@@ -214,11 +214,11 @@ class TestResendEmailSender:
     Then: Logs warning but continues (soft validation)
     """
     with patch.dict(os.environ, {"RESEND_API_KEY": "invalid_key_format"}):
-      with patch("roomz.server.server") as mock_server:
+      with patch("roomz.server.email.resend.logger") as mock_logger:
         sender = ResendEmailSender()
         # Should log a warning
-        mock_server.logger.warning.assert_called_once()
-        assert "re_" in mock_server.logger.warning.call_args[0][0]
+        mock_logger.warning.assert_called_once()
+        assert "re_" in mock_logger.warning.call_args[0][0]
         # But should still create instance
         assert sender is not None
 
@@ -251,6 +251,81 @@ class TestResendEmailSender:
     ):
       sender = ResendEmailSender()
       assert sender._from_address == "custom@example.com"
+
+  def test_resend_email_sender_strips_quotes_from_email_from(self):
+    """
+    Given: EMAIL_FROM='"custom@example.com"' (quoted)
+    When: Instantiating ResendEmailSender
+    Then: Uses unquoted from address 'custom@example.com'
+    """
+    with patch.dict(
+      os.environ,
+      {"RESEND_API_KEY": "re_test_key", "EMAIL_FROM": '"custom@example.com"'},
+      clear=True,
+    ):
+      sender = ResendEmailSender()
+      # Expected behavior: Quotes should be stripped
+      assert sender._from_address == "custom@example.com"
+
+  def test_resend_email_sender_handles_double_quotes(self):
+    """
+    Given: EMAIL_FROM='""custom@example.com""' (double quoted)
+    When: Instantiating ResendEmailSender
+    Then: Uses unquoted from address 'custom@example.com'
+    """
+    with patch.dict(
+      os.environ,
+      {"RESEND_API_KEY": "re_test_key", "EMAIL_FROM": '""custom@example.com""'},
+      clear=True,
+    ):
+      sender = ResendEmailSender()
+      # Expected behavior: Multiple surrounding quotes should be stripped
+      assert sender._from_address == "custom@example.com"
+
+  def test_resend_email_sender_preserves_unquoted_email_from(self):
+    """
+    Given: EMAIL_FROM='custom@example.com' (unquoted)
+    When: Instantiating ResendEmailSender
+    Then: Uses custom from address as is
+    """
+    with patch.dict(
+      os.environ,
+      {"RESEND_API_KEY": "re_test_key", "EMAIL_FROM": "custom@example.com"},
+      clear=True,
+    ):
+      sender = ResendEmailSender()
+      # Expected behavior: No quotes to strip, address remains same
+      assert sender._from_address == "custom@example.com"
+
+  def test_resend_email_sender_falls_back_when_email_from_is_only_quotes(self):
+    """
+    Given: EMAIL_FROM='""' (only quotes)
+    When: Instantiating ResendEmailSender
+    Then: Falls back to default from address 'no-reply@example.com'
+    """
+    with patch.dict(
+      os.environ,
+      {"RESEND_API_KEY": "re_test_key", "EMAIL_FROM": '""'},
+      clear=True,
+    ):
+      sender = ResendEmailSender()
+      # Expected behavior: Result of stripping is empty, so fall back to default
+      assert sender._from_address == "no-reply@example.com"
+
+  def test_resend_email_sender_falls_back_when_email_from_is_empty(self):
+    """
+    Given: EMAIL_FROM='' (empty)
+    When: Instantiating ResendEmailSender
+    Then: Falls back to default from address 'no-reply@example.com'
+    """
+    with patch.dict(
+      os.environ,
+      {"RESEND_API_KEY": "re_test_key", "EMAIL_FROM": ""},
+      clear=True,
+    ):
+      sender = ResendEmailSender()
+      # Expected behavior: Empty EMAIL_FROM should fall back to default
+      assert sender._from_address == "no-reply@example.com"
 
   @pytest.mark.asyncio
   async def test_resend_send_magic_link_success(self):
@@ -298,15 +373,15 @@ class TestResendEmailSender:
     Then: Logs success with email address and message ID
     """
     with patch.dict(os.environ, {"RESEND_API_KEY": "re_test_key"}):
-      with patch("roomz.server.server") as mock_server:
+      with patch("roomz.server.email.resend.logger") as mock_logger:
         sender = ResendEmailSender()
         with patch.object(
           sender, "_send_email_sync", return_value={"id": "email_123"}
         ):
           await sender.send_magic_link("test@example.com", "https://example.com/token")
           # Check that success was logged
-          mock_server.logger.info.assert_called()
-          call_args = mock_server.logger.info.call_args[0][0]
+          mock_logger.info.assert_called()
+          call_args = mock_logger.info.call_args[0][0]
           assert "test@example.com" in call_args
           assert "email_123" in call_args
 
@@ -320,7 +395,7 @@ class TestResendEmailSender:
     Then: Logs error with email address and error type (not full exception)
     """
     with patch.dict(os.environ, {"RESEND_API_KEY": "re_test_key"}):
-      with patch("roomz.server.server") as mock_server:
+      with patch("roomz.server.email.resend.logger") as mock_logger:
         sender = ResendEmailSender()
         with patch.object(sender, "_send_email_sync", return_value=None):
           result = await sender.send_magic_link(
@@ -328,7 +403,7 @@ class TestResendEmailSender:
           )
           assert result is False
           # Check that failure was logged
-          mock_server.logger.error.assert_called()
+          mock_logger.error.assert_called()
 
   @pytest.mark.asyncio
   async def test_resend_send_magic_link_html_content(self):
@@ -750,7 +825,7 @@ class TestEmailSecurity:
     Then: API key is not included in the error message
     """
     with patch.dict(os.environ, {"RESEND_API_KEY": "re_secret_key_123"}):
-      with patch("roomz.server.server") as mock_server:
+      with patch("roomz.server.email.resend.logger") as mock_logger:
         sender = ResendEmailSender()
         with patch.object(sender, "_send_email_sync", return_value=None):
           import asyncio
@@ -759,7 +834,7 @@ class TestEmailSecurity:
             sender.send_magic_link("test@example.com", "https://example.com/token")
           )
           # Check that API key is not in any log output
-          for call in mock_server.logger.error.call_args_list:
+          for call in mock_logger.error.call_args_list:
             assert "re_secret_key_123" not in str(call)
 
   def test_api_key_not_in_str_representation(self):

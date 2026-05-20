@@ -1,5 +1,16 @@
 # TODO
 
+## Bug Fixes
+
+- [x] **B-001: Fix double-quoting of EMAIL_FROM in ResendEmailSender** (2026-05-20)
+  - Strip surrounding quotes from `EMAIL_FROM` environment variable
+  - Ensure `DEFAULT_FROM_ADDRESS` is used if `EMAIL_FROM` is not set or becomes empty after stripping
+  - **Satisfies**: R103
+  - **Acceptance**:
+    - ✅ `EMAIL_FROM` set with quotes (e.g. '"user@example.com"') sends correctly without double-quotes in JSON
+    - ✅ `EMAIL_FROM` set without quotes sends correctly
+    - ✅ `EMAIL_FROM` not set uses default
+
 ## Backlog
 
 ### Iteration 4: JWT Sessions & Private Channels

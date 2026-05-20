@@ -139,6 +139,7 @@
 - [ ] R95: Plugin API documentation
 - [ ] R96: Logging with structured output (JSON)
 - [ ] R97: Metrics collection (Prometheus compatible)
+- [x] R103: Environment variables used for configuration (e.g., EMAIL_FROM) must be sanitized to remove accidental surrounding quotes. (Bug B-001)
 
 ### Observability
 

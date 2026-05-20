@@ -6,6 +6,10 @@ to the console for development purposes.
 """
 
 
+import logging
+
+logger = logging.getLogger("roomz")
+
 
 class ConsoleEmailSender:
   """
@@ -39,16 +43,12 @@ class ConsoleEmailSender:
       Always returns True (console logging never fails)
     """
     # Import inside method to avoid circular import
-    import urllib.parse
-
-    from .. import server
+    from .utils import extract_token_from_url
 
     # Extract token from URL for CLI usage
-    parsed = urllib.parse.urlparse(magic_link_url)
-    query_params = urllib.parse.parse_qs(parsed.query)
-    token = query_params.get("token", [""])[0]
+    token = extract_token_from_url(magic_link_url)
 
-    server.logger.info(
+    logger.info(
       f"\n{'=' * 60}\n"
       f"MAGIC LINK for {email}\n"
       f"\n"

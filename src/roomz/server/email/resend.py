@@ -7,10 +7,14 @@ magic link emails in production environments.
 
 import asyncio
 import os
-import urllib.parse
+import logging
 from typing import Any
 
 import resend
+
+from .utils import extract_token_from_url
+
+logger = logging.getLogger("roomz")
 
 DEFAULT_FROM_ADDRESS = "no-reply@example.com"
 DEFAULT_SUBJECT = "Your Magic Link for Roomz"
@@ -46,26 +50,23 @@ class ResendEmailSender:
     Raises:
       ValueError: If RESEND_API_KEY environment variable is not set
     """
-    # Import inside to avoid circular import
-    from .. import server
-
     api_key = os.getenv("RESEND_API_KEY")
     if not api_key:
       raise ValueError("RESEND_API_KEY environment variable is required for ResendEmailSender")
 
     # Soft validation: warn if key format looks wrong
     if not api_key.startswith("re_"):
-      server.logger.warning(
+      logger.warning(
         "RESEND_API_KEY does not start with 're_' - this may indicate an invalid key"
       )
 
     self._api_key = api_key
-    self._from_address = os.getenv("EMAIL_FROM", DEFAULT_FROM_ADDRESS)
+    self._from_address = (os.getenv("EMAIL_FROM") or "").strip("'\"") or DEFAULT_FROM_ADDRESS
 
     # Configure resend module
     resend.api_key = self._api_key
 
-    server.logger.info(
+    logger.info(
       f"ResendEmailSender initialized with from_address={self._from_address}"
     )
 
@@ -80,9 +81,7 @@ class ResendEmailSender:
       HTML string for email body
     """
     # Extract token from URL for CLI usage
-    parsed = urllib.parse.urlparse(magic_link_url)
-    query_params = urllib.parse.parse_qs(parsed.query)
-    token = query_params.get("token", [""])[0]
+    token = extract_token_from_url(magic_link_url)
 
     return f"""
 <!DOCTYPE html>
@@ -148,9 +147,6 @@ class ResendEmailSender:
     Returns:
       Response dict with 'id' on success, None on failure
     """
-    # Import inside to avoid circular import
-    from .. import server
-
     try:
       response = resend.Emails.send(
         {
@@ -162,7 +158,7 @@ class ResendEmailSender:
       )
       return {"id": response["id"]}
     except Exception as e:
-      server.logger.error(f"Resend API error for {email}: {type(e).__name__}")
+      logger.error(f"Resend API error for {email}: {e}")
       return None
 
   async def send_magic_link(self, email: str, magic_link_url: str) -> bool:
@@ -180,24 +176,21 @@ class ResendEmailSender:
       True if email was sent successfully, False on failure.
       Never raises exceptions to the caller.
     """
-    # Import inside to avoid circular import
-    from .. import server
-
     try:
       # Run synchronous API call in executor
-      loop = asyncio.get_event_loop()
+      loop = asyncio.get_running_loop()
       result = await loop.run_in_executor(
         None, self._send_email_sync, email, magic_link_url
       )
 
       if result and "id" in result:
-        server.logger.info(f"Email sent to {email}: {result['id']}")
+        logger.info(f"Email sent to {email}: {result['id']}")
         return True
       else:
-        server.logger.error(f"Failed to send email to {email}: no message ID returned")
+        logger.error(f"Failed to send email to {email}: no message ID returned")
         return False
 
     except Exception as e:
-      # Log error type but not full exception details (may contain sensitive info)
-      server.logger.error(f"Failed to send email to {email}: {type(e).__name__}")
+      # Log error with message
+      logger.error(f"Failed to send email to {email}: {e}")
       return False
