@@ -59,7 +59,7 @@ check: dev-env format lint test typecheck
 
 ## run: Run the development server
 run: run-env
-	uv run gunicorn -k uvicorn.workers.UvicornWorker roomz.server:asgi_app --reload
+	uv run gunicorn -k uvicorn.workers.UvicornWorker roomz.server:asgi_app -b 127.0.0.1:8081 --reload
 
 ## help: Show this help message
 help:
