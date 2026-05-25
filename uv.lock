@@ -2237,6 +2237,11 @@ docs = [
     { name = "sphinx-rtd-theme" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "tomli" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "aiohttp", specifier = ">=3.9.0" },
@@ -2264,6 +2269,9 @@ requires-dist = [
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.24.0" },
 ]
 provides-extras = ["docs", "dev"]
+
+[package.metadata.requires-dev]
+dev = [{ name = "tomli", specifier = ">=2.4.1" }]
 
 [[package]]
 name = "ruff"

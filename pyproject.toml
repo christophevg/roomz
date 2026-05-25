@@ -130,3 +130,8 @@ commands_pre = [
   ["uv", "pip", "install", "pytest", "pytest-cov", "pytest-asyncio"],
 ]
 commands = [["pytest", "tests", "-v", "--cov=roomz", "--cov-report=term-missing"]]
+
+[dependency-groups]
+dev = [
+    "tomli>=2.4.1",
+]

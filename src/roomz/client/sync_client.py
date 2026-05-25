@@ -94,7 +94,7 @@ class SyncClient:
     return self._async_client.connected
 
   @property
-  def user(self) -> dict | None:
+  def user(self) -> dict[str, Any] | None:
     """Current user info: {'id': str, 'email': str} or None if not authenticated."""
     return self._async_client.user
 
@@ -142,11 +142,13 @@ class SyncClient:
     self.connect()
     return self
 
-  def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+  def __exit__(
+    self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: object
+  ) -> None:
     """Context manager exit. Calls disconnect()."""
     self.disconnect()
 
-  def send(self, content: str) -> dict:
+  def send(self, content: str) -> dict[str, Any]:
     """
     Send a chat message.
 
@@ -160,9 +162,9 @@ class SyncClient:
     Raises:
       ConnectionError: If not connected
     """
-    return cast(dict, self._run_coroutine(self._async_client.send(content)))
+    return cast(dict[str, Any], self._run_coroutine(self._async_client.send(content)))
 
-  def set_display_name(self, display_name: str | None) -> dict:
+  def set_display_name(self, display_name: str | None) -> dict[str, Any]:
     """
     Set display name for this connection.
 
@@ -176,7 +178,9 @@ class SyncClient:
     Raises:
       ConnectionError: If not connected
     """
-    return cast(dict, self._run_coroutine(self._async_client.set_display_name(display_name)))
+    return cast(
+      dict[str, Any], self._run_coroutine(self._async_client.set_display_name(display_name))
+    )
 
   def on(self, event: str, handler: EventHandler) -> None:
     """

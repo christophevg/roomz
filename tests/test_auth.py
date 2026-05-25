@@ -205,7 +205,7 @@ class TestMagicLinkRequest:
     email = "spam@test.com"
 
     # Make 5 successful requests (rate limit)
-    for i in range(5):
+    for _i in range(5):
       response = await test_client.post("/auth/request-magic-link", json={"email": email})
       assert response.status_code == 200
 
@@ -225,7 +225,7 @@ class TestMagicLinkRequest:
     Then: User B's request succeeds (different email)
     """
     # User A reaches rate limit
-    for i in range(5):
+    for _i in range(5):
       await test_client.post("/auth/request-magic-link", json={"email": "userA@test.com"})
 
     # User B should still be able to request
@@ -244,7 +244,7 @@ class TestMagicLinkRequest:
     email = "timeout@test.com"
 
     # Reach rate limit
-    for i in range(5):
+    for _i in range(5):
       await test_client.post("/auth/request-magic-link", json={"email": email})
 
     # Simulate time passing by clearing old requests
@@ -591,7 +591,7 @@ class TestMagicLinkSecurity:
     email = "brute@test.com"
 
     # Reach rate limit
-    for i in range(5):
+    for _i in range(5):
       await test_client.post("/auth/request-magic-link", json={"email": email})
 
     # Further requests should be blocked
@@ -725,14 +725,18 @@ class TestLogout:
     jwt_token = generate_jwt(email)
 
     # Logout with JWT cookie
-    response = await test_client.post("/auth/logout", headers={"Cookie": f"session_token={jwt_token}"})
+    response = await test_client.post(
+      "/auth/logout", headers={"Cookie": f"session_token={jwt_token}"}
+    )
 
     assert response.status_code == 200
 
     # Cookie should be cleared (Set-Cookie with empty value or expires)
     _ = response.headers.getlist("Set-Cookie")
 
-  async def test_logout_stateless_no_server_side_revocation(self, test_client, jwt_secret_key, allowed_emails):
+  async def test_logout_stateless_no_server_side_revocation(
+    self, test_client, jwt_secret_key, allowed_emails
+  ):
     """
     Test that logout is stateless (no server-side session revocation).
 

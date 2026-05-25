@@ -5,7 +5,6 @@ This module provides a console-based email sender that logs magic links
 to the console for development purposes.
 """
 
-
 import logging
 
 logger = logging.getLogger("roomz")

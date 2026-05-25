@@ -65,6 +65,4 @@ def get_email_sender() -> EmailSender:
     # ResendEmailSender will validate API key in __init__
     return ResendEmailSender()
   else:
-    raise ValueError(
-      f"Invalid EMAIL_SENDER '{sender_type}'. Must be 'console' or 'resend'."
-    )
+    raise ValueError(f"Invalid EMAIL_SENDER '{sender_type}'. Must be 'console' or 'resend'.")

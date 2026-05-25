@@ -556,7 +556,9 @@ class TestTokenVersion:
     result = validate_jwt(token)
     assert result is None
 
-  def test_token_version_new_token_after_increment(self, jwt_secret_key, sample_email, token_version_manager):
+  def test_token_version_new_token_after_increment(
+    self, jwt_secret_key, sample_email, token_version_manager
+  ):
     """
     Test that new token after version increment has correct version.
 

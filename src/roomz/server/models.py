@@ -6,6 +6,7 @@ This module defines dataclasses for sessions and magic links.
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from typing import Any
 
 
 @dataclass
@@ -34,14 +35,14 @@ class Session:
   client_ip: str | None = None
   user_agent_hash: str | None = None
 
-  def __post_init__(self):
+  def __post_init__(self) -> None:
     """Set default expires_at to 30 days from created_at."""
     if self.expires_at == datetime.now(timezone.utc):
       from datetime import timedelta
 
       self.expires_at = self.created_at + timedelta(days=30)
 
-  def to_dict(self) -> dict:
+  def to_dict(self) -> dict[str, Any]:
     """Convert session to dictionary for storage/serialization."""
     return {
       "token_hash": self.token_hash,
@@ -54,7 +55,7 @@ class Session:
     }
 
   @classmethod
-  def from_dict(cls, data: dict) -> "Session":
+  def from_dict(cls, data: dict[str, Any]) -> "Session":
     """Create Session from dictionary."""
     return cls(
       token_hash=data["token_hash"],
@@ -89,14 +90,14 @@ class MagicLink:
   expires_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
   used: bool = False
 
-  def __post_init__(self):
+  def __post_init__(self) -> None:
     """Set default expires_at to 15 minutes from created_at."""
     if self.expires_at == datetime.now(timezone.utc):
       from datetime import timedelta
 
       self.expires_at = self.created_at + timedelta(minutes=15)
 
-  def to_dict(self) -> dict:
+  def to_dict(self) -> dict[str, Any]:
     """Convert magic link to dictionary for storage/serialization."""
     return {
       "token_hash": self.token_hash,
@@ -107,7 +108,7 @@ class MagicLink:
     }
 
   @classmethod
-  def from_dict(cls, data: dict) -> "MagicLink":
+  def from_dict(cls, data: dict[str, Any]) -> "MagicLink":
     """Create MagicLink from dictionary."""
     return cls(
       token_hash=data["token_hash"],

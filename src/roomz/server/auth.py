@@ -84,7 +84,7 @@ def get_jwt_secret_key() -> str:
   if not secret_key:
     raise ValueError(
       "JWT_SECRET_KEY environment variable must be set. "
-      "Generate with: python -c \"import secrets; print(secrets.token_urlsafe(32))\""
+      'Generate with: python -c "import secrets; print(secrets.token_urlsafe(32))"'
     )
 
   if len(secret_key) < JWT_SECRET_KEY_MIN_LENGTH:
@@ -137,14 +137,14 @@ class AllowedEmailsManager:
 
     return self._cached_emails
 
-  def _refresh_cache(self):
+  def _refresh_cache(self) -> None:
     """Refresh cache from environment variable."""
     emails_str = os.environ.get("ALLOWED_EMAILS", "")
 
     # Parse and normalize
-    self._cached_emails = set(
+    self._cached_emails = {
       email.strip().lower() for email in emails_str.split(",") if email.strip()
-    )
+    }
 
     self._cache_time = datetime.now(timezone.utc)
 
@@ -166,7 +166,7 @@ class AllowedEmailsManager:
     # Case-insensitive comparison
     return email.strip().lower() in self.get_allowed_emails()
 
-  def clear_cache(self):
+  def clear_cache(self) -> None:
     """Force cache refresh on next request."""
     self._cache_time = None
 
@@ -286,7 +286,7 @@ def generate_jwt(email: str) -> str:
   return token
 
 
-def validate_jwt(token: str) -> dict | None:
+def validate_jwt(token: str) -> dict[str, object] | None:
   """
   Validate JWT session token.
 
@@ -388,7 +388,7 @@ class RateLimiter:
     self.max_requests = max_requests
     self.window = timedelta(hours=window_hours)
     # Track requests per email: {email: [(timestamp, ip), ...]}
-    self._requests: dict[str, list] = defaultdict(list)
+    self._requests: dict[str, list[tuple[datetime, str | None]]] = defaultdict(list)
 
   def is_allowed(self, email: str, client_ip: str | None = None) -> bool:
     """
@@ -437,7 +437,7 @@ class RateLimiter:
 
     return max(0, self.max_requests - len(self._requests[email_lower]))
 
-  def reset(self, email: str | None = None):
+  def reset(self, email: str | None = None) -> None:
     """
     Reset rate limiter state (for testing).
 
@@ -538,7 +538,7 @@ class MagicLinkManager:
 
     return magic_link
 
-  def cleanup_expired(self):
+  def cleanup_expired(self) -> None:
     """
     Remove expired and used magic links from storage.
 
@@ -557,7 +557,7 @@ class MagicLinkManager:
     if expired_hashes:
       logger.info(f"Cleaned up {len(expired_hashes)} expired/used magic links")
 
-  def remove_token(self, token_hash: str):
+  def remove_token(self, token_hash: str) -> None:
     """
     Remove a magic link by token hash.
 

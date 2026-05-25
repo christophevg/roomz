@@ -6,7 +6,6 @@ Tests for:
 - extract_token_from_cookie: Extract session token from HTTP cookie header
 """
 
-
 from roomz.server import count_user_connections, extract_token_from_cookie
 
 

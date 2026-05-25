@@ -10,9 +10,10 @@ import logging
 import os
 import random
 from pathlib import Path
+from typing import Any
 
 import aiohttp
-import socketio
+import socketio  # type: ignore[import-untyped]
 from yarl import URL
 
 from roomz.client.events import EventEmitter, EventHandler
@@ -123,10 +124,10 @@ class AsyncClient:
       self._display_name = _load_display_name_from_config()
 
     self._connection_state = ConnectionState.DISCONNECTED
-    self._user: dict | None = None
+    self._user: dict[str, Any] | None = None
     self._session: aiohttp.ClientSession | None = None
     self._sio: socketio.AsyncClient | None = None
-    self._events = EventEmitter()
+    self._events: EventEmitter = EventEmitter()
     self._reconnect_attempts = 0
 
   @property
@@ -135,7 +136,7 @@ class AsyncClient:
     return self._connection_state == ConnectionState.CONNECTED
 
   @property
-  def user(self) -> dict | None:
+  def user(self) -> dict[str, Any] | None:
     """Current user info: {'id': str, 'email': str} or None if not authenticated."""
     return self._user
 
@@ -193,7 +194,9 @@ class AsyncClient:
           return True
         else:
           data = await resp.json()
-          raise ConnectionError(f"Failed to request magic link: {data.get('detail', 'Unknown error')}")
+          raise ConnectionError(
+            f"Failed to request magic link: {data.get('detail', 'Unknown error')}"
+          )
     except Exception as e:
       raise ConnectionError(f"Failed to request magic link: {e}") from e
 
@@ -205,9 +208,7 @@ class AsyncClient:
     try:
       self._session_cache_file.parent.mkdir(parents=True, exist_ok=True)
       with open(self._session_cache_file, "w") as f:
-        json.dump(
-          {"session_cookie": cookie_value, "server": self._server_url}, f
-        )
+        json.dump({"session_cookie": cookie_value, "server": self._server_url}, f)
     except Exception as e:
       logger.warning(f"Failed to save session cookie: {e}")
 
@@ -263,9 +264,7 @@ class AsyncClient:
         cached_cookie = self._load_session_cookie()
         if cached_cookie:
           # Set the cached session cookie in the cookie jar
-          self._session.cookie_jar.update_cookies(
-            {"session_token": cached_cookie}
-          )
+          self._session.cookie_jar.update_cookies({"session_token": cached_cookie})
           # Also store for explicit header passing if needed
           self._cached_cookie = cached_cookie
 
@@ -277,9 +276,7 @@ class AsyncClient:
           # Check that we got a response (even if redirect)
           if resp.status not in (200, 302, 303):
             self._connection_state = ConnectionState.DISCONNECTED
-            raise AuthenticationError(
-              f"Authentication failed: server returned {resp.status}"
-            )
+            raise AuthenticationError(f"Authentication failed: server returned {resp.status}")
 
           # Extract and save session cookie after successful verification
           cookies = self._session.cookie_jar.filter_cookies(URL(self._server_url))
@@ -353,11 +350,13 @@ class AsyncClient:
     await self.connect()
     return self
 
-  async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+  async def __aexit__(
+    self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: object
+  ) -> None:
     """Async context manager exit. Calls disconnect()."""
     await self.disconnect()
 
-  async def send(self, content: str) -> dict:
+  async def send(self, content: str) -> dict[str, Any]:
     """
     Send a chat message.
 
@@ -375,9 +374,9 @@ class AsyncClient:
       raise ConnectionError("Not connected")
 
     # Create a future to receive the acknowledgment
-    ack_future: asyncio.Future[dict] = asyncio.get_running_loop().create_future()
+    ack_future: asyncio.Future[dict[str, Any]] = asyncio.get_running_loop().create_future()
 
-    def ack_callback(response: dict) -> None:
+    def ack_callback(response: dict[str, Any]) -> None:
       """Handle acknowledgment from server."""
       if not ack_future.done():
         ack_future.set_result(response)
@@ -394,7 +393,7 @@ class AsyncClient:
       logger.error(f"Error sending message: {e}")
       return {"error": str(e), "code": 500}
 
-  async def set_display_name(self, display_name: str | None) -> dict:
+  async def set_display_name(self, display_name: str | None) -> dict[str, Any]:
     """
     Set display name for this connection.
 
@@ -419,9 +418,9 @@ class AsyncClient:
       display_name = display_name.strip() or None
 
     # Create a future to receive the acknowledgment
-    ack_future: asyncio.Future[dict] = asyncio.get_running_loop().create_future()
+    ack_future: asyncio.Future[dict[str, Any]] = asyncio.get_running_loop().create_future()
 
-    def ack_callback(response: dict) -> None:
+    def ack_callback(response: dict[str, Any]) -> None:
       """Handle acknowledgment from server."""
       if not ack_future.done():
         ack_future.set_result(response)
@@ -464,7 +463,7 @@ class AsyncClient:
     if self._reconnect:
       await self._attempt_reconnection()
 
-  async def _on_authenticated(self, data: dict) -> None:
+  async def _on_authenticated(self, data: dict[str, Any]) -> None:
     """Handle authenticated event from server."""
     logger.info(f"Authenticated as {data.get('user', {}).get('email', 'unknown')}")
 
@@ -482,23 +481,23 @@ class AsyncClient:
     # Emit authenticated event
     await self._events.emit("authenticated", data)
 
-  async def _on_message(self, data: dict) -> None:
+  async def _on_message(self, data: dict[str, Any]) -> None:
     """Handle message event from server."""
     # Only process if connected (prevent duplicate events during reconnection)
     if self._connection_state == ConnectionState.CONNECTED:
       await self._events.emit("message", data)
 
-  async def _on_user_joined(self, data: dict) -> None:
+  async def _on_user_joined(self, data: dict[str, Any]) -> None:
     """Handle user_joined event from server."""
     if self._connection_state == ConnectionState.CONNECTED:
       await self._events.emit("user_joined", data)
 
-  async def _on_user_left(self, data: dict) -> None:
+  async def _on_user_left(self, data: dict[str, Any]) -> None:
     """Handle user_left event from server."""
     if self._connection_state == ConnectionState.CONNECTED:
       await self._events.emit("user_left", data)
 
-  async def _on_display_name_changed(self, data: dict) -> None:
+  async def _on_display_name_changed(self, data: dict[str, Any]) -> None:
     """Handle display_name_changed event from server."""
     if self._connection_state == ConnectionState.CONNECTED:
       await self._events.emit("display_name_changed", data)
@@ -507,10 +506,7 @@ class AsyncClient:
     """Attempt to reconnect with exponential backoff."""
     self._connection_state = ConnectionState.RECONNECTING
 
-    while (
-      self._reconnect
-      and self._reconnect_attempts < self._max_reconnect_attempts
-    ):
+    while self._reconnect and self._reconnect_attempts < self._max_reconnect_attempts:
       self._reconnect_attempts += 1
 
       # Calculate delay with exponential backoff and jitter

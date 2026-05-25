@@ -230,9 +230,7 @@ class TestResendEmailSender:
     When: Instantiating ResendEmailSender
     Then: Uses default from address 'no-reply@example.com'
     """
-    with patch.dict(
-      os.environ, {"RESEND_API_KEY": "re_test_key"}, clear=True
-    ):
+    with patch.dict(os.environ, {"RESEND_API_KEY": "re_test_key"}, clear=True):
       sender = ResendEmailSender()
       assert sender._from_address == "no-reply@example.com"
 
@@ -338,12 +336,8 @@ class TestResendEmailSender:
     """
     with patch.dict(os.environ, {"RESEND_API_KEY": "re_test_key"}):
       sender = ResendEmailSender()
-      with patch.object(
-        sender, "_send_email_sync", return_value={"id": "email_123"}
-      ):
-        result = await sender.send_magic_link(
-          "test@example.com", "https://example.com/token"
-        )
+      with patch.object(sender, "_send_email_sync", return_value={"id": "email_123"}):
+        result = await sender.send_magic_link("test@example.com", "https://example.com/token")
         assert result is True
 
   @pytest.mark.asyncio
@@ -358,9 +352,7 @@ class TestResendEmailSender:
     with patch.dict(os.environ, {"RESEND_API_KEY": "re_test_key"}):
       sender = ResendEmailSender()
       with patch.object(sender, "_send_email_sync", return_value=None):
-        result = await sender.send_magic_link(
-          "test@example.com", "https://example.com/token"
-        )
+        result = await sender.send_magic_link("test@example.com", "https://example.com/token")
         assert result is False
 
   @pytest.mark.asyncio
@@ -375,9 +367,7 @@ class TestResendEmailSender:
     with patch.dict(os.environ, {"RESEND_API_KEY": "re_test_key"}):
       with patch("roomz.server.email.resend.logger") as mock_logger:
         sender = ResendEmailSender()
-        with patch.object(
-          sender, "_send_email_sync", return_value={"id": "email_123"}
-        ):
+        with patch.object(sender, "_send_email_sync", return_value={"id": "email_123"}):
           await sender.send_magic_link("test@example.com", "https://example.com/token")
           # Check that success was logged
           mock_logger.info.assert_called()
@@ -398,9 +388,7 @@ class TestResendEmailSender:
       with patch("roomz.server.email.resend.logger") as mock_logger:
         sender = ResendEmailSender()
         with patch.object(sender, "_send_email_sync", return_value=None):
-          result = await sender.send_magic_link(
-            "test@example.com", "https://example.com/token"
-          )
+          result = await sender.send_magic_link("test@example.com", "https://example.com/token")
           assert result is False
           # Check that failure was logged
           mock_logger.error.assert_called()
@@ -444,9 +432,7 @@ class TestResendEmailSender:
     with patch.dict(os.environ, {"RESEND_API_KEY": "re_test_key_secret"}):
       with patch("roomz.server.server") as mock_server:
         sender = ResendEmailSender()
-        with patch.object(
-          sender, "_send_email_sync", return_value={"id": "email_123"}
-        ):
+        with patch.object(sender, "_send_email_sync", return_value={"id": "email_123"}):
           await sender.send_magic_link("test@example.com", "https://example.com/token")
 
           # Check all log calls don't contain the API key
@@ -511,9 +497,7 @@ class TestGetEmailSender:
     When: Calling get_email_sender
     Then: Returns ResendEmailSender instance
     """
-    with patch.dict(
-      os.environ, {"EMAIL_SENDER": "resend", "RESEND_API_KEY": "re_test_key"}
-    ):
+    with patch.dict(os.environ, {"EMAIL_SENDER": "resend", "RESEND_API_KEY": "re_test_key"}):
       sender = get_email_sender()
       assert isinstance(sender, ResendEmailSender)
 
@@ -588,8 +572,10 @@ class TestAuthEndpointEmailIntegration:
       mock_sender = AsyncMock()
       mock_sender.send_magic_link.return_value = True
 
-      with patch("roomz.server.get_email_sender", return_value=mock_sender), \
-           patch("roomz.server.is_email_allowed", return_value=True):
+      with (
+        patch("roomz.server.get_email_sender", return_value=mock_sender),
+        patch("roomz.server.is_email_allowed", return_value=True),
+      ):
         await client.post(
           "/auth/request-magic-link",
           json={"email": "test@example.com"},
@@ -616,8 +602,10 @@ class TestAuthEndpointEmailIntegration:
       mock_sender = AsyncMock()
       mock_sender.send_magic_link.return_value = True
 
-      with patch("roomz.server.get_email_sender", return_value=mock_sender), \
-           patch("roomz.server.is_email_allowed", return_value=True):
+      with (
+        patch("roomz.server.get_email_sender", return_value=mock_sender),
+        patch("roomz.server.is_email_allowed", return_value=True),
+      ):
         response = await client.post(
           "/auth/request-magic-link",
           json={"email": "test@example.com"},
@@ -644,8 +632,10 @@ class TestAuthEndpointEmailIntegration:
       mock_sender = AsyncMock()
       mock_sender.send_magic_link.return_value = False
 
-      with patch("roomz.server.get_email_sender", return_value=mock_sender), \
-           patch("roomz.server.is_email_allowed", return_value=True):
+      with (
+        patch("roomz.server.get_email_sender", return_value=mock_sender),
+        patch("roomz.server.is_email_allowed", return_value=True),
+      ):
         response = await client.post(
           "/auth/request-magic-link",
           json={"email": "test@example.com"},
@@ -669,8 +659,10 @@ class TestAuthEndpointEmailIntegration:
     from roomz.server import server
 
     async with QuartClient(server) as client:
-      with patch("roomz.server.get_email_sender") as mock_factory, \
-           patch("roomz.server.is_email_allowed", return_value=True):
+      with (
+        patch("roomz.server.get_email_sender") as mock_factory,
+        patch("roomz.server.is_email_allowed", return_value=True),
+      ):
         mock_sender = AsyncMock()
         mock_sender.send_magic_link.return_value = True
         mock_factory.return_value = mock_sender
@@ -698,8 +690,10 @@ class TestAuthEndpointEmailIntegration:
       mock_sender = AsyncMock()
       mock_sender.send_magic_link.return_value = True
 
-      with patch("roomz.server.get_email_sender", return_value=mock_sender), \
-           patch("roomz.server.is_email_allowed", return_value=True):
+      with (
+        patch("roomz.server.get_email_sender", return_value=mock_sender),
+        patch("roomz.server.is_email_allowed", return_value=True),
+      ):
         await client.post(
           "/auth/request-magic-link",
           json={"email": "test@example.com"},
@@ -726,8 +720,10 @@ class TestAuthEndpointEmailIntegration:
       mock_sender = AsyncMock()
       mock_sender.send_magic_link.return_value = True
 
-      with patch("roomz.server.get_email_sender", return_value=mock_sender), \
-           patch("roomz.server.is_email_allowed", return_value=True):
+      with (
+        patch("roomz.server.get_email_sender", return_value=mock_sender),
+        patch("roomz.server.is_email_allowed", return_value=True),
+      ):
         await client.post(
           "/auth/request-magic-link",
           json={"email": "user@example.com"},
@@ -749,8 +745,10 @@ class TestAuthEndpointEmailIntegration:
     from roomz.server import server
 
     async with QuartClient(server) as client:
-      with patch.dict(os.environ, {}, clear=True), \
-           patch("roomz.server.is_email_allowed", return_value=True):
+      with (
+        patch.dict(os.environ, {}, clear=True),
+        patch("roomz.server.is_email_allowed", return_value=True),
+      ):
         response = await client.post(
           "/auth/request-magic-link",
           json={"email": "test@example.com"},
@@ -776,8 +774,10 @@ class TestAuthEndpointEmailIntegration:
       mock_sender = AsyncMock()
       mock_sender.send_magic_link.return_value = True
 
-      with patch("roomz.server.get_email_sender", return_value=mock_sender), \
-           patch("roomz.server.is_email_allowed", return_value=True):
+      with (
+        patch("roomz.server.get_email_sender", return_value=mock_sender),
+        patch("roomz.server.is_email_allowed", return_value=True),
+      ):
         response = await client.post(
           "/auth/request-magic-link",
           json={"email": "test@example.com"},
@@ -830,9 +830,7 @@ class TestEmailSecurity:
         with patch.object(sender, "_send_email_sync", return_value=None):
           import asyncio
 
-          asyncio.run(
-            sender.send_magic_link("test@example.com", "https://example.com/token")
-          )
+          asyncio.run(sender.send_magic_link("test@example.com", "https://example.com/token"))
           # Check that API key is not in any log output
           for call in mock_logger.error.call_args_list:
             assert "re_secret_key_123" not in str(call)
@@ -869,8 +867,10 @@ class TestEmailSecurity:
       mock_sender = AsyncMock()
       mock_sender.send_magic_link.return_value = False
 
-      with patch("roomz.server.get_email_sender", return_value=mock_sender), \
-           patch("roomz.server.is_email_allowed", return_value=True):
+      with (
+        patch("roomz.server.get_email_sender", return_value=mock_sender),
+        patch("roomz.server.is_email_allowed", return_value=True),
+      ):
         response = await client.post(
           "/auth/request-magic-link",
           json={"email": "test@example.com"},
@@ -913,8 +913,10 @@ class TestEmailErrorResponses:
       mock_sender = AsyncMock()
       mock_sender.send_magic_link.return_value = False
 
-      with patch("roomz.server.get_email_sender", return_value=mock_sender), \
-           patch("roomz.server.is_email_allowed", return_value=True):
+      with (
+        patch("roomz.server.get_email_sender", return_value=mock_sender),
+        patch("roomz.server.is_email_allowed", return_value=True),
+      ):
         response = await client.post(
           "/auth/request-magic-link",
           json={"email": "test@example.com"},
@@ -943,8 +945,10 @@ class TestEmailErrorResponses:
       mock_sender = AsyncMock()
       mock_sender.send_magic_link.return_value = False
 
-      with patch("roomz.server.get_email_sender", return_value=mock_sender), \
-           patch("roomz.server.is_email_allowed", return_value=True):
+      with (
+        patch("roomz.server.get_email_sender", return_value=mock_sender),
+        patch("roomz.server.is_email_allowed", return_value=True),
+      ):
         response = await client.post(
           "/auth/request-magic-link",
           json={"email": "test@example.com"},
@@ -969,8 +973,10 @@ class TestEmailErrorResponses:
       mock_sender = AsyncMock()
       mock_sender.send_magic_link.return_value = False
 
-      with patch("roomz.server.get_email_sender", return_value=mock_sender), \
-           patch("roomz.server.is_email_allowed", return_value=True):
+      with (
+        patch("roomz.server.get_email_sender", return_value=mock_sender),
+        patch("roomz.server.is_email_allowed", return_value=True),
+      ):
         response = await client.post(
           "/auth/request-magic-link",
           json={"email": "test@example.com"},
@@ -994,8 +1000,10 @@ class TestEmailErrorResponses:
       mock_sender = AsyncMock()
       mock_sender.send_magic_link.return_value = False
 
-      with patch("roomz.server.get_email_sender", return_value=mock_sender), \
-           patch("roomz.server.is_email_allowed", return_value=True):
+      with (
+        patch("roomz.server.get_email_sender", return_value=mock_sender),
+        patch("roomz.server.is_email_allowed", return_value=True),
+      ):
         response = await client.post(
           "/auth/request-magic-link",
           json={"email": "test@example.com"},

@@ -46,9 +46,7 @@ class TestMagicLinkWithJWT:
     allowed_emails_manager.clear_cache()
 
     # Request magic link
-    response = await test_client.post(
-      "/auth/request-magic-link", json={"email": allowed_emails[0]}
-    )
+    response = await test_client.post("/auth/request-magic-link", json={"email": allowed_emails[0]})
 
     # Verify success
     assert response.status_code == 200
@@ -116,9 +114,7 @@ class TestMagicLinkWithJWT:
     allowed_emails_manager.clear_cache()
 
     # Request with invalid email
-    response = await test_client.post(
-      "/auth/request-magic-link", json={"email": "not-an-email"}
-    )
+    response = await test_client.post("/auth/request-magic-link", json={"email": "not-an-email"})
 
     # Verify rejection
     assert response.status_code == 400
@@ -299,6 +295,7 @@ class TestMagicLinkVerificationJWT:
 
     # Manually expire the magic link (use SHA256 hash like magic_link_manager does)
     import hashlib
+
     token_hash = hashlib.sha256(token.encode()).hexdigest()
     magic_link = magic_link_manager._magic_links.get(token_hash)
     if magic_link:
@@ -659,7 +656,9 @@ class TestLogoutJWT:
     cookies = response.headers.getlist("Set-Cookie")
     clear_cookie = None
     for cookie in cookies:
-      if "session_token=" in cookie and ("expires" in cookie.lower() or "max-age=0" in cookie.lower()):
+      if "session_token=" in cookie and (
+        "expires" in cookie.lower() or "max-age=0" in cookie.lower()
+      ):
         clear_cookie = cookie
         break
 
@@ -827,9 +826,7 @@ class TestGetCurrentUserJWT:
     allowed_emails_manager.clear_cache()
 
     # Get current user
-    response = await test_client.get(
-      "/auth/me", headers={"Cookie": f"session_token={jwt_token}"}
-    )
+    response = await test_client.get("/auth/me", headers={"Cookie": f"session_token={jwt_token}"})
 
     # Verify rejection
     assert response.status_code == 401
@@ -931,9 +928,7 @@ class TestAllowedEmailsIntegration:
     allowed_emails_manager.clear_cache()
 
     # Get current user
-    response = await test_client.get(
-      "/auth/me", headers={"Cookie": f"session_token={jwt_token}"}
-    )
+    response = await test_client.get("/auth/me", headers={"Cookie": f"session_token={jwt_token}"})
 
     # Verify rejection
     assert response.status_code == 401
@@ -957,9 +952,7 @@ class TestAllowedEmailsIntegration:
     email = allowed_emails[0]
     jwt_token = generate_jwt(email)
 
-    response = await test_client.get(
-      "/auth/me", headers={"Cookie": f"session_token={jwt_token}"}
-    )
+    response = await test_client.get("/auth/me", headers={"Cookie": f"session_token={jwt_token}"})
     assert response.status_code == 200
 
     # Remove email from ALLOWED_EMAILS
@@ -968,9 +961,7 @@ class TestAllowedEmailsIntegration:
     allowed_emails_manager.clear_cache()
 
     # Try again
-    response = await test_client.get(
-      "/auth/me", headers={"Cookie": f"session_token={jwt_token}"}
-    )
+    response = await test_client.get("/auth/me", headers={"Cookie": f"session_token={jwt_token}"})
 
     # Verify rejection
     assert response.status_code == 401

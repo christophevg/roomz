@@ -6,8 +6,8 @@ magic link emails in production environments.
 """
 
 import asyncio
-import os
 import logging
+import os
 from typing import Any
 
 import resend
@@ -56,9 +56,7 @@ class ResendEmailSender:
 
     # Soft validation: warn if key format looks wrong
     if not api_key.startswith("re_"):
-      logger.warning(
-        "RESEND_API_KEY does not start with 're_' - this may indicate an invalid key"
-      )
+      logger.warning("RESEND_API_KEY does not start with 're_' - this may indicate an invalid key")
 
     self._api_key = api_key
     self._from_address = (os.getenv("EMAIL_FROM") or "").strip("'\"") or DEFAULT_FROM_ADDRESS
@@ -66,9 +64,7 @@ class ResendEmailSender:
     # Configure resend module
     resend.api_key = self._api_key
 
-    logger.info(
-      f"ResendEmailSender initialized with from_address={self._from_address}"
-    )
+    logger.info(f"ResendEmailSender initialized with from_address={self._from_address}")
 
   def _generate_html_content(self, magic_link_url: str) -> str:
     """
@@ -179,9 +175,7 @@ class ResendEmailSender:
     try:
       # Run synchronous API call in executor
       loop = asyncio.get_running_loop()
-      result = await loop.run_in_executor(
-        None, self._send_email_sync, email, magic_link_url
-      )
+      result = await loop.run_in_executor(None, self._send_email_sync, email, magic_link_url)
 
       if result and "id" in result:
         logger.info(f"Email sent to {email}: {result['id']}")

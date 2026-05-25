@@ -205,9 +205,9 @@ class TestTokenTampering:
     payload["email"] = "attacker@example.com"
 
     # Re-encode modified payload
-    modified_payload_b64 = base64.urlsafe_b64encode(
-      json.dumps(payload).encode()
-    ).decode().rstrip("=")
+    modified_payload_b64 = (
+      base64.urlsafe_b64encode(json.dumps(payload).encode()).decode().rstrip("=")
+    )
 
     # Reconstruct token with modified payload (same signature)
     modified_token = f"{header_b64}.{modified_payload_b64}.{signature_b64}"
@@ -298,9 +298,9 @@ class TestTokenTampering:
     payload["email"] = "victim@example.com"
 
     # Re-encode
-    modified_payload_b64 = base64.urlsafe_b64encode(
-      json.dumps(payload).encode()
-    ).decode().rstrip("=")
+    modified_payload_b64 = (
+      base64.urlsafe_b64encode(json.dumps(payload).encode()).decode().rstrip("=")
+    )
 
     modified_token = f"{parts[0]}.{modified_payload_b64}.{parts[2]}"
 
@@ -336,9 +336,9 @@ class TestTokenTampering:
     payload["exp"] = int((datetime.now(timezone.utc) + timedelta(days=365)).timestamp())
 
     # Re-encode
-    modified_payload_b64 = base64.urlsafe_b64encode(
-      json.dumps(payload).encode()
-    ).decode().rstrip("=")
+    modified_payload_b64 = (
+      base64.urlsafe_b64encode(json.dumps(payload).encode()).decode().rstrip("=")
+    )
 
     modified_token = f"{parts[0]}.{modified_payload_b64}.{parts[2]}"
 
@@ -757,7 +757,9 @@ class TestTokenVersionSecurity:
   Tests verify token version mechanism for session revocation.
   """
 
-  def test_token_version_mismatch_rejected(self, jwt_secret_key, sample_email, token_version_manager):
+  def test_token_version_mismatch_rejected(
+    self, jwt_secret_key, sample_email, token_version_manager
+  ):
     """
     Test that JWT with wrong token version is rejected.
 
@@ -783,7 +785,9 @@ class TestTokenVersionSecurity:
     # Should reject
     assert result is None
 
-  def test_token_version_increment_invalidates_all(self, jwt_secret_key, sample_email, token_version_manager):
+  def test_token_version_increment_invalidates_all(
+    self, jwt_secret_key, sample_email, token_version_manager
+  ):
     """
     Test that incrementing token version invalidates all existing tokens.
 
@@ -992,9 +996,7 @@ class TestCookieSecurity:
     os.environ["ALLOWED_EMAILS"] = ",".join(allowed_emails)
 
     # Request magic link
-    response = await test_client.post(
-      "/auth/request-magic-link", json={"email": allowed_emails[0]}
-    )
+    response = await test_client.post("/auth/request-magic-link", json={"email": allowed_emails[0]})
     assert response.status_code == 200
 
     # Get magic link from logs (development mode)

@@ -219,7 +219,7 @@ class TestClientConnection:
     Then: Remaining clients receive 'user_left' event
     """
     # Clear any queued events from connection
-    for client in multiple_socketio_clients[1:]:
+    for _client in multiple_socketio_clients[1:]:
       _ = multiple_socketio_clients[1].get_received()
 
     # Disconnect one client (this should trigger user_left broadcast)

@@ -13,4 +13,4 @@ from ... import server
 logger = logging.getLogger(__name__)
 
 # Register the Vue component for the UI
-server.register_component("auth.js", os.path.dirname(__file__))
+server.register_component("auth.js", os.path.dirname(__file__))  # type: ignore[no-untyped-call]

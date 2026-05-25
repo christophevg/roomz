@@ -9,6 +9,7 @@ import html
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 from baseweb import Baseweb
 from quart import jsonify, redirect, request
@@ -26,16 +27,16 @@ from .auth import (
 )
 
 # Create baseweb app with SocketIO support
-server = Baseweb("roomz", settings={"main_template": "minimal.html"})
+server = Baseweb("roomz", settings={"main_template": "minimal.html"})  # type: ignore[no-untyped-call]
 
 # Import email module after server is created (avoids circular import)
 from .email import get_email_sender  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
-server.register_stylesheet("roomz.css", HERE / "static" / "css")
+server.register_stylesheet("roomz.css", HERE / "static" / "css")  # type: ignore[no-untyped-call]
 
 # In-memory connection tracking: {sid: {email, user_id, ip, connected_at, display_name, connection_id}}
-connected_clients: dict = {}
+connected_clients: dict[str, dict[str, Any]] = {}
 
 # Message sanitization constants
 MAX_MESSAGE_LENGTH = 1000
@@ -79,6 +80,7 @@ def validate_display_name(name: str | None) -> str | None:
 
   return name
 
+
 # Channel name format constant
 USER_CHANNEL_FORMAT = "user:{}"
 
@@ -96,7 +98,7 @@ def count_user_connections(email: str) -> int:
   return sum(1 for client in connected_clients.values() if client.get("email") == email)
 
 
-async def cleanup_task():
+async def cleanup_task() -> None:
   """
   Periodically clean up expired magic links.
 
@@ -139,7 +141,7 @@ def extract_token_from_cookie(cookies: str) -> str | None:
 
 
 @server.route("/auth/request-magic-link", methods=["POST"])
-async def request_magic_link():
+async def request_magic_link() -> Any:
   """
   Request a magic link for authentication.
 
@@ -227,7 +229,7 @@ async def request_magic_link():
 
 
 @server.route("/auth/verify", methods=["GET"])
-async def verify_magic_link():
+async def verify_magic_link() -> Any:
   """
   Verify magic link token and issue JWT.
 
@@ -275,7 +277,7 @@ async def verify_magic_link():
 
 
 @server.route("/auth/logout", methods=["POST"])
-async def logout():
+async def logout() -> Any:
   """
   Logout and clear JWT cookie.
 
@@ -305,7 +307,7 @@ async def logout():
 
 
 @server.route("/auth/me", methods=["GET"])
-async def get_current_user():
+async def get_current_user() -> Any:
   """
   Get current user info from JWT.
 
@@ -342,12 +344,14 @@ async def get_current_user():
         }
       ), 401
 
+    iat = payload.get("iat", 0)
+    created_at_ts = iat if isinstance(iat, (int, float)) else 0
     return jsonify(
       {
         "status": "ok",
         "user": {
           "email": payload.get("email"),
-          "created_at": datetime.fromtimestamp(payload.get("iat", 0), timezone.utc).isoformat(),
+          "created_at": datetime.fromtimestamp(created_at_ts, timezone.utc).isoformat(),
         },
       }
     )
@@ -370,8 +374,8 @@ async def get_current_user():
 # =============================================================================
 
 
-@server.socketio.on("connect")
-async def on_connect(sid: str, environ: dict, auth_data: dict | None) -> bool:
+@server.socketio.on("connect")  # type: ignore[untyped-decorator]
+async def on_connect(sid: str, environ: dict[str, Any], auth_data: dict[str, Any] | None) -> bool:
   """
   Handle new client connection with JWT validation.
 
@@ -401,12 +405,12 @@ async def on_connect(sid: str, environ: dict, auth_data: dict | None) -> bool:
     return False
 
   # Extract user info from JWT
-  email = payload.get("email")
+  email = str(payload.get("email", ""))
   if not email:
     server.logger.warning(f"Rejecting connection {sid}: JWT missing email claim")
     return False
 
-  user_id = payload.get("sub", f"user:{email}")
+  user_id = str(payload.get("sub", f"user:{email}"))
 
   # Connection limit check
   if len(connected_clients) >= MAX_CLIENTS:
@@ -456,7 +460,7 @@ async def on_connect(sid: str, environ: dict, auth_data: dict | None) -> bool:
   return True
 
 
-@server.socketio.on("disconnect")
+@server.socketio.on("disconnect")  # type: ignore[untyped-decorator]
 async def on_disconnect(sid: str) -> None:
   """
   Handle client disconnection.
@@ -494,8 +498,8 @@ async def on_disconnect(sid: str) -> None:
       )
 
 
-@server.socketio.on("message")
-async def on_message(sid: str, data: dict) -> dict:
+@server.socketio.on("message")  # type: ignore[untyped-decorator]
+async def on_message(sid: str, data: dict[str, Any]) -> dict[str, Any]:
   """
   Receive message from client and broadcast to user's private channel.
 
@@ -542,8 +546,8 @@ async def on_message(sid: str, data: dict) -> dict:
   return {"status": "ok", "message_id": message["id"], "timestamp": message["timestamp"]}
 
 
-@server.socketio.on("set_display_name")
-async def on_set_display_name(sid: str, data: dict) -> dict:
+@server.socketio.on("set_display_name")  # type: ignore[untyped-decorator]
+async def on_set_display_name(sid: str, data: dict[str, Any]) -> dict[str, Any]:
   """
   Handle display name setting from client.
 
@@ -610,7 +614,7 @@ from . import pages as pages  # noqa: E402
 
 # Start cleanup task when server starts
 @server.before_serving
-async def startup():
+async def startup() -> None:
   """Start background tasks when server starts."""
   asyncio.create_task(cleanup_task())
 
@@ -619,5 +623,5 @@ async def startup():
 asgi_app = server._asgi_app if server._asgi_app is not None else server
 
 # Log configuration
-server.log_config()
-server.log_routes()
+server.log_config()  # type: ignore[no-untyped-call]
+server.log_routes()  # type: ignore[no-untyped-call]

@@ -548,9 +548,7 @@ class TestAsyncClientSessionCaching:
 
       # Write a session file with different server
       cache_file.write_text(
-        json.dumps(
-          {"session_cookie": "test-cookie", "server": "http://other-server:5000"}
-        )
+        json.dumps({"session_cookie": "test-cookie", "server": "http://other-server:5000"})
       )
 
       client = AsyncClient(
@@ -1002,7 +1000,7 @@ class TestDisplayNameConfigLoading:
       config_dir = Path(tmpdir) / ".roomz"
       config_dir.mkdir(parents=True, exist_ok=True)
       config_file = config_dir / "config.toml"
-      config_file.write_text("[client]\ndisplay_name = \"Laptop\"\n")
+      config_file.write_text('[client]\ndisplay_name = "Laptop"\n')
 
       # Patch home directory
       import roomz.client.async_client as async_client_module
@@ -1360,9 +1358,7 @@ class TestTUINameCommand:
     """
     # This requires async TUI with mocked client response
     # The success message display requires async client mock
-    pytest.skip(
-      "Integration test: Requires async TUI with mocked server response"
-    )
+    pytest.skip("Integration test: Requires async TUI with mocked server response")
 
   def test_name_command_shows_error_on_failure(self):
     """
@@ -1374,9 +1370,7 @@ class TestTUINameCommand:
     """
     # This requires async TUI with mocked client error response
     # Error handling requires integration test with async client
-    pytest.skip(
-      "Integration test: Requires async TUI with mocked server error response"
-    )
+    pytest.skip("Integration test: Requires async TUI with mocked server error response")
 
   def test_name_clear_shows_confirmation(self):
     """
@@ -1387,9 +1381,7 @@ class TestTUINameCommand:
     Then: TUI shows "Display name cleared"
     """
     # This requires async TUI with mocked client
-    pytest.skip(
-      "Integration test: Requires async TUI with mocked server response"
-    )
+    pytest.skip("Integration test: Requires async TUI with mocked server response")
 
 
 class TestTUIUserDisplayFormat:
@@ -1486,9 +1478,7 @@ class TestTUIUserDisplayFormat:
     Then: Message shows "Laptop (alice@example.com) joined the chat"
     """
     # This requires async TUI with mocked client event handling
-    pytest.skip(
-      "Integration test: Requires async TUI with mocked presence events"
-    )
+    pytest.skip("Integration test: Requires async TUI with mocked presence events")
 
   def test_user_left_shows_display_name(self):
     """
@@ -1499,9 +1489,7 @@ class TestTUIUserDisplayFormat:
     Then: Message shows "Laptop (alice@example.com) left the chat"
     """
     # This requires async TUI with mocked client event handling
-    pytest.skip(
-      "Integration test: Requires async TUI with mocked presence events"
-    )
+    pytest.skip("Integration test: Requires async TUI with mocked presence events")
 
 
 class TestTUIAuthenticatedEventWithDisplayName:
@@ -1522,9 +1510,7 @@ class TestTUIAuthenticatedEventWithDisplayName:
     Then: display_name is stored in TUI state
     """
     # This requires async TUI with mocked client authentication
-    pytest.skip(
-      "Integration test: Requires async TUI with mocked authentication event"
-    )
+    pytest.skip("Integration test: Requires async TUI with mocked authentication event")
 
   @pytest.mark.asyncio
   async def test_authenticated_event_null_display_name(self):
@@ -1536,13 +1522,12 @@ class TestTUIAuthenticatedEventWithDisplayName:
     Then: No display_name is stored (or stored as None)
     """
     # This requires async TUI with mocked client authentication
-    pytest.skip(
-      "Integration test: Requires async TUI with mocked authentication event"
-    )
+    pytest.skip("Integration test: Requires async TUI with mocked authentication event")
 
 
 # Integration tests (require running server)
 # These are skipped by default and should be run manually
+
 
 @pytest.mark.skip(reason="Integration test requires running server")
 class TestClientIntegration:

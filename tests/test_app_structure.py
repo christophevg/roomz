@@ -90,7 +90,9 @@ class TestProjectStructure:
     When: Checking for chat.js
     Then: File exists and contains Vue component definition
     """
-    js_path = Path(__file__).parent.parent / "src" / "roomz" / "server" / "pages" / "chat" / "chat.js"
+    js_path = (
+      Path(__file__).parent.parent / "src" / "roomz" / "server" / "pages" / "chat" / "chat.js"
+    )
     assert js_path.exists(), "chat.js should exist"
 
     content = js_path.read_text()
@@ -258,7 +260,9 @@ class TestChatPageRegistration:
     When: Examining the component
     Then: Navigation object with path '/' exists
     """
-    js_path = Path(__file__).parent.parent / "src" / "roomz" / "server" / "pages" / "chat" / "chat.js"
+    js_path = (
+      Path(__file__).parent.parent / "src" / "roomz" / "server" / "pages" / "chat" / "chat.js"
+    )
     content = js_path.read_text()
     assert 'path: "/"' in content, "Chat page should have navigation path '/'"
 
@@ -270,7 +274,9 @@ class TestChatPageRegistration:
     When: Examining the component definition
     Then: Component name is 'Chat' or 'ChatRoom'
     """
-    js_path = Path(__file__).parent.parent / "src" / "roomz" / "server" / "pages" / "chat" / "chat.js"
+    js_path = (
+      Path(__file__).parent.parent / "src" / "roomz" / "server" / "pages" / "chat" / "chat.js"
+    )
     content = js_path.read_text()
     assert "name: 'Chat'" in content, "Component name should be 'Chat'"
 
@@ -282,7 +288,9 @@ class TestChatPageRegistration:
     When: Examining the component definition
     Then: Template property exists with valid Vue template
     """
-    js_path = Path(__file__).parent.parent / "src" / "roomz" / "server" / "pages" / "chat" / "chat.js"
+    js_path = (
+      Path(__file__).parent.parent / "src" / "roomz" / "server" / "pages" / "chat" / "chat.js"
+    )
     content = js_path.read_text()
     assert "template:" in content, "Chat component should have template property"
     assert "<Page>" in content, "Template should include Page component"
@@ -295,7 +303,9 @@ class TestChatPageRegistration:
     When: Examining navigation settings
     Then: Icon is set to 'mdi-chat'
     """
-    js_path = Path(__file__).parent.parent / "src" / "roomz" / "server" / "pages" / "chat" / "chat.js"
+    js_path = (
+      Path(__file__).parent.parent / "src" / "roomz" / "server" / "pages" / "chat" / "chat.js"
+    )
     content = js_path.read_text()
     assert 'icon: "mdi-chat"' in content, "Chat page should have mdi-chat icon"
 

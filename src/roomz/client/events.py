@@ -13,7 +13,7 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 # Handler can be sync (returns None) or async (returns coroutine)
-EventHandler = Callable[[dict], None | Coroutine[Any, Any, None]]
+EventHandler = Callable[[dict[str, Any]], None | Coroutine[Any, Any, None]]
 
 
 class EventEmitter:
@@ -23,7 +23,7 @@ class EventEmitter:
   Supports both sync and async event handlers.
   """
 
-  def __init__(self):
+  def __init__(self) -> None:
     """Initialize event emitter."""
     self._handlers: dict[str, list[EventHandler]] = defaultdict(list)
 
@@ -54,7 +54,7 @@ class EventEmitter:
     else:
       self._handlers[event].clear()
 
-  async def emit(self, event: str, data: dict) -> None:
+  async def emit(self, event: str, data: dict[str, Any]) -> None:
     """
     Emit event to all registered handlers (async).
 

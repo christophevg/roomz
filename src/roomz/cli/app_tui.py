@@ -21,6 +21,7 @@ from __future__ import annotations
 import asyncio
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 from textual.app import App, ComposeResult
 from textual.containers import VerticalScroll
@@ -96,11 +97,11 @@ class MessageWidget(Static):
 class ChatInput(TextArea):
   """Custom TextArea that sends on Enter, newlines on Ctrl+Enter."""
 
-  def __init__(self, *args, **kwargs):
+  def __init__(self, *args: Any, **kwargs: Any) -> None:
     super().__init__(*args, **kwargs)
-    self._chat_app = None
+    self._chat_app: ChatApp | None = None
 
-  def on_key(self, event) -> None:
+  def on_key(self, event: Any) -> None:
     """Handle key events."""
     if event.key == "ctrl+enter":
       event.stop()
@@ -120,7 +121,7 @@ class ChatInput(TextArea):
 # =============================================================================
 
 
-class ChatApp(App):
+class ChatApp(App[None]):
   """
   Example chat application using the Roomz AsyncClient.
 
@@ -346,14 +347,14 @@ class ChatApp(App):
   # Event Handlers
   # ===========================================================================
 
-  async def _handle_authenticated(self, data: dict) -> None:
+  async def _handle_authenticated(self, data: dict[str, Any]) -> None:
     """Handle successful authentication."""
     user = data.get("user", {})
     self.email = user.get("email", "unknown")
     self.add_success_message(f"Authenticated as: {self.email}")
     self.add_system_message("Type messages and press Enter to send.")
 
-  async def _handle_message(self, data: dict) -> None:
+  async def _handle_message(self, data: dict[str, Any]) -> None:
     """Handle incoming chat message."""
     user = data.get("user", {})
     email = user.get("email", "unknown")
@@ -362,32 +363,32 @@ class ChatApp(App):
     timestamp = data.get("timestamp", "")
     self.add_chat_message(email, content, timestamp, display_name=display_name)
 
-  def _format_user_display(self, user: dict) -> str:
+  def _format_user_display(self, user: dict[str, Any]) -> str:
     """Format user display name and email."""
-    email = user.get("email", "unknown")
-    display_name = user.get("display_name")
+    email: str = user.get("email", "unknown")
+    display_name: str | None = user.get("display_name")
     if display_name and display_name.strip():
       return f"{display_name.strip()} ({email})"
     return email
 
-  async def _handle_user_joined(self, data: dict) -> None:
+  async def _handle_user_joined(self, data: dict[str, Any]) -> None:
     """Handle user joined event."""
     user = data.get("user", {})
     user_display = self._format_user_display(user)
     self.add_system_message(f"{user_display} joined the chat")
 
-  async def _handle_user_left(self, data: dict) -> None:
+  async def _handle_user_left(self, data: dict[str, Any]) -> None:
     """Handle user left event."""
     user = data.get("user", {})
     user_display = self._format_user_display(user)
     self.add_system_message(f"{user_display} left the chat")
 
-  async def _handle_disconnect(self, data: dict) -> None:
+  async def _handle_disconnect(self, data: dict[str, Any]) -> None:
     """Handle disconnection."""
     self.add_error_message("Disconnected from server")
     self.client.clear_cached_session()
 
-  async def _handle_error(self, data: dict) -> None:
+  async def _handle_error(self, data: dict[str, Any]) -> None:
     """Handle error event."""
     error = data.get("error", "Unknown error")
     code = data.get("code", 0)
@@ -396,7 +397,7 @@ class ChatApp(App):
     if code == 401:
       self.client.clear_cached_session()
 
-  async def _handle_display_name_changed(self, data: dict) -> None:
+  async def _handle_display_name_changed(self, data: dict[str, Any]) -> None:
     """Handle display_name_changed event."""
     user = data.get("user", {})
     user_display = self._format_user_display(user)

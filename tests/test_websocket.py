@@ -55,7 +55,7 @@ class TestWebSocketAuthentication:
     assert len(connected_clients) > 0
 
     # Session info should be stored
-    for sid, client_info in connected_clients.items():
+    for _sid, client_info in connected_clients.items():
       assert "session" in client_info
       assert client_info["session"].email == session_data["user"]["email"]
 
@@ -95,7 +95,9 @@ class TestWebSocketAuthentication:
     # For now, use an invalid token to simulate expired session
 
     # Try to connect with expired session (using old/expired token)
-    client = server.socketio.test_client(server, headers={"Cookie": "session_token=expired_token_placeholder"})
+    client = server.socketio.test_client(
+      server, headers={"Cookie": "session_token=expired_token_placeholder"}
+    )
 
     # Should not be in connected_clients
     assert len(connected_clients) == 0
@@ -146,7 +148,7 @@ class TestWebSocketSessionValidation:
 
     # Check that session info is stored
     assert len(connected_clients) > 0
-    for sid, client_info in connected_clients.items():
+    for _sid, client_info in connected_clients.items():
       assert "session" in client_info
       assert client_info["session"].email is not None
 
@@ -187,7 +189,7 @@ class TestWebSocketSessionValidation:
 
     # In current implementation, IP is stored but not validated
     # Check that IP is stored in client_info
-    for sid, client_info in connected_clients.items():
+    for _sid, client_info in connected_clients.items():
       assert "ip" in client_info
       # IP should be stored for security logging
 
@@ -202,7 +204,7 @@ class TestWebSocketSessionValidation:
     client, session_data = authenticated_socketio_client
 
     # User agent hash should be stored in session
-    for sid, client_info in connected_clients.items():
+    for _sid, client_info in connected_clients.items():
       session = client_info.get("session")
       if session:
         # Session may have user_agent_hash
@@ -257,9 +259,7 @@ class TestWebSocketUserIdentification:
     from roomz.server import server
 
     token2 = create_test_jwt("test@example.com")
-    client2 = server.socketio.test_client(
-      server, headers={"Cookie": f"session_token={token2}"}
-    )
+    client2 = server.socketio.test_client(server, headers={"Cookie": f"session_token={token2}"})
 
     # First client should receive user_joined event for second client
     received = client1.get_received()
@@ -290,9 +290,7 @@ class TestWebSocketUserIdentification:
     from roomz.server import server
 
     token2 = create_test_jwt("test@example.com")
-    client2 = server.socketio.test_client(
-      server, headers={"Cookie": f"session_token={token2}"}
-    )
+    client2 = server.socketio.test_client(server, headers={"Cookie": f"session_token={token2}"})
 
     # Clear received events
     client1.get_received()
@@ -327,7 +325,7 @@ class TestWebSocketUserIdentification:
 
     # Find our client
     found = False
-    for sid, client_info in connected_clients.items():
+    for _sid, client_info in connected_clients.items():
       if "session" in client_info:
         if client_info["session"].email == session_data["user"]["email"]:
           found = True
@@ -448,7 +446,7 @@ class TestWebSocketConnectionLifecycle:
     assert len(connected_clients) > 0
 
     # Should have session info
-    for sid, client_info in connected_clients.items():
+    for _sid, client_info in connected_clients.items():
       assert "session" in client_info
       assert "ip" in client_info
       assert "connected_at" in client_info
@@ -487,9 +485,7 @@ class TestWebSocketConnectionLifecycle:
     from roomz.server import server
 
     token2 = create_test_jwt("test@example.com")
-    client2 = server.socketio.test_client(
-      server, headers={"Cookie": f"session_token={token2}"}
-    )
+    client2 = server.socketio.test_client(server, headers={"Cookie": f"session_token={token2}"})
 
     # Clear received events
     client1.get_received()
@@ -548,9 +544,7 @@ class TestWebSocketReconnection:
     token = create_test_jwt("reconnect@test.com")
 
     # Connect first time
-    client1 = server.socketio.test_client(
-      server, headers={"Cookie": f"session_token={token}"}
-    )
+    client1 = server.socketio.test_client(server, headers={"Cookie": f"session_token={token}"})
 
     assert client1.is_connected()
     assert len(connected_clients) > 0
@@ -559,9 +553,7 @@ class TestWebSocketReconnection:
     client1.disconnect()
 
     # Reconnect with same session (same JWT)
-    client2 = server.socketio.test_client(
-      server, headers={"Cookie": f"session_token={token}"}
-    )
+    client2 = server.socketio.test_client(server, headers={"Cookie": f"session_token={token}"})
 
     assert client2.is_connected()
     assert len(connected_clients) > 0
@@ -674,15 +666,11 @@ class TestWebSocketEdgeCases:
     token1 = create_test_jwt("multi@test.com")
 
     # Connect first client
-    client1 = server.socketio.test_client(
-      server, headers={"Cookie": f"session_token={token1}"}
-    )
+    client1 = server.socketio.test_client(server, headers={"Cookie": f"session_token={token1}"})
 
     # Connect second client (same user, different JWT)
     token2 = create_test_jwt("multi@test.com")
-    client2 = server.socketio.test_client(
-      server, headers={"Cookie": f"session_token={token2}"}
-    )
+    client2 = server.socketio.test_client(server, headers={"Cookie": f"session_token={token2}"})
 
     # Both should be connected
     assert client1.is_connected()
@@ -715,6 +703,7 @@ class TestWebSocketEdgeCases:
 
     # All should be valid
     from roomz.server.auth import validate_jwt
+
     for token in tokens:
       validated = validate_jwt(token)
       assert validated is not None
