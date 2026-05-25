@@ -1,14 +1,12 @@
 # Roomz
 
-[![PyPI version](https://img.shields.io/pypi/v/roomz.svg)](https://pypi.org/project/roomz/)
-[![PyPI downloads](https://img.shields.io/pypi/dm/roomz.svg)](https://pypistats.org/packages/roomz)
-[![Python versions](https://img.shields.io/pypi/pyversions/roomz.svg)](https://pypi.org/project/roomz/)
-[![License](https://img.shields.io/github/license/christophevg/roomz.svg)](https://github.com/christophevg/roomz/blob/main/LICENSE)
-[![CI](https://github.com/christophevg/roomz/actions/workflows/ci.yml/badge.svg)](https://github.com/christophevg/roomz/actions/workflows/ci.yml)
-[![Coverage](https://coveralls.io/repos/github/christophevg/roomz/badge.svg)](https://coveralls.io/github/christophevg/roomz)
-[![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-blue.svg)](https://github.com/astral-sh/ruff)
-[![Type checked: mypy](https://img.shields.io/badge/type%20checked-mypy-blue.svg)](https://mypy.readthedocs.io/)
-[![Agentic](https://img.shields.io/badge/workflow-agentic-blueviolet?style=flat-square)](https://christophe.vg/about/Coding-Agent)
+[![PyPI](https://img.shields.io/pypi/v/roomz.svg)][pypi]
+[![Python](https://img.shields.io/pypi/pyversions/roomz.svg)][pypi]
+[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)][uv]
+[![CI](https://img.shields.io/github/actions/workflow/status/christophevg/roomz/ci.yml.svg)][ci]
+[![Coverage](https://img.shields.io/coveralls/github/christophevg/roomz.svg)][coveralls]
+[![License](https://img.shields.io/github/license/christophevg/roomz.svg)][license]
+[![Agentic](https://img.shields.io/badge/workflow-agentic-blueviolet?style=flat-square)](https://christophe.vg/about/Agentic-Workflow)
 
 A real-time chatroom web service with magic link authentication.
 
@@ -336,3 +334,9 @@ Built with:
 - [Socket.IO](https://python-socketio.readthedocs.io/) — Real-time communication
 - [Vue 3](https://vuejs.org/) — Frontend framework
 - [Vuetify 4](https://vuetifyjs.com/) — Material Design components
+
+[pypi]: https://pypi.org/project/roomz/
+[uv]: https://docs.astral.sh/uv/
+[ci]: https://github.com/christophevg/roomz/actions
+[coveralls]: https://coveralls.io/github/christophevg/roomz
+[license]: https://github.com/christophevg/roomz/blob/main/LICENSE
