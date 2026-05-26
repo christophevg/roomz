@@ -206,6 +206,70 @@
 
 **Goal**: Improve mobile reliability and PWA support
 
+- [ ] **I8-000: Generalized Configuration Pattern** (Issue #1)
+  - **Scope**: Create a unified configuration system for ALL client settings
+  - **Design Decision**: ✅ Migrate from `~/.roomz/config.toml` (folder) to `~/.roomz.toml` (single file)
+    - Simpler user experience (single visible file vs. hidden folder)
+    - Better discoverability (standard dotfile pattern)
+    - Session cache remains separate at `~/.roomz/session.json` (runtime data, not user config)
+  - **API Design**: See `analysis/config-api.md` for complete design document
+  - **Configuration Items** (all should follow same pattern):
+    - `server_url` (currently mandatory) → becomes optional with config fallback
+    - `display_name` (currently `~/.roomz/config.toml`)
+    - `session_cache_file` (currently explicit parameter) → default to `~/.roomz/session.json`
+  - **Security Review**: See `analysis/config-security.md` for complete security analysis
+  - **Priority Order** (finalized):
+    1. Explicit parameter (e.g., `AsyncClient(server_url=...)`)
+    2. Environment variable (e.g., `ROOMZ_SERVER_URL`, `ROOMZ_DISPLAY_NAME`, `ROOMZ_SESSION_CACHE_FILE`)
+    3. `./roomz.toml` in current working directory (project-level config) **⚠️ Requires security validation**
+    4. `~/.roomz.toml` in home directory (user-level config)
+    5. `~/.roomz/config.toml` (deprecated, backward compatibility with warning)
+  - **Security Requirements** (CRITICAL - must implement):
+    - **HIGH-1**: Session cache files MUST be created with 0600 permissions (JWT tokens)
+    - **HIGH-2**: Current directory config loading MUST validate directory security (reject world-writable)
+    - **MEDIUM-1**: Warn if config files have group/other read permissions
+    - **MEDIUM-2**: Session cache directory MUST NOT be world-writable
+    - **MEDIUM-3**: Validate server URLs (http/https only, no credentials in URL, hostname required)
+    - **LOW-1**: Review error messages for information leakage
+    - **LOW-2**: Secure migration path for config files (overwrite before deletion)
+  - **Implementation Tasks**:
+    - [ ] Create `src/roomz/client/config.py` module
+    - [ ] Add `ConfigurationError` exception to `exceptions.py`
+    - [ ] Add `SecurityError` exception to `exceptions.py`
+    - [ ] Add file permission enforcement in `_save_session_cookie()`
+    - [ ] Add directory security validation for config loading
+    - [ ] Add server URL validation function
+    - [ ] Add config file permission warnings
+    - [ ] Update `AsyncClient.__init__()` to use `Config.load()`
+    - [ ] Update `AsyncClient.connect()` to validate `server_url` (raise ConfigurationError)
+    - [ ] Update `SyncClient` to delegate to `AsyncClient`
+    - [ ] Update CLI app to use `Config.load()`
+    - [ ] Add TOML dependency (`tomli` for Python < 3.11)
+    - [ ] Add configuration tests (priority chain, backward compat, error messages)
+    - [ ] Add security tests (permissions, directory validation, URL validation)
+    - [ ] Update documentation (docs/configuration.md, docs/api.md)
+    - [ ] Add migration guide to docs
+    - [ ] Add security documentation to config docs
+  - **Backward Compatibility**:
+    - Old config location `~/.roomz/config.toml` still works with deprecation warning
+    - `server_url: str` parameter signature accepts `None` (non-breaking)
+    - CLI `--server` flag becomes optional (uses config if not provided)
+  - **Delivers**: Zero-configuration startup, consistent config pattern
+  - **Acceptance**:
+    - ✅ All config items follow the same priority pattern
+    - ✅ `AsyncClient()` works without explicit `server_url` when config exists
+    - ✅ `ROOMZ_*` environment variables have highest config priority after explicit parameters
+    - ✅ `./roomz.toml` loaded from current directory (with security validation)
+    - ✅ `~/.roomz.toml` loaded from home directory
+    - ✅ Explicit parameters override all config sources
+    - ✅ Clear error messages when required config is missing (actionable guidance)
+    - ✅ Migration or compatibility for existing `~/.roomz/config.toml` users
+    - ✅ **Security**: Session cache files created with 0600 permissions
+    - ✅ **Security**: Warning logged for insecure file/directory permissions
+    - ✅ **Security**: Error raised for world-writable directories containing session files
+    - ✅ **Security**: Server URLs validated (http/https only, no credentials)
+    - ✅ **Security**: Config migration includes secure file handling
+
 - [ ] **I8-001: PWA support**
   - Enable Progressive Web App support for improved mobile experience
   - Review and improve PWA support in baseweb first, then apply here

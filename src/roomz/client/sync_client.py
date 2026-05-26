@@ -8,9 +8,11 @@ import asyncio
 import logging
 import threading
 import time
+from pathlib import Path
 from typing import Any, cast
 
 from roomz.client.async_client import AsyncClient
+from roomz.client.config import Config
 from roomz.client.events import EventHandler
 from roomz.client.state import ConnectionState
 
@@ -24,16 +26,36 @@ class SyncClient:
   Provides a synchronous API wrapping the async implementation.
   Runs async event loop in background thread.
 
-  Usage:
-    with SyncClient(server_url, session_token) as client:
+  Configuration is resolved in this order (highest to lowest priority):
+    1. Explicit `config` parameter
+    2. Explicit `config_path` parameter (load from file)
+    3. Prefixed environment variable (e.g., HELLO_ROOMZ_SERVER_URL)
+    4. Unprefixed environment variable (e.g., ROOMZ_SERVER_URL)
+    5. ./roomz.toml (current directory)
+    6. ~/.roomz.toml (user home directory)
+    7. Default Config() (empty, raises ConfigurationError on connect)
+
+  Usage with explicit config:
+    config = Config(server_url="http://localhost:5000")
+    with SyncClient(config=config, session_token="token") as client:
       client.on('message', handle_message)
       client.send("Hello, world!")
+
+  Usage with config file:
+    with SyncClient(config_path="~/.roomz.toml", session_token="token") as client:
+      client.connect()
+
+  Usage with auto-discovery:
+    with SyncClient(session_token="token") as client:
+      client.connect()
   """
 
   def __init__(
     self,
-    server_url: str,
-    session_token: str,
+    config: Config | None = None,
+    config_path: str | Path | None = None,
+    session_token: str = "",
+    session_cache_file: str | Path | None = None,
     *,
     reconnect: bool = True,
     reconnect_delay: float = 1.0,
@@ -44,16 +66,31 @@ class SyncClient:
     Initialize sync client.
 
     Args:
-      server_url: WebSocket server URL (e.g., "http://localhost:5000")
-      session_token: Session token for authentication
+      config: Configuration object (highest priority, overrides auto-discovery)
+      config_path: Path to config file (overrides auto-discovery, merged with auto-discovered)
+      session_token: Session token for authentication (optional if session_cache_file is set)
+      session_cache_file: Path to cache session cookie (None to disable caching)
       reconnect: Enable automatic reconnection (default: True)
       reconnect_delay: Initial delay between reconnection attempts in seconds (default: 1.0)
       max_reconnect_attempts: Maximum reconnection attempts (default: 5)
       connection_timeout: Timeout for connection in seconds (default: 10.0)
+
+    Example:
+      >>> # Explicit config
+      >>> config = Config(server_url="http://localhost:5000", display_name="Alice")
+      >>> client = SyncClient(config=config)
+
+      >>> # Config from file
+      >>> client = SyncClient(config_path="~/.roomz.toml")
+
+      >>> # Auto-discovery
+      >>> client = SyncClient()
     """
     self._async_client = AsyncClient(
-      server_url,
-      session_token,
+      config=config,
+      config_path=config_path,
+      session_token=session_token,
+      session_cache_file=session_cache_file,
       reconnect=reconnect,
       reconnect_delay=reconnect_delay,
       max_reconnect_attempts=max_reconnect_attempts,
@@ -107,6 +144,11 @@ class SyncClient:
   def display_name(self) -> str | None:
     """Current display name."""
     return self._async_client.display_name
+
+  @property
+  def server_url(self) -> str | None:
+    """WebSocket server URL from configuration."""
+    return self._async_client.server_url
 
   def connect(self) -> None:
     """

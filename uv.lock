@@ -2212,6 +2212,7 @@ dependencies = [
     { name = "resend" },
     { name = "rich" },
     { name = "textual" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
@@ -2263,6 +2264,7 @@ requires-dist = [
     { name = "sphinx", marker = "extra == 'docs'", specifier = ">=7.0.0" },
     { name = "sphinx-rtd-theme", marker = "extra == 'docs'", specifier = ">=2.0.0" },
     { name = "textual", specifier = ">=0.47.0" },
+    { name = "tomli", marker = "python_full_version < '3.11'", specifier = ">=2.0.0" },
     { name = "tox", marker = "extra == 'dev'", specifier = ">=4.0.0" },
     { name = "tox-uv", marker = "extra == 'dev'", specifier = ">=1.0.0" },
     { name = "twine", marker = "extra == 'dev'", specifier = ">=6.0.0" },
