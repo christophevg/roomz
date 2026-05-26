@@ -125,7 +125,7 @@ display_name = "Alice"
     config_file = tmp_path / "invalid.toml"
     config_file.write_text("invalid toml content [[")
 
-    with pytest.raises(ValueError, match="Failed to parse config file"):
+    with pytest.raises(ConfigurationError, match="Failed to parse config file"):
       Config.load(config_file)
 
   def test_config_load_missing_section(self, tmp_path: Path) -> None:
@@ -181,9 +181,10 @@ class TestConfigAutoDiscover:
       {"ROOMZ_SERVER_URL": "http://example.com", "ROOMZ_DISPLAY_NAME": "Bob"},
       clear=True,
     ):
-      config = Config.auto_discover()
+      config, path = Config.auto_discover()
       assert config.server_url == "http://example.com"
       assert config.display_name == "Bob"
+      assert path is None
 
   def test_auto_discover_from_env_with_prefix(self) -> None:
     """Test auto-discovery from prefixed environment variables."""
@@ -196,9 +197,10 @@ class TestConfigAutoDiscover:
       },
       clear=True,
     ):
-      config = Config.auto_discover()
+      config, path = Config.auto_discover()
       assert config.server_url == "http://prod.example.com"
       assert config.display_name == "Charlie"
+      assert path is None
 
   def test_auto_discover_from_file(self, tmp_path: Path) -> None:
     """Test auto-discovery from config file."""
@@ -213,9 +215,10 @@ display_name = "Alice"
 
     # Change to tmp directory
     with mock.patch.object(Path, "cwd", return_value=tmp_path):
-      config = Config.auto_discover()
+      config, path = Config.auto_discover()
       assert config.server_url == "http://localhost:5000"
       assert config.display_name == "Alice"
+      assert path == config_file
 
   def test_auto_discover_priority_env_over_file(self, tmp_path: Path) -> None:
     """Test that env vars take precedence over file."""
@@ -235,20 +238,33 @@ display_name = "FileUser"
     ):
       with mock.patch.object(Path, "cwd", return_value=tmp_path):
         with mock.patch.object(Path, "home", return_value=tmp_path):
-          config = Config.auto_discover()
+          config, path = Config.auto_discover()
           # Env var takes precedence
           assert config.server_url == "http://env.example.com"
           # File value for missing env var
           assert config.display_name == "FileUser"
+          # File was used
+          assert path == config_file
 
   def test_auto_discover_none(self) -> None:
     """Test auto-discovery when no config available."""
     with mock.patch.dict(os.environ, {}, clear=True):
       with mock.patch.object(Path, "cwd", return_value=Path("/nonexistent")):
         with mock.patch.object(Path, "home", return_value=Path("/nonexistent")):
-          config = Config.auto_discover()
+          config, path = Config.auto_discover()
           assert config.server_url is None
           assert config.display_name is None
+          assert path is None
+
+  def test_auto_discover_invalid_file_raises(self, tmp_path: Path) -> None:
+    """Test that auto-discovery raises on invalid config file."""
+    config_file = tmp_path / "roomz.toml"
+    config_file.write_text("invalid toml [[")
+
+    with mock.patch.object(Path, "cwd", return_value=tmp_path):
+      with mock.patch.object(Path, "home", return_value=Path("/nonexistent")):
+        with pytest.raises(ConfigurationError, match="Failed to parse config file"):
+          Config.auto_discover()
 
 
 class TestResolveConfig:
