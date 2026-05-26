@@ -206,7 +206,7 @@
 
 **Goal**: Improve mobile reliability and PWA support
 
-- [ ] **I8-000: Generalized Configuration Pattern** (Issue #1)
+- [x] **I8-000: Generalized Configuration Pattern** (Issue #1) (2026-05-26)
   - **Scope**: Create a unified configuration system for ALL client settings
   - **Design Decision**: ✅ Migrate from `~/.roomz/config.toml` (folder) to `~/.roomz.toml` (single file)
     - Simpler user experience (single visible file vs. hidden folder)
@@ -233,23 +233,23 @@
     - **LOW-1**: Review error messages for information leakage
     - **LOW-2**: Secure migration path for config files (overwrite before deletion)
   - **Implementation Tasks**:
-    - [ ] Create `src/roomz/client/config.py` module
-    - [ ] Add `ConfigurationError` exception to `exceptions.py`
-    - [ ] Add `SecurityError` exception to `exceptions.py`
-    - [ ] Add file permission enforcement in `_save_session_cookie()`
-    - [ ] Add directory security validation for config loading
-    - [ ] Add server URL validation function
-    - [ ] Add config file permission warnings
-    - [ ] Update `AsyncClient.__init__()` to use `Config.load()`
-    - [ ] Update `AsyncClient.connect()` to validate `server_url` (raise ConfigurationError)
-    - [ ] Update `SyncClient` to delegate to `AsyncClient`
-    - [ ] Update CLI app to use `Config.load()`
-    - [ ] Add TOML dependency (`tomli` for Python < 3.11)
-    - [ ] Add configuration tests (priority chain, backward compat, error messages)
-    - [ ] Add security tests (permissions, directory validation, URL validation)
-    - [ ] Update documentation (docs/configuration.md, docs/api.md)
-    - [ ] Add migration guide to docs
-    - [ ] Add security documentation to config docs
+    - [x] Create `src/roomz/client/config.py` module
+    - [x] Add `ConfigurationError` exception to `exceptions.py`
+    - [x] Add `SecurityError` exception to `exceptions.py`
+    - [x] Add file permission enforcement in `_save_session_cookie()`
+    - [x] Add directory security validation for config loading
+    - [x] Add server URL validation function
+    - [x] Add config file permission warnings
+    - [x] Update `AsyncClient.__init__()` to use `Config.load()`
+    - [x] Update `AsyncClient.connect()` to validate `server_url` (raise ConfigurationError)
+    - [x] Update `SyncClient` to delegate to `AsyncClient`
+    - [x] Update CLI app to use `Config.load()`
+    - [x] Add TOML dependency (`tomli` for Python < 3.11)
+    - [x] Add configuration tests (priority chain, backward compat, error messages)
+    - [x] Add security tests (permissions, directory validation, URL validation)
+    - [x] Update documentation (docs/configuration.md, docs/api.md)
+    - [x] Add migration guide to docs
+    - [x] Add security documentation to config docs
   - **Backward Compatibility**:
     - Old config location `~/.roomz/config.toml` still works with deprecation warning
     - `server_url: str` parameter signature accepts `None` (non-breaking)
