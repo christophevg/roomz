@@ -11,16 +11,21 @@ def main() -> None:
   """Entry point for the CLI script."""
   import argparse
 
+  from roomz.client.config import Config
+
   parser = argparse.ArgumentParser(description="Roomz Chat CLI")
   parser.add_argument(
     "--server",
     "-s",
-    default="http://localhost:8000",
-    help="Server URL (default: http://localhost:8000)",
+    default=None,
+    help="Server URL (default: auto-discover from env/config)",
   )
   args = parser.parse_args()
 
-  run_tui(server_url=args.server)
+  if args.server:
+    run_tui(config=Config(server_url=args.server))
+  else:
+    run_tui()
 
 
 __all__ = ["run_tui", "main"]
