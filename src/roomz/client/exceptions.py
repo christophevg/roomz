@@ -11,6 +11,12 @@ class ClientError(Exception):
   pass
 
 
+class ConfigurationError(ClientError):
+  """Configuration error (missing or invalid configuration)."""
+
+  pass
+
+
 class ConnectionError(ClientError):
   """Failed to establish or maintain WebSocket connection."""
 

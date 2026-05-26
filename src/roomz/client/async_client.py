@@ -16,66 +16,50 @@ import aiohttp
 import socketio  # type: ignore[import-untyped]
 from yarl import URL
 
+from roomz.client.config import Config, resolve_config
 from roomz.client.events import EventEmitter, EventHandler
-from roomz.client.exceptions import AuthenticationError, ConnectionError
+from roomz.client.exceptions import AuthenticationError, ConfigurationError, ConnectionError
 from roomz.client.state import ConnectionState
 
 logger = logging.getLogger(__name__)
-
-
-def _load_display_name_from_config() -> str | None:
-  """
-  Load display name from environment variable or config file.
-
-  Priority:
-    1. ROOMZ_DISPLAY_NAME environment variable
-    2. ~/.roomz/config.toml file
-
-  Returns:
-    Display name if configured, None otherwise
-  """
-  # Check environment variable first
-  env_name = os.environ.get("ROOMZ_DISPLAY_NAME")
-  if env_name:
-    return env_name.strip() or None
-
-  # Check config file
-  config_file = Path.home() / ".roomz" / "config.toml"
-  if config_file.exists():
-    try:
-      # Simple TOML parsing (only need [client] section)
-      content = config_file.read_text()
-      in_client_section = False
-      for line in content.splitlines():
-        line = line.strip()
-        if line == "[client]":
-          in_client_section = True
-        elif line.startswith("[") and line.endswith("]"):
-          in_client_section = False
-        elif in_client_section and line.startswith("display_name"):
-          # Parse: display_name = "value" or display_name = 'value'
-          if "=" in line:
-            value = line.split("=", 1)[1].strip()
-            # Remove quotes
-            if (value.startswith('"') and value.endswith('"')) or (
-              value.startswith("'") and value.endswith("'")
-            ):
-              value = value[1:-1]
-            return value or None
-    except Exception as e:
-      logger.warning(f"Failed to load display name from config: {e}")
-
-  return None
 
 
 class AsyncClient:
   """
   Async WebSocket client for Roomz real-time chat.
 
-  Usage:
-    async with AsyncClient(server_url, session_token) as client:
+  Configuration is resolved in this order (highest to lowest priority):
+    1. Explicit `config` parameter
+    2. Explicit `config_path` parameter (load from file)
+    3. Prefixed environment variable (e.g., HELLO_ROOMZ_SERVER_URL)
+    4. Unprefixed environment variable (e.g., ROOMZ_SERVER_URL)
+    5. ./roomz.toml (current directory)
+    6. ~/.roomz.toml (user home directory)
+    7. Default Config() (empty, raises ConfigurationError on connect)
+
+  Usage with explicit config:
+    config = Config(server_url="http://localhost:5000")
+    async with AsyncClient(config=config) as client:
       client.on('message', handle_message)
       await client.send("Hello, world!")
+
+  Usage with config file:
+    async with AsyncClient(config_path="~/.roomz.toml") as client:
+      await client.connect(session_token="magic-link-token")
+
+  Usage with auto-discovery:
+    async with AsyncClient() as client:
+      await client.connect(session_token="magic-link-token")
+
+  Environment Variables:
+    - ROOMZ_SERVER_URL: Server URL
+    - ROOMZ_DISPLAY_NAME: Display name
+    - ROOMZ_PREFIX: Prefix for env vars (e.g., "DEV" -> "DEV_ROOMZ_SERVER_URL")
+
+  Config File Format (~/.roomz.toml):
+    [client]
+    server_url = "http://localhost:5000"
+    display_name = "Alice"
 
   Authentication Flow:
     1. Shared aiohttp.ClientSession is used for HTTP and WebSocket
@@ -85,30 +69,46 @@ class AsyncClient:
 
   def __init__(
     self,
-    server_url: str,
+    config: Config | None = None,
+    config_path: str | Path | None = None,
     session_token: str = "",
+    session_cache_file: str | Path | None = None,
     *,
     reconnect: bool = True,
     reconnect_delay: float = 1.0,
     max_reconnect_attempts: int = 5,
     connection_timeout: float = 10.0,
-    session_cache_file: str | Path | None = None,
-    display_name: str | None = None,
   ):
     """
     Initialize async client.
 
     Args:
-      server_url: WebSocket server URL (e.g., "http://localhost:5000")
+      config: Configuration object (highest priority, overrides auto-discovery)
+      config_path: Path to config file (overrides auto-discovery, merged with auto-discovered)
       session_token: Magic link token for authentication (optional if session_cache_file is set)
+      session_cache_file: Path to cache session cookie (None to disable caching)
       reconnect: Enable automatic reconnection (default: True)
       reconnect_delay: Initial delay between reconnection attempts in seconds (default: 1.0)
       max_reconnect_attempts: Maximum reconnection attempts (default: 5)
       connection_timeout: Timeout for connection in seconds (default: 10.0)
-      session_cache_file: Path to cache session cookie (None to disable caching)
-      display_name: Optional display name (loaded from env/config if not provided)
+
+    Note:
+      session_cache_file is NOT part of Config because it's local state,
+      not shared configuration. It's typically ~/.roomz/session.json.
+
+    Example:
+      >>> # Explicit config
+      >>> config = Config(server_url="http://localhost:5000", display_name="Alice")
+      >>> client = AsyncClient(config=config)
+
+      >>> # Config from file
+      >>> client = AsyncClient(config_path="~/.roomz.toml")
+
+      >>> # Auto-discovery
+      >>> client = AsyncClient()
     """
-    self._server_url = server_url
+    # Resolve configuration
+    self._config = resolve_config(config=config, config_path=config_path)
     self._session_token = session_token
     self._reconnect = reconnect
     self._reconnect_delay = reconnect_delay
@@ -117,11 +117,10 @@ class AsyncClient:
     self._session_cache_file = Path(session_cache_file) if session_cache_file else None
     self._cached_cookie: str | None = None  # Cached JWT cookie for reconnection
 
-    # Display name: explicit > env var > config file
-    if display_name is not None:
-      self._display_name = display_name.strip() or None
-    else:
-      self._display_name = _load_display_name_from_config()
+    # Extract values from config
+    self._display_name = (
+      self._config.display_name.strip() if self._config.display_name else None
+    )
 
     self._connection_state = ConnectionState.DISCONNECTED
     self._user: dict[str, Any] | None = None
@@ -149,6 +148,11 @@ class AsyncClient:
   def display_name(self) -> str | None:
     """Current display name (loaded from config/env, may be overridden by server)."""
     return self._display_name
+
+  @property
+  def server_url(self) -> str | None:
+    """WebSocket server URL from configuration."""
+    return self._config.server_url
 
   def on(self, event: str, handler: EventHandler) -> None:
     """
@@ -182,12 +186,21 @@ class AsyncClient:
       True if magic link was requested successfully
 
     Raises:
+      ConfigurationError: If server_url is not configured
       ConnectionError: If request fails
     """
+    # Validate configuration
+    if self._config.server_url is None:
+      raise ConfigurationError(
+        "server_url is not configured. "
+        "Provide config with server_url, set ROOMZ_SERVER_URL, "
+        "or create ./roomz.toml or ~/.roomz.toml"
+      )
+
     if not self._session:
       self._session = aiohttp.ClientSession()
 
-    url = f"{self._server_url}/auth/request-magic-link"
+    url = f"{self._config.server_url}/auth/request-magic-link"
     try:
       async with self._session.post(url, json={"email": email}) as resp:
         if resp.status == 200:
@@ -201,30 +214,104 @@ class AsyncClient:
       raise ConnectionError(f"Failed to request magic link: {e}") from e
 
   def _save_session_cookie(self, cookie_value: str) -> None:
-    """Save session cookie to cache file."""
+    """
+    Save session cookie to cache file.
+
+    Security:
+    - Creates file with 0600 permissions atomically (no race condition)
+    - Uses exclusive creation to prevent symlink attacks
+    """
     if not self._session_cache_file:
       return
 
     try:
+      # Ensure parent directory exists
       self._session_cache_file.parent.mkdir(parents=True, exist_ok=True)
-      with open(self._session_cache_file, "w") as f:
-        json.dump({"session_cookie": cookie_value, "server": self._server_url}, f)
-    except Exception as e:
+
+      # Check if file exists
+      if self._session_cache_file.exists():
+        # Update existing file securely
+        self._update_session_cookie_secure(cookie_value)
+      else:
+        # Create new file with correct permissions from the start
+        # O_CREAT | O_EXCL ensures atomic creation (no race condition)
+        # O_TRUNC truncates if file exists (shouldn't happen with O_EXCL)
+        fd = os.open(
+          str(self._session_cache_file),
+          os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_EXCL,
+          mode=0o600,
+        )
+        try:
+          with os.fdopen(fd, "w") as f:
+            json.dump(
+              {"session_cookie": cookie_value, "server": self._config.server_url}, f
+            )
+        except (OSError, TypeError) as e:
+          os.close(fd)
+          logger.warning(f"Failed to write session cookie: {e}")
+          return
+
+        logger.debug(f"Session cookie saved to {self._session_cache_file}")
+
+    except FileExistsError:
+      # File was created by another process, update it
+      self._update_session_cookie_secure(cookie_value)
+    except OSError as e:
       logger.warning(f"Failed to save session cookie: {e}")
 
+  def _update_session_cookie_secure(self, cookie_value: str) -> None:
+    """Update existing session cookie file with secure permissions."""
+    if not self._session_cache_file:
+      return
+
+    try:
+      # Check and fix permissions if needed
+      current_mode = self._session_cache_file.stat().st_mode & 0o777
+      if current_mode & 0o077:  # Has group/other permissions
+        logger.warning(
+          f"Session cache file {self._session_cache_file} has insecure "
+          f"permissions {oct(current_mode)}. Restricting to 0600."
+        )
+        self._session_cache_file.chmod(0o600)
+
+      # Atomic write: write to temp file, then rename
+      temp_file = self._session_cache_file.with_suffix(".tmp")
+      temp_file.write_text(
+        json.dumps({"session_cookie": cookie_value, "server": self._config.server_url})
+      )
+      temp_file.replace(self._session_cache_file)
+
+    except (OSError, TypeError) as e:
+      logger.warning(f"Failed to update session cookie: {e}")
+
   def _load_session_cookie(self) -> str | None:
-    """Load session cookie from cache file."""
+    """
+    Load session cookie from cache file.
+
+    Security:
+    - Validates file permissions before loading
+    - Warns if file has insecure permissions
+    """
     if not self._session_cache_file or not self._session_cache_file.exists():
       return None
 
     try:
+      # Check file permissions
+      current_mode = self._session_cache_file.stat().st_mode & 0o777
+      if current_mode & 0o077:  # Has group/other permissions
+        logger.warning(
+          f"Session cache file {self._session_cache_file} has insecure "
+          f"permissions {oct(current_mode)}. Session may be accessible to other users."
+        )
+
       with open(self._session_cache_file) as f:
         data = json.load(f)
         # Only use cookie if server matches
-        if data.get("server") == self._server_url:
+        if data.get("server") == self._config.server_url:
           cookie = data.get("session_cookie")
           return str(cookie) if cookie else None
-    except Exception as e:
+
+    except (OSError, json.JSONDecodeError) as e:
       logger.warning(f"Failed to load session cookie: {e}")
 
     return None
@@ -234,7 +321,7 @@ class AsyncClient:
     if self._session_cache_file and self._session_cache_file.exists():
       try:
         self._session_cache_file.unlink()
-      except Exception:
+      except OSError:
         pass
 
   async def connect(self, session_token: str | None = None) -> None:
@@ -246,9 +333,26 @@ class AsyncClient:
                      to use cached session cookie for reconnection.
 
     Raises:
+      ConfigurationError: If server_url is not configured
       ConnectionError: If connection fails
       AuthenticationError: If authentication fails
     """
+    # Validate configuration
+    if self._config.server_url is None:
+      raise ConfigurationError(
+        "server_url is not configured. "
+        "Provide config with server_url, set ROOMZ_SERVER_URL, "
+        "or create ./roomz.toml or ~/.roomz.toml"
+      )
+
+    # Validate configuration values
+    errors = self._config.validate()
+    if errors:
+      raise ConfigurationError(f"Invalid configuration: {'; '.join(errors)}")
+
+    # Store as non-optional for type checker
+    server_url = self._config.server_url
+
     self._connection_state = ConnectionState.CONNECTING
 
     try:
@@ -270,7 +374,7 @@ class AsyncClient:
 
       # Verify magic link token if provided (skip for session resumption)
       if token:
-        verify_url = f"{self._server_url}/auth/verify?token={token}"
+        verify_url = f"{server_url}/auth/verify?token={token}"
         async with self._session.get(verify_url) as resp:
           # Server redirects on success, but cookie is set
           # Check that we got a response (even if redirect)
@@ -279,7 +383,7 @@ class AsyncClient:
             raise AuthenticationError(f"Authentication failed: server returned {resp.status}")
 
           # Extract and save session cookie after successful verification
-          cookies = self._session.cookie_jar.filter_cookies(URL(self._server_url))
+          cookies = self._session.cookie_jar.filter_cookies(URL(server_url))
           session_cookie = cookies.get("session_token")
           if session_cookie:
             self._save_session_cookie(session_cookie.value)
@@ -307,7 +411,7 @@ class AsyncClient:
 
       # Connect to WebSocket
       await self._sio.connect(
-        self._server_url,
+        server_url,
         headers=headers if headers else {},
         wait_timeout=self._connection_timeout,
       )
@@ -506,6 +610,14 @@ class AsyncClient:
     """Attempt to reconnect with exponential backoff."""
     self._connection_state = ConnectionState.RECONNECTING
 
+    # Validate server_url is configured (should be if connect() was called)
+    if self._config.server_url is None:
+      logger.error("Cannot reconnect: server_url not configured")
+      self._connection_state = ConnectionState.DISCONNECTED
+      return
+
+    server_url = self._config.server_url
+
     while self._reconnect and self._reconnect_attempts < self._max_reconnect_attempts:
       self._reconnect_attempts += 1
 
@@ -550,7 +662,7 @@ class AsyncClient:
 
         # Connect (session cookie from original auth is still in self._session)
         await self._sio.connect(
-          self._server_url,
+          server_url,
           headers=headers if headers else {},
           wait_timeout=self._connection_timeout,
         )

@@ -9,7 +9,7 @@ This example shows how to:
 5. Manage the connection lifecycle
 
 Basic usage:
-    client = AsyncClient(server_url="http://localhost:8000")
+    client = AsyncClient(config=Config(server_url="http://localhost:8000"))
     client.on("message", handle_message)
     await client.login("user@example.com")  # Request magic link
     await client.connect(token="magic-link-token")  # Connect
@@ -29,6 +29,7 @@ from textual.reactive import reactive
 from textual.widgets import Static, TextArea
 
 from roomz.client import AsyncClient
+from roomz.client.config import Config
 
 # =============================================================================
 # UI Components (implementation details)
@@ -139,16 +140,30 @@ class ChatApp(App[None]):
 
   messages: reactive[list[MessageWidget]] = reactive(list)
 
-  def __init__(self, server_url: str = "http://localhost:8000"):
+  def __init__(self, config: Config | None = None):
+    """
+    Initialize the chat application.
+
+    Args:
+      config: Configuration object. If None, auto-discovers from environment
+               and config files (./roomz.toml, ~/.roomz.toml)
+
+    Example:
+      >>> # Explicit config
+      >>> config = Config(server_url="http://localhost:8000")
+      >>> app = ChatApp(config=config)
+
+      >>> # Auto-discovery
+      >>> app = ChatApp()
+    """
     super().__init__()
-    self.server_url = server_url
     self.email: str | None = None
 
     # Create client instance once
     # Session caching: store session cookie to auto-reconnect
     # Set to None to disable caching
     self.client = AsyncClient(
-      server_url=self.server_url,
+      config=config,
       session_cache_file=Path.home() / ".roomz" / "session.json",
     )
 
@@ -408,9 +423,23 @@ class ChatApp(App[None]):
     await self.client.disconnect()
 
 
-def run_tui(server_url: str = "http://localhost:8000") -> None:
-  """Run the TUI chat application."""
-  app = ChatApp(server_url=server_url)
+def run_tui(config: Config | None = None) -> None:
+  """
+  Run the TUI chat application.
+
+  Args:
+    config: Configuration object. If None, auto-discovers from environment
+             and config files (./roomz.toml, ~/.roomz.toml)
+
+  Example:
+    >>> # Explicit config
+    >>> config = Config(server_url="http://localhost:8000")
+    >>> run_tui(config=config)
+
+    >>> # Auto-discovery
+    >>> run_tui()
+  """
+  app = ChatApp(config=config)
   app.run()
 
 
@@ -421,9 +450,15 @@ if __name__ == "__main__":
   parser.add_argument(
     "--server",
     "-s",
-    default="http://localhost:8000",
-    help="Server URL (default: http://localhost:8000)",
+    default=None,
+    help="Server URL (default: auto-discover from env/config)",
   )
   args = parser.parse_args()
 
-  run_tui(server_url=args.server)
+  # Create config from server URL if provided, otherwise auto-discover
+  if args.server:
+    config = Config(server_url=args.server)
+  else:
+    config = None  # Auto-discover
+
+  run_tui(config=config)
