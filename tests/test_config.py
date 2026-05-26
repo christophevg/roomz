@@ -234,11 +234,12 @@ display_name = "FileUser"
       clear=True,
     ):
       with mock.patch.object(Path, "cwd", return_value=tmp_path):
-        config = Config.auto_discover()
-        # Env var takes precedence
-        assert config.server_url == "http://env.example.com"
-        # File value for missing env var
-        assert config.display_name == "FileUser"
+        with mock.patch.object(Path, "home", return_value=tmp_path):
+          config = Config.auto_discover()
+          # Env var takes precedence
+          assert config.server_url == "http://env.example.com"
+          # File value for missing env var
+          assert config.display_name == "FileUser"
 
   def test_auto_discover_none(self) -> None:
     """Test auto-discovery when no config available."""
@@ -289,21 +290,23 @@ server_url = "http://file.example.com"
       {"ROOMZ_DISPLAY_NAME": "EnvUser"},
       clear=True,
     ):
-      result = resolve_config(config_path=config_file)
-      # File value
-      assert result.server_url == "http://file.example.com"
-      # Auto-discovered value fills in None
-      assert result.display_name == "EnvUser"
+      with mock.patch.object(Path, "home", return_value=tmp_path):
+        result = resolve_config(config_path=config_file)
+        # File value
+        assert result.server_url == "http://file.example.com"
+        # Auto-discovered value fills in None
+        assert result.display_name == "EnvUser"
 
-  def test_resolve_config_auto_discover(self) -> None:
+  def test_resolve_config_auto_discover(self, tmp_path: Path) -> None:
     """Test resolve_config with auto-discovery."""
     with mock.patch.dict(
       os.environ,
       {"ROOMZ_SERVER_URL": "http://auto.com"},
       clear=True,
     ):
-      result = resolve_config()
-      assert result.server_url == "http://auto.com"
+      with mock.patch.object(Path, "home", return_value=tmp_path):
+        result = resolve_config()
+        assert result.server_url == "http://auto.com"
 
   def test_resolve_config_priority(self, tmp_path: Path) -> None:
     """Test resolve_config priority order."""

@@ -456,6 +456,7 @@ if __name__ == "__main__":
   args = parser.parse_args()
 
   # Create config from server URL if provided, otherwise auto-discover
+  config: Config | None
   if args.server:
     config = Config(server_url=args.server)
   else:
