@@ -43,7 +43,7 @@ class Config:
   Example:
     >>> config = Config(server_url="http://localhost:5000", display_name="Alice")
     >>> config = Config.load("~/.roomz.toml")
-    >>> config = Config.auto_discover()
+    >>> config, path = Config.auto_discover()
 
   Resolution Order:
     Each config value is resolved in this order:
@@ -120,7 +120,7 @@ class Config:
 
     Raises:
       FileNotFoundError: If config file doesn't exist
-      ValueError: If config file is invalid TOML
+      ConfigurationError: If config file is invalid TOML
 
     Example:
       >>> config = Config.load("~/.roomz.toml")
@@ -132,6 +132,9 @@ class Config:
       server_url = "http://localhost:5000"
       display_name = "Alice"
     """
+    # Import here to avoid circular import at module level
+    from roomz.client.exceptions import ConfigurationError
+
     config_path = Path(config_path).expanduser()
 
     if not config_path.exists():
@@ -148,11 +151,11 @@ class Config:
         server_url=client_config.get("server_url"),
         display_name=client_config.get("display_name"),
       )
-    except Exception as e:
-      raise ValueError(f"Failed to parse config file {config_path}: {e}") from e
+    except (OSError, ValueError) as e:
+      raise ConfigurationError(f"Failed to parse config file {config_path}: {e}") from e
 
   @classmethod
-  def auto_discover(cls) -> Config:
+  def auto_discover(cls) -> tuple[Config, Path | None]:
     """
     Auto-discover configuration from environment and files.
 
@@ -162,19 +165,30 @@ class Config:
       3. ~/.roomz.toml (user home directory)
 
     Returns:
-      Config instance with discovered values (may have None values)
+      Tuple of (Config instance, discovered config file path or None)
+      The config file path is useful for debugging/logging which file was used.
+
+    Raises:
+      ConfigurationError: If a config file exists but is invalid
 
     Example:
       >>> # With ROOMZ_SERVER_URL env var set
-      >>> config = Config.auto_discover()
+      >>> config, path = Config.auto_discover()
       >>> config.server_url
       'http://example.com'
+      >>> path is None  # No file was used
+      True
 
       >>> # With ./roomz.toml file
-      >>> config = Config.auto_discover()
+      >>> config, path = Config.auto_discover()
       >>> config.server_url
       'http://localhost:5000'
+      >>> path.name
+      'roomz.toml'
     """
+    # Import here to avoid circular import at module level
+    from roomz.client.exceptions import ConfigurationError
+
     # Get prefix from environment
     prefix = os.environ.get("ROOMZ_PREFIX", "")
 
@@ -182,17 +196,25 @@ class Config:
     server_url = cls._get_env_var(prefix, "ROOMZ_SERVER_URL")
     display_name = cls._get_env_var(prefix, "ROOMZ_DISPLAY_NAME")
 
+    # Track discovered path for logging
+    discovered_path: Path | None = None
+    discovered_location: str | None = None
+
     # If both values are set from env, return early
     if server_url is not None and display_name is not None:
-      return cls(server_url=server_url, display_name=display_name)
+      logger.info(
+        "config_discovered",
+        extra={"path": None, "location": "environment", "server_url": server_url}
+      )
+      return cls(server_url=server_url, display_name=display_name), None
 
     # Try config files
     config_files = [
-      Path.cwd() / "roomz.toml",  # ./roomz.toml
-      Path.home() / ".roomz.toml",  # ~/.roomz.toml
+      (Path.cwd() / "roomz.toml", "cwd"),  # ./roomz.toml
+      (Path.home() / ".roomz.toml", "home"),  # ~/.roomz.toml
     ]
 
-    for config_file in config_files:
+    for config_file, location in config_files:
       if config_file.exists():
         try:
           file_config = cls.load(config_file)
@@ -201,21 +223,36 @@ class Config:
             server_url = file_config.server_url
           if display_name is None:
             display_name = file_config.display_name
-          # Found a config file, stop searching
+          # Found a valid config file, stop searching
+          discovered_path = config_file
+          discovered_location = location
           break
         except (OSError, ValueError) as e:
           # OSError: file reading issues
           # ValueError: TOML parsing errors (from cls.load)
-          logger.warning(f"Failed to load config file {config_file}: {e}")
+          # Raise ConfigurationError instead of just logging
+          raise ConfigurationError(
+            f"Failed to load config file {config_file}: {e}"
+          ) from e
 
     config = cls(server_url=server_url, display_name=display_name)
+
+    # Log discovered config
+    logger.info(
+      "config_discovered",
+      extra={
+        "path": str(discovered_path) if discovered_path else None,
+        "location": discovered_location or "environment",
+        "server_url": server_url,
+      }
+    )
 
     # Validate discovered config and log warnings for issues
     errors = config.validate()
     for error in errors:
       logger.warning(f"Configuration validation: {error}")
 
-    return config
+    return config, discovered_path
 
   def merge(self, other: Config) -> Config:
     """
@@ -307,8 +344,9 @@ def resolve_config(
     # Load from explicit path
     explicit_config = Config.load(config_path)
     # Merge with auto-discovered (auto-discovered values fill in None)
-    auto_config = Config.auto_discover()
+    auto_config, _ = Config.auto_discover()
     return explicit_config.merge(auto_config)
 
   # Priority 4-6: Auto-discover from environment and files
-  return Config.auto_discover()
+  config, _ = Config.auto_discover()
+  return config
