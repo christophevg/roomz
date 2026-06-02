@@ -95,11 +95,14 @@ class TestAsyncClientInit:
     When: Instantiating with server_url and session_token
     Then: Client is created with optional config
     """
-    client = AsyncClient(config=Config(server_url="http://localhost:5000"), session_token="test-token",
+    client = AsyncClient(
+      config=Config(server_url="http://localhost:5000"),
+      session_token="test-token",
       reconnect=True,
       reconnect_delay=1.0,
       max_reconnect_attempts=5,
-      connection_timeout=10.0,)
+      connection_timeout=10.0,
+    )
 
     assert client.server_url == "http://localhost:5000"
     assert client._session_token == "test-token"
@@ -110,7 +113,10 @@ class TestAsyncClientInit:
 
   def test_async_client_default_parameters(self):
     """Test that AsyncClient has sensible defaults."""
-    client = AsyncClient(config=Config(server_url="http://localhost:5000"), session_token="test-token",)
+    client = AsyncClient(
+      config=Config(server_url="http://localhost:5000"),
+      session_token="test-token",
+    )
 
     assert client._reconnect is True
     assert client._reconnect_delay == 1.0
@@ -123,7 +129,10 @@ class TestAsyncClientInit:
     from pathlib import Path
 
     cache_file = Path("/tmp/test_session.json")
-    client = AsyncClient(config=Config(server_url="http://localhost:5000"), session_cache_file=cache_file,)
+    client = AsyncClient(
+      config=Config(server_url="http://localhost:5000"),
+      session_cache_file=cache_file,
+    )
 
     assert client._session_cache_file == cache_file
 
@@ -135,13 +144,19 @@ class TestAsyncClientInit:
 
   def test_async_client_state_property(self):
     """Test that state property exists and returns ConnectionState."""
-    client = AsyncClient(config=Config(server_url="http://localhost:5000"), session_token="test-token",)
+    client = AsyncClient(
+      config=Config(server_url="http://localhost:5000"),
+      session_token="test-token",
+    )
 
     assert client.connection_state == ConnectionState.DISCONNECTED
 
   def test_async_client_connected_property(self):
     """Test that connected property exists and returns bool."""
-    client = AsyncClient(config=Config(server_url="http://localhost:5000"), session_token="test-token",)
+    client = AsyncClient(
+      config=Config(server_url="http://localhost:5000"),
+      session_token="test-token",
+    )
 
     assert client.connected is False
 
@@ -151,7 +166,10 @@ class TestAsyncClientEventHandling:
 
   def test_async_client_on_method(self):
     """Test that on() method registers event handlers."""
-    client = AsyncClient(config=Config(server_url="http://localhost:5000"), session_token="test-token",)
+    client = AsyncClient(
+      config=Config(server_url="http://localhost:5000"),
+      session_token="test-token",
+    )
 
     handler = MagicMock()
     client.on("message", handler)
@@ -160,7 +178,10 @@ class TestAsyncClientEventHandling:
 
   def test_async_client_off_method(self):
     """Test that off() method removes event handlers."""
-    client = AsyncClient(config=Config(server_url="http://localhost:5000"), session_token="test-token",)
+    client = AsyncClient(
+      config=Config(server_url="http://localhost:5000"),
+      session_token="test-token",
+    )
 
     handler = MagicMock()
     client.on("message", handler)
@@ -170,7 +191,10 @@ class TestAsyncClientEventHandling:
 
   def test_async_client_off_all_handlers(self):
     """Test that off() without handler removes all handlers."""
-    client = AsyncClient(config=Config(server_url="http://localhost:5000"), session_token="test-token",)
+    client = AsyncClient(
+      config=Config(server_url="http://localhost:5000"),
+      session_token="test-token",
+    )
 
     handler1 = MagicMock()
     handler2 = MagicMock()
@@ -182,7 +206,10 @@ class TestAsyncClientEventHandling:
 
   def test_async_client_multiple_listeners_same_event(self):
     """Test that multiple listeners can be registered for same event."""
-    client = AsyncClient(config=Config(server_url="http://localhost:5000"), session_token="test-token",)
+    client = AsyncClient(
+      config=Config(server_url="http://localhost:5000"),
+      session_token="test-token",
+    )
 
     handler1 = MagicMock()
     handler2 = MagicMock()
@@ -196,7 +223,10 @@ class TestAsyncClientEventHandling:
   @pytest.mark.asyncio
   async def test_async_client_emit_event(self):
     """Test that emit() calls all registered handlers."""
-    client = AsyncClient(config=Config(server_url="http://localhost:5000"), session_token="test-token",)
+    client = AsyncClient(
+      config=Config(server_url="http://localhost:5000"),
+      session_token="test-token",
+    )
 
     results = []
 
@@ -221,7 +251,10 @@ class TestAsyncClientSend:
   @pytest.mark.asyncio
   async def test_async_client_send_not_connected_raises_error(self):
     """Test that send() raises ConnectionError when not connected."""
-    client = AsyncClient(config=Config(server_url="http://localhost:5000"), session_token="test-token",)
+    client = AsyncClient(
+      config=Config(server_url="http://localhost:5000"),
+      session_token="test-token",
+    )
 
     with pytest.raises(ConnectionError):
       await client.send("test message")
@@ -229,7 +262,10 @@ class TestAsyncClientSend:
   @pytest.mark.asyncio
   async def test_async_client_send_returns_acknowledgment(self):
     """Test that send() returns acknowledgment dict on success."""
-    client = AsyncClient(config=Config(server_url="http://localhost:5000"), session_token="test-token",)
+    client = AsyncClient(
+      config=Config(server_url="http://localhost:5000"),
+      session_token="test-token",
+    )
 
     # Mock Socket.IO client
     mock_sio = AsyncMock()
@@ -270,11 +306,14 @@ class TestSyncClientInit:
     When: Instantiating with server_url and session_token
     Then: Client is created with same options as AsyncClient
     """
-    client = SyncClient(config=Config(server_url="http://localhost:5000"), session_token="test-token",
+    client = SyncClient(
+      config=Config(server_url="http://localhost:5000"),
+      session_token="test-token",
       reconnect=True,
       reconnect_delay=1.0,
       max_reconnect_attempts=5,
-      connection_timeout=10.0,)
+      connection_timeout=10.0,
+    )
 
     assert client._async_client is not None
     assert client._async_client.server_url == "http://localhost:5000"
@@ -282,7 +321,10 @@ class TestSyncClientInit:
 
   def test_sync_client_properties(self):
     """Test that SyncClient exposes same properties as AsyncClient."""
-    client = SyncClient(config=Config(server_url="http://localhost:5000"), session_token="test-token",)
+    client = SyncClient(
+      config=Config(server_url="http://localhost:5000"),
+      session_token="test-token",
+    )
 
     # Properties should delegate to async client
     assert client.connected is False
@@ -295,7 +337,10 @@ class TestSyncClientEventHandling:
 
   def test_sync_client_on_method(self):
     """Test that on() method registers event handlers."""
-    client = SyncClient(config=Config(server_url="http://localhost:5000"), session_token="test-token",)
+    client = SyncClient(
+      config=Config(server_url="http://localhost:5000"),
+      session_token="test-token",
+    )
 
     handler = MagicMock()
     client.on("message", handler)
@@ -304,7 +349,10 @@ class TestSyncClientEventHandling:
 
   def test_sync_client_off_method(self):
     """Test that off() method removes event handlers."""
-    client = SyncClient(config=Config(server_url="http://localhost:5000"), session_token="test-token",)
+    client = SyncClient(
+      config=Config(server_url="http://localhost:5000"),
+      session_token="test-token",
+    )
 
     handler = MagicMock()
     client.on("message", handler)
@@ -326,7 +374,10 @@ class TestAsyncClientConnection:
     """
     Test that connect() creates aiohttp session and verifies token.
     """
-    client = AsyncClient(config=Config(server_url="http://localhost:5000"), session_token="test-token",)
+    client = AsyncClient(
+      config=Config(server_url="http://localhost:5000"),
+      session_token="test-token",
+    )
 
     # Mock aiohttp session
     with patch("aiohttp.ClientSession") as mock_session_class:
@@ -382,7 +433,10 @@ class TestAsyncClientConnection:
   @pytest.mark.asyncio
   async def test_async_client_disconnect_cleans_up(self):
     """Test that disconnect() closes session and updates state."""
-    client = AsyncClient(config=Config(server_url="http://localhost:5000"), session_token="test-token",)
+    client = AsyncClient(
+      config=Config(server_url="http://localhost:5000"),
+      session_token="test-token",
+    )
 
     # Setup mock session
     mock_session = AsyncMock()
@@ -474,7 +528,10 @@ class TestAsyncClientSessionCaching:
 
     with tempfile.TemporaryDirectory() as tmpdir:
       cache_file = Path(tmpdir) / "session.json"
-      client = AsyncClient(config=Config(server_url="http://localhost:5000"), session_cache_file=cache_file,)
+      client = AsyncClient(
+        config=Config(server_url="http://localhost:5000"),
+        session_cache_file=cache_file,
+      )
 
       client._save_session_cookie("test-cookie-value")
 
@@ -495,7 +552,10 @@ class TestAsyncClientSessionCaching:
         json.dumps({"session_cookie": "test-cookie", "server": "http://other-server:5000"})
       )
 
-      client = AsyncClient(config=Config(server_url="http://localhost:5000"), session_cache_file=cache_file,)
+      client = AsyncClient(
+        config=Config(server_url="http://localhost:5000"),
+        session_cache_file=cache_file,
+      )
 
       loaded = client._load_session_cookie()
 
@@ -508,7 +568,10 @@ class TestAsyncClientSessionCaching:
 
     with tempfile.TemporaryDirectory() as tmpdir:
       cache_file = Path(tmpdir) / "session.json"
-      client = AsyncClient(config=Config(server_url="http://localhost:5000"), session_cache_file=cache_file,)
+      client = AsyncClient(
+        config=Config(server_url="http://localhost:5000"),
+        session_cache_file=cache_file,
+      )
 
       client._save_session_cookie("test-cookie")
       assert cache_file.exists()
@@ -524,7 +587,10 @@ class TestAsyncClientContextManager:
   @pytest.mark.asyncio
   async def test_async_client_context_manager_connects(self):
     """Test that async context manager calls connect()."""
-    client = AsyncClient(config=Config(server_url="http://localhost:5000"), session_token="test-token",)
+    client = AsyncClient(
+      config=Config(server_url="http://localhost:5000"),
+      session_token="test-token",
+    )
 
     # Mock the connect method
     client.connect = AsyncMock()
@@ -537,7 +603,10 @@ class TestAsyncClientContextManager:
   @pytest.mark.asyncio
   async def test_async_client_context_manager_disconnects(self):
     """Test that async context manager calls disconnect() on exit."""
-    client = AsyncClient(config=Config(server_url="http://localhost:5000"), session_token="test-token",)
+    client = AsyncClient(
+      config=Config(server_url="http://localhost:5000"),
+      session_token="test-token",
+    )
 
     # Mock the methods
     client.connect = AsyncMock()
@@ -554,7 +623,10 @@ class TestSyncClientContextManager:
 
   def test_sync_client_context_manager_connects(self):
     """Test that context manager calls connect()."""
-    client = SyncClient(config=Config(server_url="http://localhost:5000"), session_token="test-token",)
+    client = SyncClient(
+      config=Config(server_url="http://localhost:5000"),
+      session_token="test-token",
+    )
 
     # Mock the connect method
     client.connect = MagicMock()
@@ -566,7 +638,10 @@ class TestSyncClientContextManager:
 
   def test_sync_client_context_manager_disconnects(self):
     """Test that context manager calls disconnect() on exit."""
-    client = SyncClient(config=Config(server_url="http://localhost:5000"), session_token="test-token",)
+    client = SyncClient(
+      config=Config(server_url="http://localhost:5000"),
+      session_token="test-token",
+    )
 
     # Mock the methods
     client.connect = MagicMock()
@@ -648,7 +723,10 @@ class TestAsyncClientDisplayNameMethod:
     When: Checking for set_display_name method
     Then: Method exists and is callable
     """
-    client = AsyncClient(config=Config(server_url="http://localhost:5000"), session_token="test-token",)
+    client = AsyncClient(
+      config=Config(server_url="http://localhost:5000"),
+      session_token="test-token",
+    )
     assert hasattr(client, "set_display_name")
     assert callable(client.set_display_name)
 
@@ -662,7 +740,10 @@ class TestAsyncClientDisplayNameMethod:
     Then: Socket.IO emit is called with event "set_display_name"
     And: Payload is {"display_name": "Laptop"}
     """
-    client = AsyncClient(config=Config(server_url="http://localhost:5000"), session_token="test-token",)
+    client = AsyncClient(
+      config=Config(server_url="http://localhost:5000"),
+      session_token="test-token",
+    )
 
     # Mock Socket.IO client
     mock_sio = AsyncMock()
@@ -689,7 +770,10 @@ class TestAsyncClientDisplayNameMethod:
     When: Calling set_display_name("Laptop")
     Then: Returns {"status": "ok", "display_name": "Laptop"}
     """
-    client = AsyncClient(config=Config(server_url="http://localhost:5000"), session_token="test-token",)
+    client = AsyncClient(
+      config=Config(server_url="http://localhost:5000"),
+      session_token="test-token",
+    )
 
     # Mock Socket.IO client
     mock_sio = AsyncMock()
@@ -717,7 +801,10 @@ class TestAsyncClientDisplayNameMethod:
     Then: Socket.IO emit is called with {"display_name": null}
     And: Display name is cleared on server
     """
-    client = AsyncClient(config=Config(server_url="http://localhost:5000"), session_token="test-token",)
+    client = AsyncClient(
+      config=Config(server_url="http://localhost:5000"),
+      session_token="test-token",
+    )
 
     # Mock Socket.IO client
     mock_sio = AsyncMock()
@@ -744,7 +831,10 @@ class TestAsyncClientDisplayNameMethod:
     When: Calling set_display_name("")
     Then: Socket.IO emit is called with {"display_name": null}
     """
-    client = AsyncClient(config=Config(server_url="http://localhost:5000"), session_token="test-token",)
+    client = AsyncClient(
+      config=Config(server_url="http://localhost:5000"),
+      session_token="test-token",
+    )
 
     # Mock Socket.IO client
     mock_sio = AsyncMock()
@@ -771,7 +861,10 @@ class TestAsyncClientDisplayNameMethod:
     When: Calling set_display_name("Laptop")
     Then: Raises ConnectionError
     """
-    client = AsyncClient(config=Config(server_url="http://localhost:5000"), session_token="test-token",)
+    client = AsyncClient(
+      config=Config(server_url="http://localhost:5000"),
+      session_token="test-token",
+    )
 
     # Not connected
     client._sio = None
@@ -788,7 +881,10 @@ class TestAsyncClientDisplayNameMethod:
     When: Calling set_display_name("Laptop")
     Then: client.display_name property is set to "Laptop"
     """
-    client = AsyncClient(config=Config(server_url="http://localhost:5000"), session_token="test-token",)
+    client = AsyncClient(
+      config=Config(server_url="http://localhost:5000"),
+      session_token="test-token",
+    )
 
     # Mock Socket.IO client
     mock_sio = AsyncMock()
@@ -822,7 +918,10 @@ class TestAsyncClientDisplayNameProperty:
     When: Checking display_name property
     Then: Property exists and returns None by default
     """
-    client = AsyncClient(config=Config(server_url="http://localhost:5000"), session_token="test-token",)
+    client = AsyncClient(
+      config=Config(server_url="http://localhost:5000"),
+      session_token="test-token",
+    )
     assert hasattr(client, "display_name")
     assert client.display_name is None
 
@@ -834,7 +933,10 @@ class TestAsyncClientDisplayNameProperty:
     When: Reading display_name property
     Then: Returns "Laptop"
     """
-    client = AsyncClient(config=Config(server_url="http://localhost:5000", display_name="Laptop"), session_token="test-token",)
+    client = AsyncClient(
+      config=Config(server_url="http://localhost:5000", display_name="Laptop"),
+      session_token="test-token",
+    )
     assert client.display_name == "Laptop"
 
   def test_display_name_property_returns_none_when_not_set(self):
@@ -845,7 +947,10 @@ class TestAsyncClientDisplayNameProperty:
     When: Reading display_name property
     Then: Returns None
     """
-    client = AsyncClient(config=Config(server_url="http://localhost:5000"), session_token="test-token",)
+    client = AsyncClient(
+      config=Config(server_url="http://localhost:5000"),
+      session_token="test-token",
+    )
     assert client.display_name is None
 
 
@@ -879,7 +984,6 @@ class TestDisplayNameConfigLoading:
       else:
         os.environ.pop("ROOMZ_DISPLAY_NAME", None)
 
-
   def test_env_var_takes_precedence_over_config(self):
     """
     Test that env var takes precedence over config file.
@@ -894,7 +998,10 @@ class TestDisplayNameConfigLoading:
     try:
       os.environ["ROOMZ_DISPLAY_NAME"] = "Phone"
       # Explicit display_name param should take precedence
-      client = AsyncClient(config=Config(server_url="http://localhost:5000", display_name="Laptop"), session_token="test-token",)
+      client = AsyncClient(
+        config=Config(server_url="http://localhost:5000", display_name="Laptop"),
+        session_token="test-token",
+      )
       # When passed explicitly, it overrides env var
       assert client._display_name == "Laptop"
     finally:
@@ -911,9 +1018,11 @@ class TestDisplayNameConfigLoading:
     When: Creating AsyncClient
     Then: No error, display_name is None
     """
-    client = AsyncClient(config=Config(server_url="http://localhost:5000"), session_token="test-token",)
+    client = AsyncClient(
+      config=Config(server_url="http://localhost:5000"),
+      session_token="test-token",
+    )
     assert client._display_name is None
-
 
   def test_explicit_display_name_overrides_config(self):
     """
@@ -928,7 +1037,10 @@ class TestDisplayNameConfigLoading:
     original = os.environ.get("ROOMZ_DISPLAY_NAME")
     try:
       os.environ["ROOMZ_DISPLAY_NAME"] = "Phone"
-      client = AsyncClient(config=Config(server_url="http://localhost:5000", display_name="Laptop"), session_token="test-token",)
+      client = AsyncClient(
+        config=Config(server_url="http://localhost:5000", display_name="Laptop"),
+        session_token="test-token",
+      )
       assert client._display_name == "Laptop"
     finally:
       if original is not None:
@@ -954,7 +1066,10 @@ class TestDisplayNameAutoSendOnConnect:
     When: Connection is established and authenticated
     Then: set_display_name is called automatically with "Laptop"
     """
-    client = AsyncClient(config=Config(server_url="http://localhost:5000", display_name="Laptop"), session_token="test-token",)
+    client = AsyncClient(
+      config=Config(server_url="http://localhost:5000", display_name="Laptop"),
+      session_token="test-token",
+    )
 
     # Track if set_display_name was called
     set_display_name_called = []
@@ -986,7 +1101,10 @@ class TestDisplayNameAutoSendOnConnect:
     When: Connection is established and authenticated
     Then: set_display_name is NOT called
     """
-    client = AsyncClient(config=Config(server_url="http://localhost:5000"), session_token="test-token",)
+    client = AsyncClient(
+      config=Config(server_url="http://localhost:5000"),
+      session_token="test-token",
+    )
 
     # Track if set_display_name was called
     set_display_name_called = []
@@ -1027,7 +1145,10 @@ class TestDisplayNameEventHandling:
     When: Setting up event handlers
     Then: Handler for "display_name_changed" event is registered
     """
-    client = AsyncClient(config=Config(server_url="http://localhost:5000"), session_token="test-token",)
+    client = AsyncClient(
+      config=Config(server_url="http://localhost:5000"),
+      session_token="test-token",
+    )
 
     # Mock Socket.IO client
     mock_sio = AsyncMock()
@@ -1065,7 +1186,10 @@ class TestDisplayNameEventHandling:
     When: Server sends display_name_changed event
     Then: Handler receives event with user and display_name
     """
-    client = AsyncClient(config=Config(server_url="http://localhost:5000"), session_token="test-token",)
+    client = AsyncClient(
+      config=Config(server_url="http://localhost:5000"),
+      session_token="test-token",
+    )
 
     # Track events emitted
     events_received = []

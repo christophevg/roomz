@@ -204,7 +204,7 @@ class Config:
     if server_url is not None and display_name is not None:
       logger.info(
         "config_discovered",
-        extra={"path": None, "location": "environment", "server_url": server_url}
+        extra={"path": None, "location": "environment", "server_url": server_url},
       )
       return cls(server_url=server_url, display_name=display_name), None
 
@@ -231,9 +231,7 @@ class Config:
           # OSError: file reading issues
           # ValueError: TOML parsing errors (from cls.load)
           # Raise ConfigurationError instead of just logging
-          raise ConfigurationError(
-            f"Failed to load config file {config_file}: {e}"
-          ) from e
+          raise ConfigurationError(f"Failed to load config file {config_file}: {e}") from e
 
     config = cls(server_url=server_url, display_name=display_name)
 
@@ -244,7 +242,7 @@ class Config:
         "path": str(discovered_path) if discovered_path else None,
         "location": discovered_location or "environment",
         "server_url": server_url,
-      }
+      },
     )
 
     # Validate discovered config and log warnings for issues
@@ -275,9 +273,7 @@ class Config:
     """
     return Config(
       server_url=self.server_url if self.server_url is not None else other.server_url,
-      display_name=(
-        self.display_name if self.display_name is not None else other.display_name
-      ),
+      display_name=(self.display_name if self.display_name is not None else other.display_name),
     )
 
   def validate(self) -> list[str]:
