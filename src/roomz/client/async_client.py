@@ -118,9 +118,7 @@ class AsyncClient:
     self._cached_cookie: str | None = None  # Cached JWT cookie for reconnection
 
     # Extract values from config
-    self._display_name = (
-      self._config.display_name.strip() if self._config.display_name else None
-    )
+    self._display_name = self._config.display_name.strip() if self._config.display_name else None
 
     self._connection_state = ConnectionState.DISCONNECTED
     self._user: dict[str, Any] | None = None
@@ -243,9 +241,7 @@ class AsyncClient:
         )
         try:
           with os.fdopen(fd, "w") as f:
-            json.dump(
-              {"session_cookie": cookie_value, "server": self._config.server_url}, f
-            )
+            json.dump({"session_cookie": cookie_value, "server": self._config.server_url}, f)
         except (OSError, TypeError) as e:
           os.close(fd)
           logger.warning(f"Failed to write session cookie: {e}")

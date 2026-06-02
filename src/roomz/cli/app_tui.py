@@ -441,25 +441,3 @@ def run_tui(config: Config | None = None) -> None:
   """
   app = ChatApp(config=config)
   app.run()
-
-
-if __name__ == "__main__":
-  import argparse
-
-  parser = argparse.ArgumentParser(description="Roomz Chat TUI")
-  parser.add_argument(
-    "--server",
-    "-s",
-    default=None,
-    help="Server URL (default: auto-discover from env/config)",
-  )
-  args = parser.parse_args()
-
-  # Create config from server URL if provided, otherwise auto-discover
-  config: Config | None
-  if args.server:
-    config = Config(server_url=args.server)
-  else:
-    config = None  # Auto-discover
-
-  run_tui(config=config)
