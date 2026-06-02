@@ -282,6 +282,28 @@
     - ✅ Basic offline functionality works
     - ✅ PWA passes Lighthouse audit
 
+- [ ] **I8-004: Replace config module with clevis package** (Issue #5)
+  - Replace custom configuration code (353 lines in `src/roomz/config/`) with clevis package
+  - Use `cli=False` when AsyncClient creates Config object
+  - Accept an `args` argument that can be passed to `clevis.get_config()`
+  - Update TOML format from `[client]` section to top-level (breaking change acceptable)
+  - Remove `src/roomz/config/` module entirely
+  - Update AsyncClient to use new config approach
+  - All existing tests must pass
+  - Document new configuration approach in README
+  - Reference: research/clevis-evaluation.md
+  - **Delivers**: 300+ lines reduction, improved maintainability, standardized config pattern
+  - **Satisfies**: Technical debt reduction, improved code quality
+  - **Priority**: P2
+  - **Acceptance**:
+    - ✅ Custom config module removed entirely
+    - ✅ AsyncClient uses clevis with `cli=False`
+    - ✅ `args` argument supported for config loading
+    - ✅ TOML format updated to top-level (no `[client]` section)
+    - ✅ All existing tests pass without modification
+    - ✅ README updated with new config approach
+    - ✅ Breaking change documented in changelog
+
 - [ ] **I8-002: Investigate mobile message loss on refresh**
   - Investigate bug: messages disappear when app has been open for a while
   - Determine root cause (WebSocket reconnection? Server restart? Browser behavior?)
@@ -454,3 +476,4 @@
     - ✅ Works on mobile (responsive layout)
 
 **Result**: Open the web app, type a message, see it appear on all connected browsers. Pure real-time chat, no auth, no persistence, no rooms.
+
