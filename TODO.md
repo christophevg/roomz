@@ -313,6 +313,23 @@
     - ✅ Root cause identified
     - ✅ Solution approach documented
 
+- [ ] **I8-005: Deduplicate CLI entry point code** (Issue #3)
+  - Refactor duplicate CLI entry point code from `__init__.py` and `__main__.py`
+  - Create separate `cli` module (not in existing options A/B/C)
+  - Call from script definition and `__main__.py`
+  - Clean up `__init__.py`
+  - **Owner-specified approach**: Create `src/roomz/cli/cli.py` module with shared CLI logic
+  - **Satisfies**: Technical debt reduction, code quality
+  - **Priority**: P3 (technical debt/refactoring)
+  - **Delivers**: Single source of truth for CLI entry point
+  - **Acceptance**:
+    - ✅ Create `src/roomz/cli/cli.py` module with shared CLI logic
+    - ✅ Update `__main__.py` to import and call the new cli module
+    - ✅ Clean up `__init__.py` - remove duplicate code
+    - ✅ Update pyproject.toml script definition if needed
+    - ✅ All existing tests pass
+    - ✅ No functional changes - only code reorganization
+
 - [ ] **I8-003: Local message caching**
   - Cache room messages in browser storage (localStorage/IndexedDB)
   - Messages need unique IDs for incremental sync
