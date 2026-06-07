@@ -15,11 +15,11 @@ import socketio  # type: ignore[import-untyped]
 from clevis import SecurityAction, get_config
 from yarl import URL
 
-from roomz.client.config import RoomzConfig
 from roomz.client.events import EventEmitter, EventHandler
 from roomz.client.exceptions import AuthenticationError, ConfigurationError, ConnectionError
 from roomz.client.session import load_session_cache, save_session_cache
 from roomz.client.state import ConnectionState
+from roomz.config import ClientConfig
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +35,7 @@ class AsyncClient:
     4. Dataclass defaults
 
   Usage with explicit config:
-    config = RoomzConfig(server_url="http://localhost:5000")
+    config = ClientConfig(server_url="http://localhost:5000", display_name="Alice")
     async with AsyncClient(config=config) as client:
       client.on('message', handle_message)
       await client.send("Hello, world!")
@@ -66,7 +66,7 @@ class AsyncClient:
 
   def __init__(
     self,
-    config: RoomzConfig | None = None,
+    config: ClientConfig | None = None,
     args: list[str] | None = None,
     session_token: str = "",
     session_cache_file: str | Path | None = None,
@@ -102,7 +102,7 @@ class AsyncClient:
 
     Example:
       >>> # Explicit config
-      >>> config = RoomzConfig(client=ClientConfig(server_url="http://localhost:5000", display_name="Alice"))
+      >>> config = ClientConfig(server_url="http://localhost:5000", display_name="Alice")
       >>> client = AsyncClient(config=config)
 
       >>> # Auto-discovery
@@ -113,7 +113,7 @@ class AsyncClient:
       self._config = config
     else:
       self._config = get_config(
-        RoomzConfig,
+        ClientConfig,
         name="roomz",
         cli=False,
         security={
@@ -132,7 +132,7 @@ class AsyncClient:
 
     # Extract values from config
     self._display_name = (
-      self._config.client.display_name.strip() if self._config.client.display_name else None
+      self._config.display_name.strip() if self._config.display_name else None
     )
 
     self._connection_state = ConnectionState.DISCONNECTED
@@ -165,7 +165,7 @@ class AsyncClient:
   @property
   def server_url(self) -> str | None:
     """WebSocket server URL from configuration."""
-    return self._config.client.server_url
+    return self._config.server_url
 
   def on(self, event: str, handler: EventHandler) -> None:
     """
@@ -203,7 +203,7 @@ class AsyncClient:
       ConnectionError: If request fails
     """
     # Validate configuration
-    if self._config.client.server_url is None:
+    if self._config.server_url is None:
       raise ConfigurationError(
         "server_url is not configured. "
         "Provide config with server_url, set ROOMZ_SERVER_URL, "
@@ -213,7 +213,7 @@ class AsyncClient:
     if not self._session:
       self._session = aiohttp.ClientSession()
 
-    url = f"{self._config.client.server_url}/auth/request-magic-link"
+    url = f"{self._config.server_url}/auth/request-magic-link"
     try:
       async with self._session.post(url, json={"email": email}) as resp:
         if resp.status == 200:
@@ -248,7 +248,7 @@ class AsyncClient:
 
     cache_file = self._session_cache_file if self._session_cache_file else None
     if cache_file:
-      save_session_cache(cookie_value, self._config.client.server_url, cache_file=cache_file)
+      save_session_cache(cookie_value, self._config.server_url, cache_file=cache_file)
 
   def _load_session_cookie(self) -> str | None:
     """
@@ -268,7 +268,7 @@ class AsyncClient:
       return None
 
     cached_data = load_session_cache(cache_file=cache_file)
-    if cached_data and cached_data.get("server") == self._config.client.server_url:
+    if cached_data and cached_data.get("server") == self._config.server_url:
       cookie = cached_data.get("session_cookie")
       return str(cookie) if cookie else None
     return None
@@ -287,7 +287,7 @@ class AsyncClient:
       AuthenticationError: If authentication fails
     """
     # Validate configuration
-    if self._config.client.server_url is None:
+    if self._config.server_url is None:
       raise ConfigurationError(
         "server_url is not configured. "
         "Provide config with server_url, set ROOMZ_SERVER_URL, "
@@ -295,7 +295,7 @@ class AsyncClient:
       )
 
     # Store as non-optional for type checker
-    server_url = self._config.client.server_url
+    server_url = self._config.server_url
 
     self._connection_state = ConnectionState.CONNECTING
 
@@ -313,7 +313,7 @@ class AsyncClient:
         cached_data = load_session_cache(cache_file=cache_file)
         if cached_data:
           # Only use cookie if server matches
-          if cached_data.get("server") == self._config.client.server_url:
+          if cached_data.get("server") == self._config.server_url:
             cached_cookie = cached_data.get("session_cookie")
             if cached_cookie:
               # Set the cached session cookie in the cookie jar
@@ -337,7 +337,7 @@ class AsyncClient:
           if session_cookie:
             cache_file = self._session_cache_file if self._session_cache_file else None
             save_session_cache(
-              session_cookie.value, self._config.client.server_url, cache_file=cache_file
+              session_cookie.value, self._config.server_url, cache_file=cache_file
             )
             self._cached_cookie = session_cookie.value
 
@@ -563,12 +563,12 @@ class AsyncClient:
     self._connection_state = ConnectionState.RECONNECTING
 
     # Validate server_url is configured (should be if connect() was called)
-    if self._config.client.server_url is None:
+    if self._config.server_url is None:
       logger.error("Cannot reconnect: server_url not configured")
       self._connection_state = ConnectionState.DISCONNECTED
       return
 
-    server_url = self._config.client.server_url
+    server_url = self._config.server_url
 
     while self._reconnect and self._reconnect_attempts < self._max_reconnect_attempts:
       self._reconnect_attempts += 1

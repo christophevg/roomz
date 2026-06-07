@@ -13,7 +13,7 @@ from unittest import mock
 import pytest
 from clevis import get_config
 
-from roomz.client.config import RoomzConfig
+from roomz.config import RoomzConfig
 
 # Windows detection
 IS_WINDOWS = platform.system() == "Windows" or os.name == "nt"

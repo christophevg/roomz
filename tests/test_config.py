@@ -10,8 +10,8 @@ from unittest import mock
 import pytest
 from clevis import SecurityAction, get_config
 
-from roomz.client.config import ClientConfig, RoomzConfig
 from roomz.client.exceptions import ConfigurationError
+from roomz.config import ClientConfig, RoomzConfig
 
 # Windows detection
 IS_WINDOWS = platform.system() == "Windows" or os.name == "nt"
@@ -217,15 +217,13 @@ server_url = "http://test.com"
 
 
 class TestIntegration:
-  """Integration tests for RoomzConfig with AsyncClient."""
+  """Integration tests for ClientConfig with AsyncClient."""
 
   def test_config_used_by_async_client(self) -> None:
-    """Test that RoomzConfig is properly used by AsyncClient."""
+    """Test that ClientConfig is properly used by AsyncClient."""
     from roomz.client import AsyncClient
 
-    config = RoomzConfig(
-      client=ClientConfig(server_url="http://localhost:5000", display_name="TestUser")
-    )
+    config = ClientConfig(server_url="http://localhost:5000", display_name="TestUser")
     client = AsyncClient(config=config)
 
     assert client.server_url == "http://localhost:5000"
@@ -235,7 +233,7 @@ class TestIntegration:
     """Test that connecting without server_url raises ConfigurationError."""
     from roomz.client import AsyncClient
 
-    client = AsyncClient(config=RoomzConfig())
+    client = AsyncClient(config=ClientConfig())
     with pytest.raises(ConfigurationError, match="server_url is not configured"):
       import asyncio
 

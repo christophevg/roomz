@@ -30,7 +30,7 @@ from textual.reactive import reactive
 from textual.widgets import Static, TextArea
 
 from roomz.client import AsyncClient
-from roomz.client.config import RoomzConfig
+from roomz.config import ClientConfig
 
 # =============================================================================
 # UI Components (implementation details)
@@ -141,7 +141,7 @@ class ChatApp(App[None]):
 
   messages: reactive[list[MessageWidget]] = reactive(list)
 
-  def __init__(self, config: RoomzConfig | None = None):
+  def __init__(self, config: ClientConfig | None = None):
     """
     Initialize the chat application.
 
@@ -151,7 +151,7 @@ class ChatApp(App[None]):
 
     Example:
       >>> # Explicit config
-      >>> config = RoomzConfig(client=ClientConfig(server_url="http://localhost:8000"))
+      >>> config = ClientConfig(server_url="http://localhost:8000", display_name="Alice")
       >>> app = ChatApp(config=config)
 
       >>> # Auto-discovery
@@ -424,7 +424,7 @@ class ChatApp(App[None]):
     await self.client.disconnect()
 
 
-def run_tui(config: RoomzConfig | None = None, args: list[str] | None = None) -> None:
+def run_tui(config: ClientConfig | None = None, args: list[str] | None = None) -> None:
   """
   Run the TUI chat application.
 
@@ -444,7 +444,7 @@ def run_tui(config: RoomzConfig | None = None, args: list[str] | None = None) ->
 
   Example:
     >>> # Explicit config
-    >>> config = RoomzConfig(client=ClientConfig(server_url="http://localhost:8000"))
+    >>> config = ClientConfig(server_url="http://localhost:8000", display_name="Alice")
     >>> run_tui(config=config)
 
     >>> # Auto-discovery with CLI args
@@ -455,7 +455,7 @@ def run_tui(config: RoomzConfig | None = None, args: list[str] | None = None) ->
   """
   if config is None:
     config = get_config(
-      RoomzConfig,
+      ClientConfig,
       name="roomz",
       cli=True,
       args=args,

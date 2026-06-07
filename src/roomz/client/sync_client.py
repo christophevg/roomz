@@ -12,9 +12,9 @@ from pathlib import Path
 from typing import Any, cast
 
 from roomz.client.async_client import AsyncClient
-from roomz.client.config import RoomzConfig
 from roomz.client.events import EventHandler
 from roomz.client.state import ConnectionState
+from roomz.config import ClientConfig
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +33,7 @@ class SyncClient:
     4. Dataclass defaults
 
   Usage with explicit config:
-    config = RoomzConfig(server_url="http://localhost:5000")
+    config = ClientConfig(server_url="http://localhost:5000", display_name="Alice")
     with SyncClient(config=config, session_token="token") as client:
       client.on('message', handle_message)
       client.send("Hello, world!")
@@ -45,7 +45,7 @@ class SyncClient:
 
   def __init__(
     self,
-    config: RoomzConfig | None = None,
+    config: ClientConfig | None = None,
     args: list[str] | None = None,
     session_token: str = "",
     session_cache_file: str | Path | None = None,
@@ -70,7 +70,7 @@ class SyncClient:
 
     Example:
       >>> # Explicit config
-      >>> config = RoomzConfig(server_url="http://localhost:5000", display_name="Alice")
+      >>> config = ClientConfig(server_url="http://localhost:5000", display_name="Alice")
       >>> client = SyncClient(config=config)
 
       >>> # Auto-discovery

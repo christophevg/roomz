@@ -495,14 +495,14 @@ wheels = [
 
 [[package]]
 name = "clevis"
-version = "0.3.0"
+version = "0.3.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "dacite" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/1e/09/7616437640ae8ba7ad696ae28a921ae27519e401de8c751c498b054d933e/clevis-0.3.0.tar.gz", hash = "sha256:935ca08811e9c767da64bb2f8f5036ee190e1bc0cde7fa26dcb132e2cfe8e4c3", size = 170451, upload-time = "2026-06-05T17:10:21.608Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f9/87/d18101b0a6644d3715e7f5fdd829988fce8302971dfede53b71f95c3ebdf/clevis-0.3.1.tar.gz", hash = "sha256:36b26bb0220f48210d2f9e8aa72388dea4c3b612dbac35d8a5414e8cd1fa9c92", size = 168785, upload-time = "2026-06-07T18:52:22.782Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/60/57/e511ba6dfe9e64e8a21fae38486055bb8d4082e5c66a598f36a5922dde63/clevis-0.3.0-py3-none-any.whl", hash = "sha256:1e292f0c58a90b53f48563f8cb7ce37f3d000ff5e9e1868c9ae18fb52ec06fc1", size = 16234, upload-time = "2026-06-05T17:10:20.189Z" },
+    { url = "https://files.pythonhosted.org/packages/00/7d/eb25735374fb50ad6e6d4d74106881bcf1dfbe3e85f7a6277e45343fd945/clevis-0.3.1-py3-none-any.whl", hash = "sha256:c4c60f3b9f40fd8b88199cadf98bb10efba139ba2790bbc7f95f4c5e250ff2ed", size = 16551, upload-time = "2026-06-07T18:52:21.446Z" },
 ]
 
 [[package]]
@@ -2233,7 +2233,7 @@ wheels = [
 
 [[package]]
 name = "roomz"
-version = "0.3.1"
+version = "0.4.0"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
@@ -2283,7 +2283,7 @@ requires-dist = [
     { name = "aiohttp", specifier = ">=3.9.0" },
     { name = "baseweb", specifier = ">=0.5.2" },
     { name = "build", marker = "extra == 'dev'", specifier = ">=1.0.0" },
-    { name = "clevis", specifier = ">=0.3.0" },
+    { name = "clevis", specifier = ">=0.3.1" },
     { name = "coveralls", marker = "extra == 'dev'", specifier = ">=3.3.0" },
     { name = "envtoml", specifier = ">=0.2.0" },
     { name = "gunicorn", specifier = ">=21.0.0" },

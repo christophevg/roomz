@@ -7,6 +7,7 @@ Commands:
     check     Validate configuration without running
     config    Display current configuration
     serve     Run roomz application with Gunicorn
+    cli       Run the TUI chat client
     version   Display roomz version
 
 Usage:
@@ -19,6 +20,8 @@ Usage:
     roomz serve                   Run app from roomz.toml
     roomz serve --reload           Run with auto-reload (development)
     roomz serve --server-workers 4 Override server config
+    roomz cli                     Run the TUI chat client
+    roomz cli --server-url URL    Override server URL
     roomz version                 Show version
 """
 
@@ -32,7 +35,7 @@ from clevis import configclass, get_cmd, get_config
 from gunicorn.app.wsgiapp import WSGIApplication  # type: ignore[import-untyped]
 
 from roomz import __version__
-from roomz.config import RoomzConfig
+from roomz.config import ClientConfig, RoomzConfig
 
 # Command Configuration Classes
 
@@ -84,6 +87,17 @@ class ConfigConfig(RoomzConfig):
   """
 
   format: str = "table"  # or "toml"
+
+
+@configclass(cmd="cli", help="Run TUI chat client")  # type: ignore[arg-type]
+class CliConfig(ClientConfig):
+  """Configuration for cli command.
+
+  Inherits ClientConfig fields for CLI overrides.
+  CLI args will be: --server-url, --display-name
+  """
+
+  pass
 
 
 @configclass(cmd="version", help="Display roomz version")  # type: ignore[arg-type]
@@ -335,6 +349,18 @@ def version():
   print(__version__)
 
 
+def cli(config: CliConfig):
+  """Run the TUI chat client.
+
+  Args:
+      config: CliConfig instance with merged configuration
+              (defaults < user TOML < project TOML < CLI args)
+  """
+  from roomz.cli.app_tui import run_tui
+
+  run_tui(config=config)
+
+
 # Gunicorn Application Wrapper
 
 
@@ -393,10 +419,12 @@ def run():
       init(get_config(InitConfig, name="roomz"))
     case "config":
       show_config(get_config(ConfigConfig, name="roomz"))
+    case "cli":
+      cli(get_config(CliConfig, name="roomz"))
     case "version":
       version()
     case _:
-      print("Commands: init, check, config, serve, version")
+      print("Commands: init, check, config, serve, cli, version")
       sys.exit(1)
 
 

@@ -28,7 +28,7 @@ from roomz.client import (
   ConnectionState,
   SyncClient,
 )
-from roomz.client.config import ClientConfig, RoomzConfig
+from roomz.config import ClientConfig
 
 # Windows detection
 IS_WINDOWS = platform.system() == "Windows" or os.name == "nt"
@@ -101,7 +101,7 @@ class TestAsyncClientInit:
     Then: Client is created with optional config
     """
     client = AsyncClient(
-      config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000")),
+      config=ClientConfig(server_url="http://localhost:5000"),
       session_token="test-token",
       reconnect=True,
       reconnect_delay=1.0,
@@ -119,7 +119,7 @@ class TestAsyncClientInit:
   def test_async_client_default_parameters(self):
     """Test that AsyncClient has sensible defaults."""
     client = AsyncClient(
-      config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000")),
+      config=ClientConfig(server_url="http://localhost:5000"),
       session_token="test-token",
     )
 
@@ -135,7 +135,7 @@ class TestAsyncClientInit:
 
     cache_file = Path("/tmp/test_session.json")
     client = AsyncClient(
-      config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000")),
+      config=ClientConfig(server_url="http://localhost:5000"),
       session_cache_file=cache_file,
     )
 
@@ -144,7 +144,7 @@ class TestAsyncClientInit:
   def test_async_client_optional_session_token(self):
     """Test that session_token is optional."""
     client = AsyncClient(
-      config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000"))
+      config=ClientConfig(server_url="http://localhost:5000")
     )
 
     assert client._session_token == ""
@@ -152,7 +152,7 @@ class TestAsyncClientInit:
   def test_async_client_state_property(self):
     """Test that state property exists and returns ConnectionState."""
     client = AsyncClient(
-      config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000")),
+      config=ClientConfig(server_url="http://localhost:5000"),
       session_token="test-token",
     )
 
@@ -161,7 +161,7 @@ class TestAsyncClientInit:
   def test_async_client_connected_property(self):
     """Test that connected property exists and returns bool."""
     client = AsyncClient(
-      config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000")),
+      config=ClientConfig(server_url="http://localhost:5000"),
       session_token="test-token",
     )
 
@@ -174,7 +174,7 @@ class TestAsyncClientEventHandling:
   def test_async_client_on_method(self):
     """Test that on() method registers event handlers."""
     client = AsyncClient(
-      config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000")),
+      config=ClientConfig(server_url="http://localhost:5000"),
       session_token="test-token",
     )
 
@@ -186,7 +186,7 @@ class TestAsyncClientEventHandling:
   def test_async_client_off_method(self):
     """Test that off() method removes event handlers."""
     client = AsyncClient(
-      config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000")),
+      config=ClientConfig(server_url="http://localhost:5000"),
       session_token="test-token",
     )
 
@@ -199,7 +199,7 @@ class TestAsyncClientEventHandling:
   def test_async_client_off_all_handlers(self):
     """Test that off() without handler removes all handlers."""
     client = AsyncClient(
-      config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000")),
+      config=ClientConfig(server_url="http://localhost:5000"),
       session_token="test-token",
     )
 
@@ -214,7 +214,7 @@ class TestAsyncClientEventHandling:
   def test_async_client_multiple_listeners_same_event(self):
     """Test that multiple listeners can be registered for same event."""
     client = AsyncClient(
-      config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000")),
+      config=ClientConfig(server_url="http://localhost:5000"),
       session_token="test-token",
     )
 
@@ -231,7 +231,7 @@ class TestAsyncClientEventHandling:
   async def test_async_client_emit_event(self):
     """Test that emit() calls all registered handlers."""
     client = AsyncClient(
-      config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000")),
+      config=ClientConfig(server_url="http://localhost:5000"),
       session_token="test-token",
     )
 
@@ -259,7 +259,7 @@ class TestAsyncClientSend:
   async def test_async_client_send_not_connected_raises_error(self):
     """Test that send() raises ConnectionError when not connected."""
     client = AsyncClient(
-      config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000")),
+      config=ClientConfig(server_url="http://localhost:5000"),
       session_token="test-token",
     )
 
@@ -270,7 +270,7 @@ class TestAsyncClientSend:
   async def test_async_client_send_returns_acknowledgment(self):
     """Test that send() returns acknowledgment dict on success."""
     client = AsyncClient(
-      config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000")),
+      config=ClientConfig(server_url="http://localhost:5000"),
       session_token="test-token",
     )
 
@@ -314,7 +314,7 @@ class TestSyncClientInit:
     Then: Client is created with same options as AsyncClient
     """
     client = SyncClient(
-      config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000")),
+      config=ClientConfig(server_url="http://localhost:5000"),
       session_token="test-token",
       reconnect=True,
       reconnect_delay=1.0,
@@ -329,7 +329,7 @@ class TestSyncClientInit:
   def test_sync_client_properties(self):
     """Test that SyncClient exposes same properties as AsyncClient."""
     client = SyncClient(
-      config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000")),
+      config=ClientConfig(server_url="http://localhost:5000"),
       session_token="test-token",
     )
 
@@ -345,7 +345,7 @@ class TestSyncClientEventHandling:
   def test_sync_client_on_method(self):
     """Test that on() method registers event handlers."""
     client = SyncClient(
-      config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000")),
+      config=ClientConfig(server_url="http://localhost:5000"),
       session_token="test-token",
     )
 
@@ -357,7 +357,7 @@ class TestSyncClientEventHandling:
   def test_sync_client_off_method(self):
     """Test that off() method removes event handlers."""
     client = SyncClient(
-      config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000")),
+      config=ClientConfig(server_url="http://localhost:5000"),
       session_token="test-token",
     )
 
@@ -382,7 +382,7 @@ class TestAsyncClientConnection:
     Test that connect() creates aiohttp session and verifies token.
     """
     client = AsyncClient(
-      config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000")),
+      config=ClientConfig(server_url="http://localhost:5000"),
       session_token="test-token",
     )
 
@@ -415,7 +415,7 @@ class TestAsyncClientConnection:
   async def test_async_client_connect_with_token_parameter(self):
     """Test that connect() accepts optional session_token parameter."""
     client = AsyncClient(
-      config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000"))
+      config=ClientConfig(server_url="http://localhost:5000")
     )
 
     # Mock aiohttp session
@@ -443,7 +443,7 @@ class TestAsyncClientConnection:
   async def test_async_client_disconnect_cleans_up(self):
     """Test that disconnect() closes session and updates state."""
     client = AsyncClient(
-      config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000")),
+      config=ClientConfig(server_url="http://localhost:5000"),
       session_token="test-token",
     )
 
@@ -474,7 +474,7 @@ class TestAsyncClientLogin:
   async def test_async_client_login_requests_magic_link(self):
     """Test that login() requests a magic link."""
     client = AsyncClient(
-      config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000"))
+      config=ClientConfig(server_url="http://localhost:5000")
     )
 
     # Mock aiohttp session
@@ -498,7 +498,7 @@ class TestAsyncClientLogin:
   async def test_async_client_login_handles_error(self):
     """Test that login() handles request errors."""
     client = AsyncClient(
-      config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000"))
+      config=ClientConfig(server_url="http://localhost:5000")
     )
 
     # Mock aiohttp session
@@ -522,7 +522,7 @@ class TestAsyncClientSessionCaching:
   def test_save_session_cookie_disabled(self):
     """Test that session cookie is not saved when caching disabled."""
     client = AsyncClient(
-      config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000"))
+      config=ClientConfig(server_url="http://localhost:5000")
     )
 
     client._save_session_cookie("test-cookie")
@@ -532,7 +532,7 @@ class TestAsyncClientSessionCaching:
   def test_load_session_cookie_disabled(self):
     """Test that session cookie is not loaded when caching disabled."""
     client = AsyncClient(
-      config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000"))
+      config=ClientConfig(server_url="http://localhost:5000")
     )
 
     result = client._load_session_cookie()
@@ -546,7 +546,7 @@ class TestAsyncClientSessionCaching:
     with tempfile.TemporaryDirectory() as tmpdir:
       cache_file = Path(tmpdir) / "session.json"
       client = AsyncClient(
-        config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000")),
+        config=ClientConfig(server_url="http://localhost:5000"),
         session_cache_file=cache_file,
       )
 
@@ -570,7 +570,7 @@ class TestAsyncClientSessionCaching:
       )
 
       client = AsyncClient(
-        config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000")),
+        config=ClientConfig(server_url="http://localhost:5000"),
         session_cache_file=cache_file,
       )
 
@@ -586,7 +586,7 @@ class TestAsyncClientSessionCaching:
     with tempfile.TemporaryDirectory() as tmpdir:
       cache_file = Path(tmpdir) / "session.json"
       client = AsyncClient(
-        config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000")),
+        config=ClientConfig(server_url="http://localhost:5000"),
         session_cache_file=cache_file,
       )
 
@@ -605,7 +605,7 @@ class TestAsyncClientContextManager:
   async def test_async_client_context_manager_connects(self):
     """Test that async context manager calls connect()."""
     client = AsyncClient(
-      config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000")),
+      config=ClientConfig(server_url="http://localhost:5000"),
       session_token="test-token",
     )
 
@@ -621,7 +621,7 @@ class TestAsyncClientContextManager:
   async def test_async_client_context_manager_disconnects(self):
     """Test that async context manager calls disconnect() on exit."""
     client = AsyncClient(
-      config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000")),
+      config=ClientConfig(server_url="http://localhost:5000"),
       session_token="test-token",
     )
 
@@ -641,7 +641,7 @@ class TestSyncClientContextManager:
   def test_sync_client_context_manager_connects(self):
     """Test that context manager calls connect()."""
     client = SyncClient(
-      config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000")),
+      config=ClientConfig(server_url="http://localhost:5000"),
       session_token="test-token",
     )
 
@@ -656,7 +656,7 @@ class TestSyncClientContextManager:
   def test_sync_client_context_manager_disconnects(self):
     """Test that context manager calls disconnect() on exit."""
     client = SyncClient(
-      config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000")),
+      config=ClientConfig(server_url="http://localhost:5000"),
       session_token="test-token",
     )
 
@@ -741,7 +741,7 @@ class TestAsyncClientDisplayNameMethod:
     Then: Method exists and is callable
     """
     client = AsyncClient(
-      config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000")),
+      config=ClientConfig(server_url="http://localhost:5000"),
       session_token="test-token",
     )
     assert hasattr(client, "set_display_name")
@@ -758,7 +758,7 @@ class TestAsyncClientDisplayNameMethod:
     And: Payload is {"display_name": "Laptop"}
     """
     client = AsyncClient(
-      config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000")),
+      config=ClientConfig(server_url="http://localhost:5000"),
       session_token="test-token",
     )
 
@@ -788,7 +788,7 @@ class TestAsyncClientDisplayNameMethod:
     Then: Returns {"status": "ok", "display_name": "Laptop"}
     """
     client = AsyncClient(
-      config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000")),
+      config=ClientConfig(server_url="http://localhost:5000"),
       session_token="test-token",
     )
 
@@ -819,7 +819,7 @@ class TestAsyncClientDisplayNameMethod:
     And: Display name is cleared on server
     """
     client = AsyncClient(
-      config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000")),
+      config=ClientConfig(server_url="http://localhost:5000"),
       session_token="test-token",
     )
 
@@ -849,7 +849,7 @@ class TestAsyncClientDisplayNameMethod:
     Then: Socket.IO emit is called with {"display_name": null}
     """
     client = AsyncClient(
-      config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000")),
+      config=ClientConfig(server_url="http://localhost:5000"),
       session_token="test-token",
     )
 
@@ -879,7 +879,7 @@ class TestAsyncClientDisplayNameMethod:
     Then: Raises ConnectionError
     """
     client = AsyncClient(
-      config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000")),
+      config=ClientConfig(server_url="http://localhost:5000"),
       session_token="test-token",
     )
 
@@ -899,7 +899,7 @@ class TestAsyncClientDisplayNameMethod:
     Then: client.display_name property is set to "Laptop"
     """
     client = AsyncClient(
-      config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000")),
+      config=ClientConfig(server_url="http://localhost:5000"),
       session_token="test-token",
     )
 
@@ -936,7 +936,7 @@ class TestAsyncClientDisplayNameProperty:
     Then: Property exists and returns None by default
     """
     client = AsyncClient(
-      config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000")),
+      config=ClientConfig(server_url="http://localhost:5000"),
       session_token="test-token",
     )
     assert hasattr(client, "display_name")
@@ -951,9 +951,7 @@ class TestAsyncClientDisplayNameProperty:
     Then: Returns "Laptop"
     """
     client = AsyncClient(
-      config=RoomzConfig(
-        client=ClientConfig(server_url="http://localhost:5000", display_name="Laptop")
-      ),
+      config=ClientConfig(server_url="http://localhost:5000", display_name="Laptop"),
       session_token="test-token",
     )
     assert client.display_name == "Laptop"
@@ -967,7 +965,7 @@ class TestAsyncClientDisplayNameProperty:
     Then: Returns None
     """
     client = AsyncClient(
-      config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000")),
+      config=ClientConfig(server_url="http://localhost:5000"),
       session_token="test-token",
     )
     assert client.display_name is None
@@ -998,10 +996,10 @@ class TestDisplayNameConfigLoading:
       os.environ["ROOMZ_DISPLAY_NAME"] = "Laptop"
 
       # Create TOML file with env var interpolation
+      # ClientConfig expects flat fields at root level, not nested under [client]
       config_file = tmp_path / "roomz.toml"
       config_file.write_text(
         """
-[client]
 display_name = "${ROOMZ_DISPLAY_NAME}"
 """
       )
@@ -1033,9 +1031,7 @@ display_name = "${ROOMZ_DISPLAY_NAME}"
       os.environ["ROOMZ_DISPLAY_NAME"] = "Phone"
       # Explicit display_name param should take precedence
       client = AsyncClient(
-        config=RoomzConfig(
-          client=ClientConfig(server_url="http://localhost:5000", display_name="Laptop")
-        ),
+        config=ClientConfig(server_url="http://localhost:5000", display_name="Laptop"),
         session_token="test-token",
       )
       # When passed explicitly, it overrides env var
@@ -1055,7 +1051,7 @@ display_name = "${ROOMZ_DISPLAY_NAME}"
     Then: No error, display_name is None
     """
     client = AsyncClient(
-      config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000")),
+      config=ClientConfig(server_url="http://localhost:5000"),
       session_token="test-token",
     )
     assert client._display_name is None
@@ -1074,9 +1070,7 @@ display_name = "${ROOMZ_DISPLAY_NAME}"
     try:
       os.environ["ROOMZ_DISPLAY_NAME"] = "Phone"
       client = AsyncClient(
-        config=RoomzConfig(
-          client=ClientConfig(server_url="http://localhost:5000", display_name="Laptop")
-        ),
+        config=ClientConfig(server_url="http://localhost:5000", display_name="Laptop"),
         session_token="test-token",
       )
       assert client._display_name == "Laptop"
@@ -1105,9 +1099,7 @@ class TestDisplayNameAutoSendOnConnect:
     Then: set_display_name is called automatically with "Laptop"
     """
     client = AsyncClient(
-      config=RoomzConfig(
-        client=ClientConfig(server_url="http://localhost:5000", display_name="Laptop")
-      ),
+      config=ClientConfig(server_url="http://localhost:5000", display_name="Laptop"),
       session_token="test-token",
     )
 
@@ -1142,7 +1134,7 @@ class TestDisplayNameAutoSendOnConnect:
     Then: set_display_name is NOT called
     """
     client = AsyncClient(
-      config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000")),
+      config=ClientConfig(server_url="http://localhost:5000"),
       session_token="test-token",
     )
 
@@ -1186,7 +1178,7 @@ class TestDisplayNameEventHandling:
     Then: Handler for "display_name_changed" event is registered
     """
     client = AsyncClient(
-      config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000")),
+      config=ClientConfig(server_url="http://localhost:5000"),
       session_token="test-token",
     )
 
@@ -1227,7 +1219,7 @@ class TestDisplayNameEventHandling:
     Then: Handler receives event with user and display_name
     """
     client = AsyncClient(
-      config=RoomzConfig(client=ClientConfig(server_url="http://localhost:5000")),
+      config=ClientConfig(server_url="http://localhost:5000"),
       session_token="test-token",
     )
 
