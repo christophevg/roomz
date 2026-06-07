@@ -1570,4 +1570,3 @@ class TestClientIntegration:
     - Two connected clients (same user, different devices)
     """
     pytest.fail("Integration test requires running server and valid token")
-

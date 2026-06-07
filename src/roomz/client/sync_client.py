@@ -234,4 +234,3 @@ class SyncClient:
       handler: Specific handler to remove, or None to remove all handlers for event
     """
     self._async_client.off(event, handler)
-

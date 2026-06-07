@@ -240,4 +240,3 @@ class TestIntegration:
       import asyncio
 
       asyncio.run(client.connect())
-

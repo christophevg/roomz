@@ -148,4 +148,3 @@ def clear_session_cache(cache_file: Path | None = None) -> None:
       cache_file.unlink()
     except OSError as e:
       logger.warning(f"Failed to clear session cache: {e}")
-

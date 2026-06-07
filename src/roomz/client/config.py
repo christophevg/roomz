@@ -71,4 +71,3 @@ class RoomzConfig:
   """
 
   client: ClientConfig = field(default_factory=ClientConfig)
-
