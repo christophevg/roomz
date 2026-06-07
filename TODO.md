@@ -316,6 +316,162 @@
 
 ---
 
+### Iteration 10: Message Persistence (Phase 1 - Foundation)
+
+**Goal**: Enable message history, search, and threading foundation
+
+- [ ] **I10-001: Message History Persistence** (Priority: P1 - High)
+  - **Status**: READY FOR ANALYSIS
+  - **Research Reference**: research/chat-room-features.md (F3)
+  - Store message history beyond current session with configurable retention
+  - Database backend (MongoDB) for persistent storage
+  - Message schema with Snowflake IDs or time-sortable sequence numbers
+  - Per-conversation ordering for efficient pagination
+  - Support incremental sync with "last known message" tracking
+  - **Dependencies**: None (foundation feature)
+  - **Satisfies**: Enables I11-001 (search), I11-002 (threading)
+  - **Delivers**: Persistent message history across sessions
+  - **Acceptance**:
+    - ✅ Messages persist across server restarts
+    - ✅ User can view message history on page reload
+    - ✅ Messages have unique, time-sortable IDs
+    - ✅ Pagination works efficiently (cursor-based)
+
+- [ ] **I10-002: Infinite Scroll Back** (Priority: P2 - High)
+  - **Status**: READY FOR ANALYSIS
+  - **Research Reference**: research/chat-room-features.md (F3 - Implementation Notes)
+  - Load older messages on scroll to top
+  - Cursor-based pagination for large result sets
+  - Smooth loading experience without message jump
+  - Preserve scroll position when new messages arrive
+  - **Dependencies**: I10-001 (Message History Persistence)
+  - **Satisfies**: Efficient history browsing
+  - **Delivers**: Seamless message history navigation
+  - **Acceptance**:
+    - ✅ Scrolling to top loads older messages
+    - ✅ No message jump or duplicate messages during load
+    - ✅ Works smoothly on mobile devices
+
+---
+
+### Iteration 11: Participant & Status (Phase 1 - High Priority)
+
+**Goal**: Visibility and status for multi-agent coordination
+
+- [ ] **I11-001: Participant Status with typing indicator** (Priority: P1 - High)
+  - **Status**: READY FOR ANALYSIS
+  - **Research Reference**: research/chat-room-features.md (F7, F9)
+  - Real-time status: active, thinking, idle, error, disconnected
+  - Typing indicator: "Agent is typing..." visual feedback
+  - Debounced WebSocket events for typing (short TTL 2-3 seconds)
+  - Combine multiple typing states: "Alice and 2 others are typing..."
+  - Server-side coalescing to avoid overwhelming clients
+  - **Dependencies**: I9-002 (Participant List Display)
+  - **Satisfies**: R-agent-status (from research)
+  - **Delivers**: Real-time agent availability and activity visibility
+  - **Acceptance**:
+    - ✅ Participant list shows active status indicators
+    - ✅ "Agent is typing..." shows during input with debounce
+    - ✅ Multiple concurrent typing states display correctly
+    - ✅ Status updates in real-time via WebSocket
+
+- [ ] **I11-002: Status command** (Priority: P2 - Medium)
+  - **Status**: READY FOR ANALYSIS
+  - **Research Reference**: research/chat-room-features.md (F7 - Agent Status Indicators)
+  - `/status <status>` command for setting custom status
+  - Status types: available, busy, away, sleeping, custom message
+  - Status appears in participant list with visual indicator
+  - Auto-clear status after configurable timeout
+  - **Dependencies**: I11-001 (Participant Status infrastructure)
+  - **Satisfies**: Custom agent status visibility
+  - **Delivers**: Custom status for agents and users
+  - **Acceptance**:
+    - ✅ `/status sleeping` sets status to "sleeping"
+    - ✅ Status appears in participant list
+    - ✅ Custom status messages supported
+    - ✅ Auto-clear works after timeout
+
+---
+
+### Iteration 12: Advanced Messaging (Phase 2)
+
+**Goal**: Organize conversations and provide visual feedback
+
+- [ ] **I12-001: Message Threading** (Priority: P2 - Medium)
+  - **Status**: READY FOR ANALYSIS
+  - **Research Reference**: research/chat-room-features.md (F1)
+  - Parent-child message relationships for topic-focused discussions
+  - Thread-aware message storage with `parent_id` field
+  - Thread context preservation when switching threads
+  - Reply count on parent messages
+  - Inline threading UI (like Google Chat) or modal views for mobile
+  - Thread summarization for context management
+  - **Dependencies**: I10-001 (Message History Persistence)
+  - **Satisfies**: R-threading (from research)
+  - **Delivers**: Organized multi-turn agent conversations
+  - **Acceptance**:
+    - ✅ Messages can be threaded (reply to message)
+    - ✅ Thread context preserved across sessions
+    - ✅ Reply count displayed on parent message
+    - ✅ Thread view shows full conversation thread
+
+- [ ] **I12-002: Typing Indicators** (Priority: P3 - Low)
+  - **Status**: READY FOR ANALYSIS
+  - **Research Reference**: research/chat-room-features.md (F9)
+  - Visual "Agent is typing..." feedback during agent processing
+  - Show typing indicator with short TTL (2-3 seconds)
+  - Debounce mechanism to avoid overwhelming events
+  - **Dependencies**: None (standalone)
+  - **Satisfies**: Visual feedback during agent processing
+  - **Delivers**: Reduced uncertainty during agent wait
+  - **Acceptance**:
+    - ✅ Typing indicator shows when agent is processing
+    - ✅ Debounce prevents event flooding
+    - ✅ Indicator disappears after timeout or completion
+
+---
+
+### Iteration 13: File & Export (Phase 3)
+
+**Goal**: Enable artifact sharing and compliance workflows
+
+- [ ] **I13-001: File Attachments** (Priority: P3 - Medium)
+  - **Status**: READY FOR ANALYSIS
+  - **Research Reference**: research/chat-room-features.md (F20)
+  - Upload and share files in chat (documents, images, code files)
+  - File storage backend integration
+  - File preview in chat (images, code snippets)
+  - Click to download functionality
+  - Configurable file size limits
+  - Security: Virus scanning, content validation
+  - **Dependencies**: None (standalone)
+  - **Satisfies**: R-file-sharing (from research)
+  - **Delivers**: Share artifacts with agents
+  - **Acceptance**:
+    - ✅ Files can be uploaded and attached to messages
+    - ✅ Image files show preview in chat
+    - ✅ Code files display with syntax highlighting
+    - ✅ Download link works for all file types
+    - ✅ File size limits enforced
+
+- [ ] **I13-002: Message Export** (Priority: P3 - Low)
+  - **Status**: READY FOR ANALYSIS
+  - **Research Reference**: research/chat-room-features.md (F17)
+  - Export conversation history as JSON, Markdown, or plain text
+  - Filter by date range
+  - Include all metadata (timestamps, user info)
+  - Download as file
+  - **Dependencies**: I10-001 (Message History Persistence)
+  - **Satisfies**: R-compliance (from research)
+  - **Delivers**: Compliance and backup capability
+  - **Acceptance**:
+    - ✅ Export conversation to JSON format
+    - ✅ Export conversation to Markdown format
+    - ✅ Filter by date range works
+    - ✅ Metadata included in export
+
+---
+
 ### Postponed: Developer Experience
 
 - Enable repository as a plugin and create a skill for using/developing clients with the roomz module (cfr ../baseweb)
