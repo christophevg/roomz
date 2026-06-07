@@ -61,7 +61,7 @@ dev = [
 
 [project.scripts]
 roomz = "roomz.server:asgi_app"
-roomz-cli = "roomz.cli:main"
+cli = "roomz.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/christophevg/roomz"
