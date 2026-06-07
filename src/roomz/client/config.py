@@ -7,40 +7,22 @@ Provides simplified configuration with built-in security validation.
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
-class RoomzConfig:
+class ClientConfig:
   """
-  Configuration for Roomz client.
+  Client-specific configuration.
 
   Attributes:
     server_url: WebSocket server URL (e.g., "http://localhost:5000")
     display_name: Optional display name for the user
 
   Example:
-    >>> config = RoomzConfig(server_url="http://localhost:5000", display_name="Alice")
-    >>> config = get_config(RoomzConfig, name="roomz")  # Use clevis directly
-
-  Resolution Order (highest to lowest priority):
-    1. CLI arguments (when cli=True)
-    2. Project TOML (./roomz.toml) with ${VAR} interpolation
-    3. User TOML (~/.roomz.toml) with ${VAR} interpolation
-    4. Dataclass defaults
-
-  Environment Variables (for TOML interpolation):
-    Use ${ROOMZ_SERVER_URL} and ${ROOMZ_DISPLAY_NAME} in TOML files.
-
-  Config File Format (TOML):
-    server_url = "http://localhost:5000"
-    display_name = "Alice"
-
-    # Or with environment variable interpolation:
-    server_url = "${ROOMZ_SERVER_URL}"
-    display_name = "${ROOMZ_DISPLAY_NAME}"
+    >>> client_config = ClientConfig(server_url="http://localhost:5000", display_name="Alice")
   """
 
   server_url: str | None = None
@@ -56,6 +38,41 @@ class RoomzConfig:
       # Check for credentials in URL
       if "@" in self.server_url:
         raise ValueError(f"server_url should not contain credentials: {self.server_url}")
+
+
+@dataclass
+class RoomzConfig:
+  """
+  Root configuration for Roomz client.
+
+  Attributes:
+    client: Client-specific configuration (server_url, display_name)
+
+  Example:
+    >>> config = RoomzConfig()
+    >>> config = get_config(RoomzConfig, name="roomz")  # Use clevis directly
+
+  Resolution Order (highest to lowest priority):
+    1. CLI arguments (when cli=True)
+    2. Project TOML (./roomz.toml) with ${VAR} interpolation
+    3. User TOML (~/.roomz.toml) with ${VAR} interpolation
+    4. Dataclass defaults
+
+  Environment Variables (for TOML interpolation):
+    Use ${ROOMZ_SERVER_URL} and ${ROOMZ_DISPLAY_NAME} in TOML files.
+
+  Config File Format (TOML):
+    [client]
+    server_url = "http://localhost:5000"
+    display_name = "Alice"
+
+    # Or with environment variable interpolation:
+    [client]
+    server_url = "${ROOMZ_SERVER_URL}"
+    display_name = "${ROOMZ_DISPLAY_NAME}"
+  """
+
+  client: ClientConfig = field(default_factory=ClientConfig)
 
 
 # Type alias for backward compatibility
