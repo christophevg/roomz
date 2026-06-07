@@ -494,6 +494,18 @@ wheels = [
 ]
 
 [[package]]
+name = "clevis"
+version = "0.3.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "dacite" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/1e/09/7616437640ae8ba7ad696ae28a921ae27519e401de8c751c498b054d933e/clevis-0.3.0.tar.gz", hash = "sha256:935ca08811e9c767da64bb2f8f5036ee190e1bc0cde7fa26dcb132e2cfe8e4c3", size = 170451, upload-time = "2026-06-05T17:10:21.608Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/60/57/e511ba6dfe9e64e8a21fae38486055bb8d4082e5c66a598f36a5922dde63/clevis-0.3.0-py3-none-any.whl", hash = "sha256:1e292f0c58a90b53f48563f8cb7ce37f3d000ff5e9e1868c9ae18fb52ec06fc1", size = 16234, upload-time = "2026-06-05T17:10:20.189Z" },
+]
+
+[[package]]
 name = "click"
 version = "8.3.3"
 source = { registry = "https://pypi.org/simple" }
@@ -690,6 +702,15 @@ wheels = [
 ]
 
 [[package]]
+name = "dacite"
+version = "1.9.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/55/a0/7ca79796e799a3e782045d29bf052b5cde7439a2bbb17f15ff44f7aacc63/dacite-1.9.2.tar.gz", hash = "sha256:6ccc3b299727c7aa17582f0021f6ae14d5de47c7227932c47fec4cdfefd26f09", size = 22420, upload-time = "2025-02-05T09:27:29.757Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/94/35/386550fd60316d1e37eccdda609b074113298f23cef5bddb2049823fe666/dacite-1.9.2-py3-none-any.whl", hash = "sha256:053f7c3f5128ca2e9aceb66892b1a3c8936d02c686e707bee96e19deef4bc4a0", size = 16600, upload-time = "2025-02-05T09:27:24.345Z" },
+]
+
+[[package]]
 name = "distlib"
 version = "0.4.0"
 source = { registry = "https://pypi.org/simple" }
@@ -731,6 +752,18 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/bc/68/c186606e4f2bf731abd18044ea201e70c3c244bf468f41368820d197fca5/dotmap-1.3.30.tar.gz", hash = "sha256:5821a7933f075fb47563417c0e92e0b7c031158b4c9a6a7e56163479b658b368", size = 12391, upload-time = "2022-04-06T16:26:49.211Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/4d/f9/976d6813c160d6c89196d81e9466dca1503d20e609d8751f3536daf37ec6/dotmap-1.3.30-py3-none-any.whl", hash = "sha256:bd9fa15286ea2ad899a4d1dc2445ed85a1ae884a42effb87c89a6ecce71243c6", size = 11464, upload-time = "2022-04-06T16:26:47.103Z" },
+]
+
+[[package]]
+name = "envtoml"
+version = "0.4.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "tomli", marker = "python_full_version < '3.11'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/1b/0b/f4366faffcb2123107e2e4c0f6f29bc2f1264e17e697504d2ed9f5ccb9e4/envtoml-0.4.0.tar.gz", hash = "sha256:a5a0be49649535146f86402bc8b723ee47ef005995032f4ccb821f7a88dd64ee", size = 28545, upload-time = "2026-01-22T11:07:46.877Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/47/74/1a217e8900a244add27a6548dcd403569de54a22a9fad52990d3435fba81/envtoml-0.4.0-py3-none-any.whl", hash = "sha256:f5a271a9a07622a8e1b467ea20bec5ac91fa0353e24d7385981a25ecbf128d2e", size = 4779, upload-time = "2026-01-22T11:07:46.053Z" },
 ]
 
 [[package]]
@@ -2205,6 +2238,8 @@ source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
     { name = "baseweb" },
+    { name = "clevis" },
+    { name = "envtoml" },
     { name = "gunicorn" },
     { name = "pyjwt" },
     { name = "python-dotenv" },
@@ -2212,7 +2247,6 @@ dependencies = [
     { name = "resend" },
     { name = "rich" },
     { name = "textual" },
-    { name = "tomli", marker = "python_full_version < '3.11'" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
@@ -2248,7 +2282,9 @@ requires-dist = [
     { name = "aiohttp", specifier = ">=3.9.0" },
     { name = "baseweb", specifier = ">=0.5.2" },
     { name = "build", marker = "extra == 'dev'", specifier = ">=1.0.0" },
+    { name = "clevis", specifier = ">=0.3.0" },
     { name = "coveralls", marker = "extra == 'dev'", specifier = ">=3.3.0" },
+    { name = "envtoml", specifier = ">=0.2.0" },
     { name = "gunicorn", specifier = ">=21.0.0" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.13.0" },
     { name = "myst-parser", marker = "extra == 'docs'", specifier = ">=2.0.0" },
@@ -2264,7 +2300,6 @@ requires-dist = [
     { name = "sphinx", marker = "extra == 'docs'", specifier = ">=7.0.0" },
     { name = "sphinx-rtd-theme", marker = "extra == 'docs'", specifier = ">=2.0.0" },
     { name = "textual", specifier = ">=0.47.0" },
-    { name = "tomli", marker = "python_full_version < '3.11'", specifier = ">=2.0.0" },
     { name = "tox", marker = "extra == 'dev'", specifier = ">=4.0.0" },
     { name = "tox-uv", marker = "extra == 'dev'", specifier = ">=1.0.0" },
     { name = "twine", marker = "extra == 'dev'", specifier = ">=6.0.0" },

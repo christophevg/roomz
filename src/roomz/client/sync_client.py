@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any, cast
 
 from roomz.client.async_client import AsyncClient
-from roomz.client.config import Config
+from roomz.client.config import RoomzConfig
 from roomz.client.events import EventHandler
 from roomz.client.state import ConnectionState
 
@@ -28,22 +28,17 @@ class SyncClient:
 
   Configuration is resolved in this order (highest to lowest priority):
     1. Explicit `config` parameter
-    2. Explicit `config_path` parameter (load from file)
-    3. Prefixed environment variable (e.g., HELLO_ROOMZ_SERVER_URL)
-    4. Unprefixed environment variable (e.g., ROOMZ_SERVER_URL)
-    5. ./roomz.toml (current directory)
-    6. ~/.roomz.toml (user home directory)
-    7. Default Config() (empty, raises ConfigurationError on connect)
+    2. CLI arguments (if args provided)
+    3. Environment variables (ROOMZ_SERVER_URL, ROOMZ_DISPLAY_NAME)
+    4. ./roomz.toml (current directory) with security validation
+    5. ~/.roomz.toml (user home directory)
+    6. Dataclass defaults (empty)
 
   Usage with explicit config:
-    config = Config(server_url="http://localhost:5000")
+    config = RoomzConfig(server_url="http://localhost:5000")
     with SyncClient(config=config, session_token="token") as client:
       client.on('message', handle_message)
       client.send("Hello, world!")
-
-  Usage with config file:
-    with SyncClient(config_path="~/.roomz.toml", session_token="token") as client:
-      client.connect()
 
   Usage with auto-discovery:
     with SyncClient(session_token="token") as client:
@@ -52,8 +47,8 @@ class SyncClient:
 
   def __init__(
     self,
-    config: Config | None = None,
-    config_path: str | Path | None = None,
+    config: RoomzConfig | None = None,
+    args: list[str] | None = None,
     session_token: str = "",
     session_cache_file: str | Path | None = None,
     *,
@@ -67,7 +62,7 @@ class SyncClient:
 
     Args:
       config: Configuration object (highest priority, overrides auto-discovery)
-      config_path: Path to config file (overrides auto-discovery, merged with auto-discovered)
+      args: CLI arguments to pass to clevis (optional, for testing)
       session_token: Session token for authentication (optional if session_cache_file is set)
       session_cache_file: Path to cache session cookie (None to disable caching)
       reconnect: Enable automatic reconnection (default: True)
@@ -77,18 +72,15 @@ class SyncClient:
 
     Example:
       >>> # Explicit config
-      >>> config = Config(server_url="http://localhost:5000", display_name="Alice")
+      >>> config = RoomzConfig(server_url="http://localhost:5000", display_name="Alice")
       >>> client = SyncClient(config=config)
-
-      >>> # Config from file
-      >>> client = SyncClient(config_path="~/.roomz.toml")
 
       >>> # Auto-discovery
       >>> client = SyncClient()
     """
     self._async_client = AsyncClient(
       config=config,
-      config_path=config_path,
+      args=args,
       session_token=session_token,
       session_cache_file=session_cache_file,
       reconnect=reconnect,

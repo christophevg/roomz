@@ -151,11 +151,14 @@ Roomz includes a Python client library for programmatic access to the chat servi
 The easiest way to use Roomz from the command line:
 
 ```bash
-# Start the CLI
+# Start the CLI (auto-discovers config from ~/.roomz.toml)
 uv run roomz-cli
 
-# Or with a custom server
-uv run roomz-cli --server http://your-server:8000
+# Or specify server URL via CLI argument
+uv run roomz-cli --server-url http://your-server:8000
+
+# Or specify display name
+uv run roomz-cli --display-name "Alice"
 ```
 
 **Commands:**
@@ -171,7 +174,58 @@ uv run roomz-cli --server http://your-server:8000
 - Split-screen TUI with message history
 - Color-coded messages (your messages in green)
 - Multiline support (Enter to send, Ctrl+Enter for new line)
-- Display names (set via `/name` command or config file)
+- Display names (set via `/name` command, environment variable, or config file)
+
+### Configuration
+
+Roomz uses [clevis](https://pypi.org/project/clevis/) for configuration management with built-in security validation.
+
+**Configuration Resolution Order** (highest to lowest priority):
+1. CLI arguments (`--server-url`, `--display-name`)
+2. Environment variables (`ROOMZ_SERVER_URL`, `ROOMZ_DISPLAY_NAME`)
+3. Project-level config (`./roomz.toml` in current directory)
+4. User-level config (`~/.roomz.toml` in home directory)
+5. Dataclass defaults
+
+**Environment Variables:**
+```bash
+export ROOMZ_SERVER_URL="http://localhost:8000"
+export ROOMZ_DISPLAY_NAME="Alice"
+```
+
+**Config File Format** (`~/.roomz.toml`):
+```toml
+server_url = "http://localhost:8000"
+display_name = "Alice"
+```
+
+**Security Features:**
+- Config files with group/other read permissions are **rejected** (must use 0600)
+- Config files in world-writable directories are **rejected**
+- Home directory is trusted (no directory security check)
+- Session cache files are created with 0600 permissions
+
+**Migration from v0.1.x:**
+If you have an existing `~/.roomz/config.toml`, migrate to the new format:
+
+**Old Format** (deprecated):
+```toml
+[client]
+server_url = "http://localhost:8000"
+display_name = "Alice"
+```
+
+**New Format:**
+```toml
+server_url = "http://localhost:8000"
+display_name = "Alice"
+```
+
+Then set secure permissions:
+```bash
+mv ~/.roomz/config.toml ~/.roomz.toml
+chmod 600 ~/.roomz.toml
+```
 
 ### Using the AsyncClient
 
@@ -179,12 +233,16 @@ For programmatic access in your Python applications:
 
 ```python
 from roomz.client import AsyncClient
+from pathlib import Path
 
-# Create client with session caching
+# Option 1: Explicit configuration
 client = AsyncClient(
-  server_url="http://localhost:8000",
-  session_cache_file="~/.roomz/session.json"
+  config=RoomzConfig(server_url="http://localhost:8000"),
+  session_cache_file=Path.home() / ".cache" / "roomz" / "session.json"
 )
+
+# Option 2: Auto-discover from environment/config files
+client = AsyncClient()
 
 # Register event handlers
 client.on("message", lambda data: print(f"{data['user']['email']}: {data['content']}"))
@@ -214,55 +272,37 @@ client.clear_cached_session()
 For synchronous applications:
 
 ```python
-from roomz.client import SyncClient
+from roomz.client import SyncClient, RoomzConfig
 
-with SyncClient(server_url="http://localhost:8000", session_token="token") as client:
+# Option 1: Explicit configuration
+with SyncClient(config=RoomzConfig(server_url="http://localhost:8000"), session_token="token") as client:
+  client.on("message", lambda data: print(data['content']))
+  result = client.send("Hello!")
+
+# Option 2: Auto-discover
+with SyncClient(session_token="token") as client:
   client.on("message", lambda data: print(data['content']))
   result = client.send("Hello!")
 ```
 
 ### Session Caching
 
-The client can cache session cookies for automatic reconnection:
+The client automatically caches session cookies for reconnection:
 
 ```python
-# Enable caching (recommended for CLI apps)
+from pathlib import Path
+
+# Default location: ~/.cache/roomz/session.json
+# Custom location:
 client = AsyncClient(
-  server_url="http://localhost:8000",
-  session_cache_file=Path.home() / ".roomz" / "session.json"
+  session_cache_file=Path("/custom/path/session.json")
 )
 
-# Disable caching (default)
-client = AsyncClient(server_url="http://localhost:8000")
+# Disable caching:
+client = AsyncClient(session_cache_file=None)
 ```
 
-### Display Names
-
-Set a custom display name that appears in chat messages:
-
-**Python Client:**
-```python
-# Set display name
-result = await client.set_display_name("Alice")
-# Messages show as: "Alice (alice@example.com)"
-
-# Clear display name
-await client.set_display_name(None)
-# Messages show as: "alice@example.com"
-```
-
-**Environment Variable:**
-```bash
-export ROOMZ_DISPLAY_NAME="Alice"
-```
-
-**Config File (`~/.roomz/config.toml`):**
-```toml
-[client]
-display_name = "Alice"
-```
-
-**Format:** Messages display as `"Display Name (email)"` when set, or just `"email"` when not set.
+**Security:** Session cache files are created with 0600 permissions in a 0700 directory to protect JWT tokens.
 
 ## Technology Stack
 

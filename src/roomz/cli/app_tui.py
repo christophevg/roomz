@@ -29,7 +29,7 @@ from textual.reactive import reactive
 from textual.widgets import Static, TextArea
 
 from roomz.client import AsyncClient
-from roomz.client.config import Config
+from roomz.client.config import RoomzConfig, get_roomz_config
 
 # =============================================================================
 # UI Components (implementation details)
@@ -140,13 +140,13 @@ class ChatApp(App[None]):
 
   messages: reactive[list[MessageWidget]] = reactive(list)
 
-  def __init__(self, config: Config | None = None):
+  def __init__(self, config: RoomzConfig | None = None):
     """
     Initialize the chat application.
 
     Args:
-      config: Configuration object. If None, auto-discovers from environment
-               and config files (./roomz.toml, ~/.roomz.toml)
+      config: Configuration object. If None, uses clevis to auto-discover from
+               environment and config files (./roomz.toml, ~/.roomz.toml)
 
     Example:
       >>> # Explicit config
@@ -423,21 +423,35 @@ class ChatApp(App[None]):
     await self.client.disconnect()
 
 
-def run_tui(config: Config | None = None) -> None:
+def run_tui(config: RoomzConfig | None = None, args: list[str] | None = None) -> None:
   """
   Run the TUI chat application.
 
   Args:
-    config: Configuration object. If None, auto-discovers from environment
-             and config files (./roomz.toml, ~/.roomz.toml)
+    config: Configuration object. If None, uses clevis to auto-discover from
+            environment and config files (./roomz.toml, ~/.roomz.toml)
+    args: CLI arguments (optional, for testing)
+
+  Configuration Resolution Order:
+    1. CLI arguments (--server-url, --display-name)
+    2. Environment variables (ROOMZ_SERVER_URL, ROOMZ_DISPLAY_NAME)
+    3. ./roomz.toml (current directory) with security validation
+    4. ~/.roomz.toml (user home directory)
+    5. Dataclass defaults
 
   Example:
     >>> # Explicit config
-    >>> config = Config(server_url="http://localhost:8000")
+    >>> config = RoomzConfig(server_url="http://localhost:8000")
     >>> run_tui(config=config)
+
+    >>> # Auto-discovery with CLI args
+    >>> run_tui(args=["--server-url", "http://localhost:8000"])
 
     >>> # Auto-discovery
     >>> run_tui()
   """
+  if config is None:
+    config = get_roomz_config(cli=True, args=args)
+
   app = ChatApp(config=config)
   app.run()
