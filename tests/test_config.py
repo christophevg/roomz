@@ -223,7 +223,9 @@ class TestIntegration:
     """Test that RoomzConfig is properly used by AsyncClient."""
     from roomz.client import AsyncClient
 
-    config = RoomzConfig(client=ClientConfig(server_url="http://localhost:5000", display_name="TestUser"))
+    config = RoomzConfig(
+      client=ClientConfig(server_url="http://localhost:5000", display_name="TestUser")
+    )
     client = AsyncClient(config=config)
 
     assert client.server_url == "http://localhost:5000"
@@ -238,18 +240,4 @@ class TestIntegration:
       import asyncio
 
       asyncio.run(client.connect())
-
-  def test_config_backward_compat_alias(self) -> None:
-    """Test that Config is an alias for RoomzConfig."""
-    from roomz.client import Config, RoomzConfig
-
-    # Config should be an alias
-    assert Config is RoomzConfig
-
-    # Both should work
-    client_config1 = ClientConfig(server_url="http://example.com")
-    config1 = Config(client=client_config1)
-    client_config2 = ClientConfig(server_url="http://example.com")
-    config2 = RoomzConfig(client=client_config2)
-    assert type(config1) is type(config2)
 

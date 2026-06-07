@@ -119,8 +119,7 @@ def load_session_cache(cache_file: Path | None = None) -> dict[str, Any] | None:
     dir_stat = cache_file.parent.stat()
     if dir_stat.st_mode & 0o002:  # World-writable directory
       logger.warning(
-        f"Session cache directory {cache_file.parent} is world-writable. "
-        f"This is a security risk."
+        f"Session cache directory {cache_file.parent} is world-writable. This is a security risk."
       )
   except OSError as e:
     logger.warning(f"Failed to validate session cache permissions: {e}")
@@ -149,3 +148,4 @@ def clear_session_cache(cache_file: Path | None = None) -> None:
       cache_file.unlink()
     except OSError as e:
       logger.warning(f"Failed to clear session cache: {e}")
+
