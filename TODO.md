@@ -254,23 +254,34 @@
 
 **Goal**: Enhanced message rendering and participant visibility
 
-- [ ] **I9-001: Message content type support** (Issue #8) (Priority: TBD - waiting for clarification)
-  - **Status**: WAITING FOR CLARIFICATION
-  - Add content type to messages (e.g., text/markdown, application/json)
-  - Support content sniffing for types without authoritative MIME types (e.g., diffs as text/plain)
+- [ ] **I9-001: Message content type support** (Issue #8) (Priority: TBD)
+  - **Status**: READY FOR ANALYSIS
+  - Content types: per message (not per-room)
+  - Priority formats: markdown, code/diff (default: plain text)
+  - Clients: all (web + Python CLI)
+  - Support content sniffing for types without authoritative MIME types
   - Render messages appropriately based on content type
-  - **Clarifying questions posted**: per-room vs per-message, initial formats, web vs Python client
   - **Delivers**: Rich message rendering
-  - **Acceptance**: TBD after clarification
+  - **Acceptance**:
+    - ✅ Messages can specify content type (markdown, code, diff, plain text)
+    - ✅ Web client renders markdown and code with syntax highlighting
+    - ✅ Python CLI renders markdown and code appropriately
+    - ✅ Default plain text for messages without content type
+    - ✅ Content type is per-message, not per-room
 
-- [ ] **I9-002: Participant list display** (Issue #9) (Priority: TBD - waiting for clarification)
-  - **Status**: WAITING FOR CLARIFICATION
-  - Display list of participants in room
+- [ ] **I9-002: Participant list display** (Issue #9) (Priority: TBD)
+  - **Status**: READY FOR ANALYSIS
+  - UI location: designer's choice
+  - Display: all participants with active indicator
+  - Web client: always visible
+  - Python CLI: `/who` command
   - Show active/online status indicators
-  - Handle offline participants (still in room but not active)
-  - **Clarifying questions posted**: UI location, all vs active, web vs Python CLI
   - **Delivers**: Visibility of who is in the room
-  - **Acceptance**: TBD after clarification
+  - **Acceptance**:
+    - ✅ Web client shows all participants with active indicator
+    - ✅ Participant list always visible in web client
+    - ✅ Python CLI has `/who` command to list participants
+    - ✅ Active status clearly indicated for each participant
 
 ---
 
