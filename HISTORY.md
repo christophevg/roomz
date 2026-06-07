@@ -1,5 +1,11 @@
 # Roomz Version History
 
+## 0.2.2 (2026-06-07)
+
+### Bug Fixes
+
+- **Fixed clevis compatibility issue** - Removed 'from __future__ import annotations' from config.py to resolve compatibility issues with clevis package's nested dataclass handling
+
 ## 0.2.1 (2026-06-07)
 
 ### New Features
