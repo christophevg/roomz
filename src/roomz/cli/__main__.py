@@ -5,7 +5,7 @@ Usage:
   python -m roomz.cli [--server URL]
 """
 
-from .cli import main
+from .app_tui import run_tui
 
 if __name__ == "__main__":
-  main()
+  run_tui()

@@ -463,4 +463,3 @@ def run_tui(config: RoomzConfig | None = None, args: list[str] | None = None) ->
 
   app = ChatApp(config=config)
   app.run()
-

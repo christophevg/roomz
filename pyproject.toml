@@ -61,7 +61,7 @@ dev = [
 
 [project.scripts]
 roomz = "roomz.server:asgi_app"
-cli = "roomz.cli:main"
+roomz-cli = "roomz.cli.app_tui:run_tui"
 
 [project.urls]
 Homepage = "https://github.com/christophevg/roomz"
@@ -137,4 +137,6 @@ commands = [["pytest", "tests", "-v", "--cov=roomz", "--cov-report=term-missing"
 dev = [
     "tomli>=2.4.1",
 ]
+
+
 
