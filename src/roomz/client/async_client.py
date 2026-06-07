@@ -5,9 +5,7 @@ Primary async WebSocket client implementation for Roomz.
 """
 
 import asyncio
-import json
 import logging
-import os
 import random
 from pathlib import Path
 from typing import Any
@@ -16,9 +14,10 @@ import aiohttp
 import socketio  # type: ignore[import-untyped]
 from yarl import URL
 
-from roomz.client.config import Config, resolve_config
+from roomz.client.config import RoomzConfig, get_roomz_config
 from roomz.client.events import EventEmitter, EventHandler
 from roomz.client.exceptions import AuthenticationError, ConfigurationError, ConnectionError
+from roomz.client.session import load_session_cache, save_session_cache
 from roomz.client.state import ConnectionState
 
 logger = logging.getLogger(__name__)
@@ -30,22 +29,17 @@ class AsyncClient:
 
   Configuration is resolved in this order (highest to lowest priority):
     1. Explicit `config` parameter
-    2. Explicit `config_path` parameter (load from file)
-    3. Prefixed environment variable (e.g., HELLO_ROOMZ_SERVER_URL)
-    4. Unprefixed environment variable (e.g., ROOMZ_SERVER_URL)
-    5. ./roomz.toml (current directory)
-    6. ~/.roomz.toml (user home directory)
-    7. Default Config() (empty, raises ConfigurationError on connect)
+    2. CLI arguments (if args provided)
+    3. Environment variables (ROOMZ_SERVER_URL, ROOMZ_DISPLAY_NAME)
+    4. ./roomz.toml (current directory) with security validation
+    5. ~/.roomz.toml (user home directory)
+    6. Dataclass defaults (empty)
 
   Usage with explicit config:
-    config = Config(server_url="http://localhost:5000")
+    config = RoomzConfig(server_url="http://localhost:5000")
     async with AsyncClient(config=config) as client:
       client.on('message', handle_message)
       await client.send("Hello, world!")
-
-  Usage with config file:
-    async with AsyncClient(config_path="~/.roomz.toml") as client:
-      await client.connect(session_token="magic-link-token")
 
   Usage with auto-discovery:
     async with AsyncClient() as client:
@@ -54,10 +48,8 @@ class AsyncClient:
   Environment Variables:
     - ROOMZ_SERVER_URL: Server URL
     - ROOMZ_DISPLAY_NAME: Display name
-    - ROOMZ_PREFIX: Prefix for env vars (e.g., "DEV" -> "DEV_ROOMZ_SERVER_URL")
 
   Config File Format (~/.roomz.toml):
-    [client]
     server_url = "http://localhost:5000"
     display_name = "Alice"
 
@@ -65,12 +57,17 @@ class AsyncClient:
     1. Shared aiohttp.ClientSession is used for HTTP and WebSocket
     2. Call /auth/verify?token=xxx to get session cookie
     3. Cookie is automatically passed to WebSocket connection
+
+  Security:
+    - Config files with group/other read permissions are REJECTED
+    - Config files in world-writable directories are REJECTED
+    - Session cache files created with 0600 permissions
   """
 
   def __init__(
     self,
-    config: Config | None = None,
-    config_path: str | Path | None = None,
+    config: RoomzConfig | None = None,
+    args: list[str] | None = None,
     session_token: str = "",
     session_cache_file: str | Path | None = None,
     *,
@@ -84,7 +81,7 @@ class AsyncClient:
 
     Args:
       config: Configuration object (highest priority, overrides auto-discovery)
-      config_path: Path to config file (overrides auto-discovery, merged with auto-discovered)
+      args: CLI arguments to pass to clevis (optional, for testing)
       session_token: Magic link token for authentication (optional if session_cache_file is set)
       session_cache_file: Path to cache session cookie (None to disable caching)
       reconnect: Enable automatic reconnection (default: True)
@@ -92,23 +89,32 @@ class AsyncClient:
       max_reconnect_attempts: Maximum reconnection attempts (default: 5)
       connection_timeout: Timeout for connection in seconds (default: 10.0)
 
-    Note:
-      session_cache_file is NOT part of Config because it's local state,
-      not shared configuration. It's typically ~/.roomz/session.json.
+    Configuration Resolution Order:
+      1. Explicit `config` parameter
+      2. Environment variables (ROOMZ_SERVER_URL, ROOMZ_DISPLAY_NAME)
+      3. ./roomz.toml (current directory) with security validation
+      4. ~/.roomz.toml (user home directory)
+      5. Dataclass defaults
+
+    Security:
+      - Config files with group/other read permissions are REJECTED
+      - Config files in world-writable directories are REJECTED
+      - Home directory is trusted (no directory check)
 
     Example:
       >>> # Explicit config
-      >>> config = Config(server_url="http://localhost:5000", display_name="Alice")
+      >>> config = RoomzConfig(server_url="http://localhost:5000", display_name="Alice")
       >>> client = AsyncClient(config=config)
-
-      >>> # Config from file
-      >>> client = AsyncClient(config_path="~/.roomz.toml")
 
       >>> # Auto-discovery
       >>> client = AsyncClient()
     """
     # Resolve configuration
-    self._config = resolve_config(config=config, config_path=config_path)
+    if config is not None:
+      self._config = config
+    else:
+      self._config = get_roomz_config(cli=False, args=args)
+
     self._session_token = session_token
     self._reconnect = reconnect
     self._reconnect_delay = reconnect_delay
@@ -211,114 +217,52 @@ class AsyncClient:
     except Exception as e:
       raise ConnectionError(f"Failed to request magic link: {e}") from e
 
+  def clear_cached_session(self) -> None:
+    """Clear cached session cookie."""
+    from roomz.client.session import clear_session_cache
+
+    cache_file = self._session_cache_file if self._session_cache_file else None
+    clear_session_cache(cache_file=cache_file)
+
   def _save_session_cookie(self, cookie_value: str) -> None:
     """
-    Save session cookie to cache file.
+    Save session cookie to cache file (internal method for testing).
 
-    Security:
-    - Creates file with 0600 permissions atomically (no race condition)
-    - Uses exclusive creation to prevent symlink attacks
+    Args:
+      cookie_value: Session cookie value to save
+
+    Note:
+      This method exists for backward compatibility with tests.
+      New code should use session.save_session_cache() directly.
     """
-    if not self._session_cache_file:
-      return
+    from roomz.client.session import save_session_cache
 
-    try:
-      # Ensure parent directory exists
-      self._session_cache_file.parent.mkdir(parents=True, exist_ok=True)
-
-      # Check if file exists
-      if self._session_cache_file.exists():
-        # Update existing file securely
-        self._update_session_cookie_secure(cookie_value)
-      else:
-        # Create new file with correct permissions from the start
-        # O_CREAT | O_EXCL ensures atomic creation (no race condition)
-        # O_TRUNC truncates if file exists (shouldn't happen with O_EXCL)
-        fd = os.open(
-          str(self._session_cache_file),
-          os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_EXCL,
-          mode=0o600,
-        )
-        try:
-          with os.fdopen(fd, "w") as f:
-            json.dump({"session_cookie": cookie_value, "server": self._config.server_url}, f)
-        except (OSError, TypeError) as e:
-          os.close(fd)
-          logger.warning(f"Failed to write session cookie: {e}")
-          return
-
-        logger.debug(f"Session cookie saved to {self._session_cache_file}")
-
-    except FileExistsError:
-      # File was created by another process, update it
-      self._update_session_cookie_secure(cookie_value)
-    except OSError as e:
-      logger.warning(f"Failed to save session cookie: {e}")
-
-  def _update_session_cookie_secure(self, cookie_value: str) -> None:
-    """Update existing session cookie file with secure permissions."""
-    if not self._session_cache_file:
-      return
-
-    try:
-      # Check and fix permissions if needed
-      current_mode = self._session_cache_file.stat().st_mode & 0o777
-      if current_mode & 0o077:  # Has group/other permissions
-        logger.warning(
-          f"Session cache file {self._session_cache_file} has insecure "
-          f"permissions {oct(current_mode)}. Restricting to 0600."
-        )
-        self._session_cache_file.chmod(0o600)
-
-      # Atomic write: write to temp file, then rename
-      temp_file = self._session_cache_file.with_suffix(".tmp")
-      temp_file.write_text(
-        json.dumps({"session_cookie": cookie_value, "server": self._config.server_url})
-      )
-      temp_file.replace(self._session_cache_file)
-
-    except (OSError, TypeError) as e:
-      logger.warning(f"Failed to update session cookie: {e}")
+    cache_file = self._session_cache_file if self._session_cache_file else None
+    if cache_file:
+      save_session_cache(cookie_value, self._config.server_url, cache_file=cache_file)
 
   def _load_session_cookie(self) -> str | None:
     """
-    Load session cookie from cache file.
+    Load session cookie from cache file (internal method for testing).
 
-    Security:
-    - Validates file permissions before loading
-    - Warns if file has insecure permissions
+    Returns:
+      Session cookie value or None if not found
+
+    Note:
+      This method exists for backward compatibility with tests.
+      New code should use session.load_session_cache() directly.
     """
-    if not self._session_cache_file or not self._session_cache_file.exists():
+    from roomz.client.session import load_session_cache
+
+    cache_file = self._session_cache_file if self._session_cache_file else None
+    if not cache_file:
       return None
 
-    try:
-      # Check file permissions
-      current_mode = self._session_cache_file.stat().st_mode & 0o777
-      if current_mode & 0o077:  # Has group/other permissions
-        logger.warning(
-          f"Session cache file {self._session_cache_file} has insecure "
-          f"permissions {oct(current_mode)}. Session may be accessible to other users."
-        )
-
-      with open(self._session_cache_file) as f:
-        data = json.load(f)
-        # Only use cookie if server matches
-        if data.get("server") == self._config.server_url:
-          cookie = data.get("session_cookie")
-          return str(cookie) if cookie else None
-
-    except (OSError, json.JSONDecodeError) as e:
-      logger.warning(f"Failed to load session cookie: {e}")
-
+    cached_data = load_session_cache(cache_file=cache_file)
+    if cached_data and cached_data.get("server") == self._config.server_url:
+      cookie = cached_data.get("session_cookie")
+      return str(cookie) if cookie else None
     return None
-
-  def clear_cached_session(self) -> None:
-    """Clear cached session cookie."""
-    if self._session_cache_file and self._session_cache_file.exists():
-      try:
-        self._session_cache_file.unlink()
-      except OSError:
-        pass
 
   async def connect(self, session_token: str | None = None) -> None:
     """
@@ -341,11 +285,6 @@ class AsyncClient:
         "or create ./roomz.toml or ~/.roomz.toml"
       )
 
-    # Validate configuration values
-    errors = self._config.validate()
-    if errors:
-      raise ConfigurationError(f"Invalid configuration: {'; '.join(errors)}")
-
     # Store as non-optional for type checker
     server_url = self._config.server_url
 
@@ -361,12 +300,17 @@ class AsyncClient:
 
       # Try to load cached session cookie if no token provided
       if not token:
-        cached_cookie = self._load_session_cookie()
-        if cached_cookie:
-          # Set the cached session cookie in the cookie jar
-          self._session.cookie_jar.update_cookies({"session_token": cached_cookie})
-          # Also store for explicit header passing if needed
-          self._cached_cookie = cached_cookie
+        cache_file = self._session_cache_file if self._session_cache_file else None
+        cached_data = load_session_cache(cache_file=cache_file)
+        if cached_data:
+          # Only use cookie if server matches
+          if cached_data.get("server") == self._config.server_url:
+            cached_cookie = cached_data.get("session_cookie")
+            if cached_cookie:
+              # Set the cached session cookie in the cookie jar
+              self._session.cookie_jar.update_cookies({"session_token": cached_cookie})
+              # Also store for explicit header passing if needed
+              self._cached_cookie = cached_cookie
 
       # Verify magic link token if provided (skip for session resumption)
       if token:
@@ -382,7 +326,8 @@ class AsyncClient:
           cookies = self._session.cookie_jar.filter_cookies(URL(server_url))
           session_cookie = cookies.get("session_token")
           if session_cookie:
-            self._save_session_cookie(session_cookie.value)
+            cache_file = self._session_cache_file if self._session_cache_file else None
+            save_session_cache(session_cookie.value, self._config.server_url, cache_file=cache_file)
             self._cached_cookie = session_cookie.value
 
       # Create Socket.IO client with shared session

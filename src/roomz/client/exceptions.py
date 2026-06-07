@@ -27,3 +27,9 @@ class AuthenticationError(ClientError):
   """Authentication failed."""
 
   pass
+
+
+class SecurityError(ClientError):
+  """Security violation detected."""
+
+  pass
