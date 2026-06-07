@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-06-07
+
+### Changed
+
+- **Breaking**: CLI entry point renamed from `roomz-cli` to `cli`
+  - Old: `roomz-cli` command
+  - New: `cli` command
+  - This simplifies the CLI interface after deduplicating CLI code
+  - Users will need to update any scripts or documentation referencing `roomz-cli`
+
+### Fixed
+
+- Removed unnecessary `asyncio` extra from `python-socketio` dependency
+
+---
+
 ## [0.2.0] - 2026-05-26
 
 ### Added
@@ -100,6 +116,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Description |
 |---------|------|-------------|
+| 0.3.0 | 2026-06-07 | Breaking: CLI entry point renamed from roomz-cli to cli |
 | 0.2.0 | 2026-05-26 | Configuration pattern, session security fixes |
 | 0.1.2 | 2026-05-18 | Display names, mobile UX fixes |
 | 0.1.1 | 2026-05-15 | Package restructuring |
