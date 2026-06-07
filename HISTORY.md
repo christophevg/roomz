@@ -1,25 +1,6 @@
 # Roomz Version History
 
-## 0.3.0 (2026-06-07)
-
-### Breaking Changes
-
-#### Configuration Format Change (I8-004)
-
-The TOML configuration file format has changed. Configuration values must now be at the top level instead of nested under a `[client]` section:
-
-**Old format (v0.2.x):**
-```toml
-[client]
-server_url = "http://localhost:5000"
-display_name = "Alice"
-```
-
-**New format (v0.3.x):**
-```toml
-server_url = "http://localhost:5000"
-display_name = "Alice"
-```
+## 0.2.1 (2026-06-07)
 
 ### New Features
 
@@ -36,15 +17,17 @@ display_name = "Alice"
 - **Better error messages** - Clearer error messages for configuration issues
 - **Simplified configuration** - Direct use of clevis for configuration discovery and loading
 
-### Migration Guide
+### Note
 
-If you were using the TOML configuration file:
+The configuration file format remains unchanged. Continue using the `[client]` section in your TOML files:
 
-1. Update your `~/.roomz.toml` or `./roomz.toml` file
-2. Remove the `[client]` section header
-3. Move all configuration values to the top level
+```toml
+[client]
+server_url = "http://localhost:5000"
+display_name = "Alice"
+```
 
-Environment variables and command-line arguments remain unchanged.
+This is the correct clevis pattern and is fully backward compatible.
 
 ## 0.2.0 (2025-05-26)
 
