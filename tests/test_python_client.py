@@ -13,6 +13,8 @@ Requirements: FR-1.6.1, FR-1.6.2 (from functional analysis)
 Task: I3-001 Python client library
 """
 
+import os
+import platform
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -27,6 +29,9 @@ from roomz.client import (
   SyncClient,
 )
 from roomz.client.config import Config
+
+# Windows detection
+IS_WINDOWS = platform.system() == "Windows" or os.name == "nt"
 
 
 class TestClientExceptions:
@@ -962,6 +967,7 @@ class TestDisplayNameConfigLoading:
   variables and configuration files.
   """
 
+  @pytest.mark.skipif(IS_WINDOWS, reason="Home directory not available on Windows CI")
   def test_load_display_name_from_env_var(self):
     """
     Test that display name is loaded from ROOMZ_DISPLAY_NAME env var via auto-discovery.
