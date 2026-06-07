@@ -8,8 +8,9 @@ from pathlib import Path
 from unittest import mock
 
 import pytest
+from clevis import SecurityAction, get_config
 
-from roomz.client.config import RoomzConfig, get_roomz_config
+from roomz.client.config import RoomzConfig
 from roomz.client.exceptions import ConfigurationError
 
 # Windows detection
@@ -53,24 +54,12 @@ class TestRoomzConfig:
       RoomzConfig(server_url="http://user:pass@localhost:5000")
 
 
-class TestGetRoomzConfig:
-  """Tests for get_roomz_config function."""
-
-  @pytest.mark.skipif(IS_WINDOWS, reason="Home directory not available on Windows CI")
-  def test_get_config_from_env(self) -> None:
-    """Test get_roomz_config from environment variables."""
-    with mock.patch.dict(
-      os.environ,
-      {"ROOMZ_SERVER_URL": "http://example.com", "ROOMZ_DISPLAY_NAME": "Bob"},
-      clear=True,
-    ):
-      config = get_roomz_config(cli=False, args=[])
-      assert config.server_url == "http://example.com"
-      assert config.display_name == "Bob"
+class TestClevisConfig:
+  """Tests for clevis get_config function with RoomzConfig."""
 
   @pytest.mark.skipif(IS_WINDOWS, reason="Unix file permissions not supported on Windows")
   def test_get_config_from_file(self, tmp_path: Path) -> None:
-    """Test get_roomz_config from TOML file."""
+    """Test get_config from TOML file."""
     config_file = tmp_path / "roomz.toml"
     config_file.write_text(
       """
@@ -83,50 +72,66 @@ display_name = "Alice"
 
     # Change to tmp directory
     with mock.patch.object(Path, "cwd", return_value=tmp_path):
-      config = get_roomz_config(cli=False, args=[])
+      config = get_config(
+        RoomzConfig,
+        name="roomz",
+        user=False,
+        project=True,
+        cli=False,
+        security={
+          "file_permissions": SecurityAction.REJECT,
+          "directory_permissions": SecurityAction.REJECT,
+        },
+      )
       assert config.server_url == "http://localhost:5000"
       assert config.display_name == "Alice"
 
-  @pytest.mark.skipif(IS_WINDOWS, reason="Home directory not available on Windows CI")
-  def test_get_config_priority_env_over_file(self, tmp_path: Path) -> None:
-    """Test that env vars take precedence over file."""
+  @pytest.mark.skipif(IS_WINDOWS, reason="Unix file permissions not supported on Windows")
+  def test_get_config_with_env_interpolation(self, tmp_path: Path) -> None:
+    """Test get_config with environment variable interpolation in TOML."""
     config_file = tmp_path / "roomz.toml"
     config_file.write_text(
       """
-server_url = "http://file.example.com"
-display_name = "FileUser"
+server_url = "${ROOMZ_SERVER_URL}"
+display_name = "${ROOMZ_DISPLAY_NAME}"
 """
     )
     config_file.chmod(0o600)
 
     with mock.patch.dict(
       os.environ,
-      {"ROOMZ_SERVER_URL": "http://env.example.com"},
+      {"ROOMZ_SERVER_URL": "http://env.example.com", "ROOMZ_DISPLAY_NAME": "EnvUser"},
       clear=True,
     ):
       with mock.patch.object(Path, "cwd", return_value=tmp_path):
-        config = get_roomz_config(cli=False, args=[])
-        # Env var takes precedence
+        config = get_config(
+          RoomzConfig,
+          name="roomz",
+          user=False,
+          project=True,
+          cli=False,
+          security={
+            "file_permissions": SecurityAction.REJECT,
+            "directory_permissions": SecurityAction.REJECT,
+          },
+        )
         assert config.server_url == "http://env.example.com"
-        # File value for missing env var
-        assert config.display_name == "FileUser"
+        assert config.display_name == "EnvUser"
 
   def test_get_config_none(self) -> None:
-    """Test get_roomz_config when no config available."""
+    """Test get_config when no config available."""
     with mock.patch.dict(os.environ, {}, clear=True):
       with mock.patch.object(Path, "cwd", return_value=Path("/nonexistent")):
         with mock.patch.object(Path, "home", return_value=Path("/nonexistent")):
-          config = get_roomz_config(cli=False, args=[])
+          config = get_config(
+            RoomzConfig,
+            name="roomz",
+            user=False,
+            project=False,
+            cli=False,
+          )
           assert config.server_url is None
           assert config.display_name is None
-
-  def test_get_config_explicit(self) -> None:
-    """Test get_roomz_config with explicit config parameter."""
-    # When passing explicit config, it should override
-    # But get_roomz_config doesn't take explicit config - it's just a factory
-    # This test verifies that explicit configs work
-    config = RoomzConfig(server_url="http://explicit.com")
-    assert config.server_url == "http://explicit.com"
 
 
 class TestSecurity:
@@ -141,8 +146,18 @@ class TestSecurity:
     config_file.chmod(0o644)
 
     with mock.patch.object(Path, "cwd", return_value=tmp_path):
-      with pytest.raises(ConfigurationError, match="Failed to load configuration"):
-        get_roomz_config(cli=False, args=[])
+      with pytest.raises(Exception, match="readable by group/other"):  # clevis raises SecurityError
+        get_config(
+          RoomzConfig,
+          name="roomz",
+          user=False,
+          project=True,
+          cli=False,
+          security={
+            "file_permissions": SecurityAction.REJECT,
+            "directory_permissions": SecurityAction.REJECT,
+          },
+        )
 
   @pytest.mark.skipif(IS_WINDOWS, reason="Unix file permissions not supported on Windows")
   def test_accepts_secure_config(self, tmp_path: Path) -> None:
@@ -152,33 +167,18 @@ class TestSecurity:
     config_file.chmod(0o600)
 
     with mock.patch.object(Path, "cwd", return_value=tmp_path):
-      config = get_roomz_config(cli=False, args=[])
+      config = get_config(
+        RoomzConfig,
+        name="roomz",
+        user=False,
+        project=True,
+        cli=False,
+        security={
+          "file_permissions": SecurityAction.REJECT,
+          "directory_permissions": SecurityAction.REJECT,
+        },
+      )
       assert config.server_url == "http://test.com"
-
-
-class TestBackwardCompatibility:
-  """Tests for backward compatibility."""
-
-  def test_resolve_config_explicit(self) -> None:
-    """Test resolve_config with explicit config."""
-    from roomz.client.config import resolve_config
-
-    explicit = RoomzConfig(server_url="http://explicit.com")
-    result = resolve_config(config=explicit)
-    assert result.server_url == "http://explicit.com"
-
-  @pytest.mark.skipif(IS_WINDOWS, reason="Home directory not available on Windows CI")
-  def test_resolve_config_auto_discover(self) -> None:
-    """Test resolve_config with auto-discovery."""
-    from roomz.client.config import resolve_config
-
-    with mock.patch.dict(
-      os.environ,
-      {"ROOMZ_SERVER_URL": "http://auto.com"},
-      clear=True,
-    ):
-      result = resolve_config()
-      assert result.server_url == "http://auto.com"
 
 
 class TestIntegration:
@@ -193,20 +193,6 @@ class TestIntegration:
 
     assert client.server_url == "http://localhost:5000"
     assert client.display_name == "TestUser"
-
-  @pytest.mark.skipif(IS_WINDOWS, reason="Home directory not available on Windows CI")
-  def test_config_auto_discover_used_by_async_client(self) -> None:
-    """Test that auto-discovered config works with AsyncClient."""
-    from roomz.client import AsyncClient
-
-    with mock.patch.dict(
-      os.environ,
-      {"ROOMZ_SERVER_URL": "http://auto.example.com", "ROOMZ_DISPLAY_NAME": "AutoUser"},
-      clear=True,
-    ):
-      client = AsyncClient()
-      assert client.server_url == "http://auto.example.com"
-      assert client.display_name == "AutoUser"
 
   def test_config_none_raises_on_connect(self) -> None:
     """Test that connecting without server_url raises ConfigurationError."""
