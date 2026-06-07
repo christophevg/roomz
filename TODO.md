@@ -236,6 +236,8 @@
   - On reconnect, inform backend of last known message to receive new messages
   - Note: Full sync requires backend persistence (postponed to 2.0)
   - Initial implementation: frontend caching for immediate display after refresh
+  - **Status**: ON HOLD (depends on persistence features)
+  - **Note**: Will be addressed along with I8-002 during persistence work
   - **Delivers**: Messages persist across app refreshes
   - **Satisfies**: R33 (session persistence), R89 (automatic reconnection)
   - **Acceptance**:
@@ -506,4 +508,5 @@
     - ✅ Works on mobile (responsive layout)
 
 **Result**: Open the web app, type a message, see it appear on all connected browsers. Pure real-time chat, no auth, no persistence, no rooms.
+
 
