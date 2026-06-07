@@ -41,7 +41,7 @@ check: format lint typecheck test ## Run all quality checks
 ## Running
 
 run: env-run ## Run the development server
-	uv run gunicorn -k uvicorn.workers.UvicornWorker roomz.server:asgi_app -b 127.0.0.1:8081 --reload
+	uv run roomz serve --reload
 
 ## Documentation
 

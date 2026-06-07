@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "roomz"
-version = "0.3.1"
+version = "0.4.0"
 description = "Real-time chatroom web service with magic link authentication"
 authors = [{name = "Christophe VG", email = "contact@christophe.vg"}]
 readme = "README.md"
@@ -37,6 +37,7 @@ dependencies = [
   "PyJWT>=2.8.0",
   "python-dotenv>=1.2.2",
   "clevis>=0.3.0",
+  "tomli-w>=1.0.0",
   "envtoml>=0.2.0",
 ]
 
@@ -60,8 +61,8 @@ dev = [
 ]
 
 [project.scripts]
-roomz = "roomz.server:asgi_app"
-roomz-cli = "roomz.cli.app_tui:run_tui"
+roomz = "roomz.__main__:run"
+cli = "roomz.cli.app_tui:run_tui"
 
 [project.urls]
 Homepage = "https://github.com/christophevg/roomz"

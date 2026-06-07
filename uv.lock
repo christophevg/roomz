@@ -276,7 +276,7 @@ wheels = [
 
 [[package]]
 name = "baseweb"
-version = "0.5.2"
+version = "0.6.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "dotmap" },
@@ -290,9 +290,9 @@ dependencies = [
     { name = "urllib3" },
     { name = "websocket-client" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c8/cc/3b0c57864394eb082e04358c6da0e1f9f89df0d9539a37bc956b64956ed6/baseweb-0.5.2.tar.gz", hash = "sha256:87615aa9ef346753c5b03c3f064297d093588bbd05933fb8456198c0efc069d4", size = 6896528, upload-time = "2026-05-15T08:44:10.06Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ec/ba/aa0d5e69a03657058d2554a58465d6d95d08638e0709e64f79acf7e697d9/baseweb-0.6.0.tar.gz", hash = "sha256:b77812d4bedcfc5967030612c9ab8dc0f0f37ee8c84a92d4bb6681f2f06f53e8", size = 6903725, upload-time = "2026-05-18T12:43:37.074Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/6f/a0/41997a549ce9d826cc59e8fbb1e41de341a831aab30fde8901cab2c489e4/baseweb-0.5.2-py3-none-any.whl", hash = "sha256:5206fce78af6c1db55499b5192a84679c1f8eedb56ecb8953ef82f67d30e35a9", size = 3487814, upload-time = "2026-05-15T08:43:52.327Z" },
+    { url = "https://files.pythonhosted.org/packages/e6/ac/e84665bcd216749b8b12abb6cef14318bf3c2fefbaaf4a6b9fcb5e0b6bf6/baseweb-0.6.0-py3-none-any.whl", hash = "sha256:5d4b9e459c5e00b1b5badd302b2f799f5eb1757155704683ff14a044a325e51e", size = 3487630, upload-time = "2026-05-18T12:43:25.762Z" },
 ]
 
 [[package]]
@@ -2233,7 +2233,7 @@ wheels = [
 
 [[package]]
 name = "roomz"
-version = "0.3.0"
+version = "0.3.1"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
@@ -2247,6 +2247,7 @@ dependencies = [
     { name = "resend" },
     { name = "rich" },
     { name = "textual" },
+    { name = "tomli-w" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
@@ -2300,6 +2301,7 @@ requires-dist = [
     { name = "sphinx", marker = "extra == 'docs'", specifier = ">=7.0.0" },
     { name = "sphinx-rtd-theme", marker = "extra == 'docs'", specifier = ">=2.0.0" },
     { name = "textual", specifier = ">=0.47.0" },
+    { name = "tomli-w", specifier = ">=1.0.0" },
     { name = "tox", marker = "extra == 'dev'", specifier = ">=4.0.0" },
     { name = "tox-uv", marker = "extra == 'dev'", specifier = ">=1.0.0" },
     { name = "twine", marker = "extra == 'dev'", specifier = ">=6.0.0" },
@@ -3243,5 +3245,3 @@ sdist = { url = "https://files.pythonhosted.org/packages/30/21/093488dfc7cc8964d
 wheels = [
     { url = "https://files.pythonhosted.org/packages/08/8a/0861bec20485572fbddf3dfba2910e38fe249796cb73ecdeb74e07eeb8d3/zipp-3.23.1-py3-none-any.whl", hash = "sha256:0b3596c50a5c700c9cb40ba8d86d9f2cc4807e9bedb06bcdf7fac85633e444dc", size = 10378, upload-time = "2026-04-13T23:21:45.386Z" },
 ]
-
-

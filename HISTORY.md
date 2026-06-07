@@ -1,5 +1,31 @@
 # Roomz Version History
 
+## 0.4.0 (2026-06-07)
+
+### New Features
+
+#### Baseweb-Style CLI Integration
+
+- **New command-line interface** - Unified CLI following Baseweb standards with commands: init, check, config, serve, version
+- **Init command** - Create default roomz.toml configuration file with secure permissions
+- **Check command** - Validate configuration without running the application
+- **Config command** - Display current configuration in table or TOML format
+- **Serve command** - Run roomz application with Gunicorn, supporting all configuration overrides
+- **Version command** - Display roomz version information
+- **Clevis integration** - Full integration with clevis package for configuration management with priority: CLI args > env vars > project TOML > user TOML > defaults
+- **StandaloneApplication class** - Custom Gunicorn application wrapper for proper ASGI app loading
+
+### Improvements
+
+- **Better configuration management** - RoomzConfig dataclass with nested ServerConfig, EmailConfig, and JWTConfig sections
+- **Introspection-based utilities** - config_to_toml and print_config_table use dataclasses.asdict() to avoid hardcoding field names
+- **Helpful error messages** - Improved error messages for import failures and configuration issues
+
+### Bug Fixes
+
+- **Removed unused cli.py module** - Deleted src/roomz/cli/cli.py after functionality was moved to app_tui.py in I8-005
+- **Code cleanup** - Removed trailing whitespace from all source files for consistency
+
 ## 0.3.1 (2026-06-07)
 
 ### Bug Fixes
