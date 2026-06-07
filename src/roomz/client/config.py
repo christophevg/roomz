@@ -74,6 +74,3 @@ class RoomzConfig:
 
   client: ClientConfig = field(default_factory=ClientConfig)
 
-
-# Type alias for backward compatibility
-Config = RoomzConfig

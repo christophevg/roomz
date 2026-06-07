@@ -9,7 +9,7 @@ This example shows how to:
 5. Manage the connection lifecycle
 
 Basic usage:
-    client = AsyncClient(config=Config(server_url="http://localhost:8000"))
+    client = AsyncClient(config=RoomzConfig(client=ClientConfig(server_url="http://localhost:8000")))
     client.on("message", handle_message)
     await client.login("user@example.com")  # Request magic link
     await client.connect(token="magic-link-token")  # Connect
@@ -23,7 +23,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from clevis import SecurityAction, get_config
+from clevis import get_config
 from textual.app import App, ComposeResult
 from textual.containers import VerticalScroll
 from textual.reactive import reactive
@@ -151,7 +151,7 @@ class ChatApp(App[None]):
 
     Example:
       >>> # Explicit config
-      >>> config = Config(server_url="http://localhost:8000")
+      >>> config = RoomzConfig(client=ClientConfig(server_url="http://localhost:8000"))
       >>> app = ChatApp(config=config)
 
       >>> # Auto-discovery
@@ -439,9 +439,8 @@ def run_tui(config: RoomzConfig | None = None, args: list[str] | None = None) ->
     3. ~/.roomz.toml (user config with ${VAR} interpolation)
     4. Dataclass defaults
 
-  Environment Variables:
-    Environment variables are supported via ${VAR} interpolation in TOML files,
-    not directly. Use ${ROOMZ_SERVER_URL} and ${ROOMZ_DISPLAY_NAME} in TOML.
+  Environment variables are supported via ${VAR} interpolation in TOML files.
+  Use ${ROOMZ_SERVER_URL} and ${ROOMZ_DISPLAY_NAME} in TOML configs.
 
   Example:
     >>> # Explicit config
@@ -460,10 +459,6 @@ def run_tui(config: RoomzConfig | None = None, args: list[str] | None = None) ->
       name="roomz",
       cli=True,
       args=args,
-      security={
-        "file_permissions": SecurityAction.REJECT,
-        "directory_permissions": SecurityAction.REJECT,
-      },
     )
 
   app = ChatApp(config=config)
