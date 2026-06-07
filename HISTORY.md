@@ -1,5 +1,16 @@
 # Roomz Version History
 
+## 0.3.1 (2026-06-07)
+
+### Bug Fixes
+
+- **Removed unused cli.py module** - Deleted src/roomz/cli/cli.py after functionality was moved to app_tui.py in I8-005
+- **Code cleanup** - Removed trailing whitespace from all source files for consistency
+
+### Improvements
+
+- **Better code organization** - CLI entry point code is now consolidated in app_tui.py with direct script invocation
+
 ## 0.2.2 (2026-06-07)
 
 ### Bug Fixes
