@@ -298,21 +298,30 @@
   - **Delivers**: Structured question/answer interactions
   - **Acceptance**: TBD (pending analysis)
 
-- [ ] **I9-004: Collapsible messages with subject** (Issue #11) (Priority: TBD)
-  - **Status**: READY FOR ANALYSIS
+- [ ] **I9-004: Collapsible messages with subject** (Issue #11) (Priority: P2)
+  - **Status**: ANALYZED (ready for implementation)
+  - **Analysis**: analysis/I9-004-collapsible-messages.md
   - **Related to**: I9-001 (Message content types)
   - **Owner feedback received**: 2026-06-07
-  - Subject: optional
-  - Default: global collapsed, user can override
-  - Historical messages: always collapsed
-  - Settings: user preference (applies to all clients)
-  - Apply to: collapsible messages only (those with subject)
-  - Subject formatting: supports colors, special characters, icons
-  - Feature: Messages with optional subject and collapsible body
-  - User can control default expanded/collapsed state
-  - Enables large messages with short summary
+  - **Subject**: Optional field (max 200 chars), supports markdown formatting, emoji
+  - **Collapse state**: User preference > Message preference > Global default (collapsed)
+  - **Historical messages**: Always collapsed (no per-message state tracking)
+  - **Protocol**: Add `subject` (string | null), `collapsed` (boolean), `is_historical` (boolean)
+  - **Web client**: Collapsible UI with smooth animation, keyboard accessible, localStorage preference
+  - **Python client**: `[+]`/`[-]` indicators, `/expand` and `/collapse` commands
+  - **Estimated**: 10-15 hours (2-3h server, 4-6h web, 2-3h CLI, 2-3h testing)
   - **Delivers**: Better handling of large/complex messages
-  - **Acceptance**: TBD (pending analysis)
+  - **Acceptance**:
+    - ✅ Server accepts optional `subject` field (max 200 chars, sanitized)
+    - ✅ Server broadcasts `subject`, `collapsed`, `is_historical` fields
+    - ✅ Web client renders collapsed (subject) and expanded (subject + body) states
+    - ✅ Web client respects user preference > message preference > global default
+    - ✅ Historical messages always collapsed
+    - ✅ Subject formatting: bold, italic, code, emoji
+    - ✅ Python CLI shows `[+]`/`[-]` indicators with expand/collapse commands
+    - ✅ Keyboard accessible (Enter/Space to toggle)
+    - ✅ Screen reader support (aria-expanded)
+    - ✅ Backward compatible with existing clients
 
 ---
 
