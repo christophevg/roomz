@@ -218,33 +218,6 @@
     - ✅ Basic offline functionality works
     - ✅ PWA passes Lighthouse audit
 
-- [ ] **I8-004: Replace config module with clevis package** (Issue #5)
-  - Replace custom configuration code (353 lines) with clevis package v0.3.0+
-  - **NO SECURITY WRAPPER LAYER NEEDED** - Clevis 0.3.0 has built-in security features
-  - Use `clevis.get_config()` with `security` parameter for built-in validation
-  - Create `session_cache.py` module for session cache security (0600 permissions)
-  - Update TOML format from `[client]` section to top-level (breaking change)
-  - Remove `src/roomz/client/config.py` and rewrite using clevis (~60 lines)
-  - Update AsyncClient/SyncClient signature: remove `config_path`, add `args`
-  - All I8-000 security requirements preserved via Clevis built-in features
-  - All existing tests must pass
-  - Document new configuration approach in README
-  - References: research/clevis-new-release.md, analysis/reporting/I8-004/plan-v2.md
-  - **Delivers**: 440+ lines reduction, improved maintainability, standardized config pattern
-  - **Satisfies**: Technical debt reduction, improved code quality, I8-000 security requirements
-  - **Priority**: P2
-  - **Acceptance**:
-    - ✅ Custom config module removed (< 70 lines new code)
-    - ✅ Session cache files created with 0600 permissions
-    - ✅ Clevis security validation active (file permissions, directory security)
-    - ✅ All I8-000 security requirements preserved (HIGH-1, HIGH-2, MEDIUM-1, etc.)
-    - ✅ AsyncClient/SyncClient use `get_roomz_config(cli=False, args=args)`
-    - ✅ TOML format updated to top-level (no `[client]` section)
-    - ✅ All existing tests pass
-    - ✅ New security tests for permission validation
-    - ✅ README updated with new config approach
-    - ✅ Migration guide added to changelog
-    - ✅ Breaking change documented in changelog
 
 - [ ] **I8-002: Investigate mobile message loss on refresh**
   - Investigate bug: messages disappear when app has been open for a while
@@ -389,6 +362,34 @@
     - ✅ **Security**: Error raised for world-writable directories containing session files
     - ✅ **Security**: Server URLs validated (http/https only, no credentials)
     - ✅ **Security**: Config migration includes secure file handling
+
+- [x] **I8-004: Replace config module with clevis package** (Issue #5) (2026-06-07)
+  - Replace custom configuration code (353 lines) with clevis package v0.3.0+
+  - **NO SECURITY WRAPPER LAYER NEEDED** - Clevis 0.3.0 has built-in security features
+  - Use `clevis.get_config()` with `security` parameter for built-in validation
+  - Create `session_cache.py` module for session cache security (0600 permissions)
+  - Update TOML format from `[client]` section to top-level (breaking change)
+  - Remove `src/roomz/client/config.py` and rewrite using clevis (~60 lines)
+  - Update AsyncClient/SyncClient signature: remove `config_path`, add `args`
+  - All I8-000 security requirements preserved via Clevis built-in features
+  - All existing tests must pass
+  - Document new configuration approach in README
+  - References: research/clevis-new-release.md, analysis/reporting/I8-004/plan-v2.md
+  - **Delivers**: 440+ lines reduction, improved maintainability, standardized config pattern
+  - **Satisfies**: Technical debt reduction, improved code quality, I8-000 security requirements
+  - **Priority**: P2
+  - **Acceptance**:
+    - ✅ Custom config module removed (< 70 lines new code)
+    - ✅ Session cache files created with 0600 permissions
+    - ✅ Clevis security validation active (file permissions, directory security)
+    - ✅ All I8-000 security requirements preserved (HIGH-1, HIGH-2, MEDIUM-1, etc.)
+    - ✅ AsyncClient/SyncClient use `get_roomz_config(cli=False, args=args)`
+    - ✅ TOML format updated to top-level (no `[client]` section)
+    - ✅ All existing tests pass
+    - ✅ New security tests for permission validation
+    - ✅ README updated with new config approach
+    - ✅ Migration guide added to changelog
+    - ✅ Breaking change documented in changelog
 
 - [x] **I8-005: Deduplicate CLI entry point code** (Issue #3) (2026-06-02)
   - Refactor duplicate CLI entry point code from `__init__.py` and `__main__.py`
