@@ -192,6 +192,7 @@ Use `${VAR}` syntax in TOML files to interpolate environment variables:
 
 ```toml
 # ~/.roomz.toml
+[client]
 server_url = "${ROOMZ_SERVER_URL}"
 display_name = "${ROOMZ_DISPLAY_NAME}"
 ```
@@ -200,6 +201,7 @@ display_name = "${ROOMZ_DISPLAY_NAME}"
 
 ```toml
 # ~/.roomz.toml
+[client]
 server_url = "http://localhost:8000"
 display_name = "Alice"
 ```
@@ -215,12 +217,12 @@ display_name = "Alice"
 For programmatic access in your Python applications:
 
 ```python
-from roomz.client import AsyncClient
+from roomz.client import AsyncClient, RoomzConfig, ClientConfig
 from pathlib import Path
 
 # Option 1: Explicit configuration
 client = AsyncClient(
-  config=RoomzConfig(server_url="http://localhost:8000"),
+  config=RoomzConfig(client=ClientConfig(server_url="http://localhost:8000")),
   session_cache_file=Path.home() / ".cache" / "roomz" / "session.json"
 )
 
@@ -255,10 +257,10 @@ client.clear_cached_session()
 For synchronous applications:
 
 ```python
-from roomz.client import SyncClient, RoomzConfig
+from roomz.client import SyncClient, RoomzConfig, ClientConfig
 
 # Option 1: Explicit configuration
-with SyncClient(config=RoomzConfig(server_url="http://localhost:8000"), session_token="token") as client:
+with SyncClient(config=RoomzConfig(client=ClientConfig(server_url="http://localhost:8000")), session_token="token") as client:
   client.on("message", lambda data: print(data['content']))
   result = client.send("Hello!")
 

@@ -442,7 +442,7 @@ def run_tui(config: RoomzConfig | None = None, args: list[str] | None = None) ->
 
   Example:
     >>> # Explicit config
-    >>> config = RoomzConfig(server_url="http://localhost:8000")
+    >>> config = RoomzConfig(client=ClientConfig(server_url="http://localhost:8000"))
     >>> run_tui(config=config)
 
     >>> # Auto-discovery with CLI args
@@ -455,8 +455,6 @@ def run_tui(config: RoomzConfig | None = None, args: list[str] | None = None) ->
     config = get_config(
       RoomzConfig,
       name="roomz",
-      user=True,
-      project=True,
       cli=True,
       args=args,
       security={
