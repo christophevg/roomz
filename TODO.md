@@ -206,7 +206,7 @@
 
 **Goal**: Improve mobile reliability and PWA support
 
-- [ ] **I8-001: PWA support**
+- [ ] **I8-001: PWA support** (Priority: P3)
   - Enable Progressive Web App support for improved mobile experience
   - Review and improve PWA support in baseweb first, then apply here
   - Add service worker for offline capability
@@ -219,16 +219,18 @@
     - ✅ PWA passes Lighthouse audit
 
 
-- [ ] **I8-002: Investigate mobile message loss on refresh**
+- [ ] **I8-002: Investigate mobile message loss on refresh** (Priority: P1 - ON HOLD)
   - Investigate bug: messages disappear when app has been open for a while
   - Determine root cause (WebSocket reconnection? Server restart? Browser behavior?)
   - Document findings for I8-003 solution
+  - **Status**: ON HOLD (waiting for reproduction scenario)
+  - **Note**: Will likely be addressed when implementing persistence features
   - **Delivers**: Understanding of message loss issue
   - **Acceptance**:
     - ✅ Root cause identified
     - ✅ Solution approach documented
 
-- [ ] **I8-003: Local message caching**
+- [ ] **I8-003: Local message caching** (Priority: P2 - depends on persistence work)
   - Cache room messages in browser storage (localStorage/IndexedDB)
   - Messages need unique IDs for incremental sync
   - On reconnect, inform backend of last known message to receive new messages
