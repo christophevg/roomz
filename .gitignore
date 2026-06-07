@@ -51,3 +51,4 @@ docs/_build/
 uv.lock
 .env.local
 resend_email_test.py
+reporting
