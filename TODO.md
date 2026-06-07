@@ -207,6 +207,9 @@
 **Goal**: Improve mobile reliability and PWA support
 
 - [ ] **I8-001: PWA support** (Priority: P3)
+  - **Status**: BLOCKED
+  - **Blocked by**: PWA support in baseweb (currently in development)
+  - **Note**: Will be implemented once baseweb PWA support is complete
   - Enable Progressive Web App support for improved mobile experience
   - Review and improve PWA support in baseweb first, then apply here
   - Add service worker for offline capability
