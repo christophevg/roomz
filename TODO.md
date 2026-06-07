@@ -284,35 +284,35 @@
     - ✅ Active status clearly indicated for each participant
 
 - [ ] **I9-003: Question message type** (Issue #10) (Priority: TBD)
-  - **Status**: WAITING FOR CLARIFICATION
+  - **Status**: READY FOR ANALYSIS
   - **Related to**: I9-001 (Message content types)
-  - **Clarifying questions posted**: 2026-06-07
-  - Questions:
-    1. Rendering differences between web/CLI?
-    2. Answer options provided by sender or open-ended?
-    3. Response as new message type (application/x-answer)?
-    4. Agent-to-user, user-to-agent, or both?
-    5. Timeout for unanswered questions?
+  - **Owner feedback received**: 2026-06-07
+  - Rendering: appropriate per client capabilities
+  - Answer options: provided by sender, optional free-text option
+  - Response: simple text response (not special message type)
+  - Participant types: any participant can create question
+  - Timeout: optional with default answer (e.g., timeout="60s", timeout_message="no answer provided")
+  - User can cancel/not answer
   - Feature: Special message type for multiple choice questions
   - Extensions: multiple answers (checkboxes), free text option
   - **Delivers**: Structured question/answer interactions
-  - **Acceptance**: TBD (pending clarification)
+  - **Acceptance**: TBD (pending analysis)
 
 - [ ] **I9-004: Collapsible messages with subject** (Issue #11) (Priority: TBD)
-  - **Status**: WAITING FOR CLARIFICATION
+  - **Status**: READY FOR ANALYSIS
   - **Related to**: I9-001 (Message content types)
-  - **Clarifying questions posted**: 2026-06-07
-  - Questions:
-    1. Subject required or optional?
-    2. Collapsed state persistence across sessions?
-    3. Global expand/collapse all setting?
-    4. Default collapsed content types?
-    5. Apply to all messages or specific content types?
+  - **Owner feedback received**: 2026-06-07
+  - Subject: optional
+  - Default: global collapsed, user can override
+  - Historical messages: always collapsed
+  - Settings: user preference (applies to all clients)
+  - Apply to: collapsible messages only (those with subject)
+  - Subject formatting: supports colors, special characters, icons
   - Feature: Messages with optional subject and collapsible body
   - User can control default expanded/collapsed state
   - Enables large messages with short summary
   - **Delivers**: Better handling of large/complex messages
-  - **Acceptance**: TBD (pending clarification)
+  - **Acceptance**: TBD (pending analysis)
 
 ---
 
