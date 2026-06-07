@@ -5,14 +5,12 @@ This tests the specific issue where nested dataclasses with
 'from __future__ import annotations' fail to parse CLI arguments.
 """
 
-import tempfile
 from pathlib import Path
 from unittest import mock
 
-import pytest
-
-from roomz.client.config import ClientConfig, RoomzConfig
 from clevis import get_config
+
+from roomz.client.config import RoomzConfig
 
 
 class TestCLIConfig:
