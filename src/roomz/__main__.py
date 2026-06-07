@@ -89,7 +89,7 @@ class ConfigConfig(RoomzConfig):
   format: str = "table"  # or "toml"
 
 
-@configclass(cmd="cli", help="Run TUI chat client")  # type: ignore[arg-type]
+@configclass(cmd="cli", help="Run TUI chat client", config="client")  # type: ignore[arg-type]
 class CliConfig(ClientConfig):
   """Configuration for cli command.
 
@@ -430,3 +430,4 @@ def run():
 
 if __name__ == "__main__":
   run()
+
