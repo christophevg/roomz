@@ -7,7 +7,7 @@ used by both entry points (__init__.py and __main__.py).
 
 import argparse
 
-from roomz.client.config import Config
+from roomz.client.config import ClientConfig, Config
 
 from .app_tui import run_tui
 
@@ -24,6 +24,6 @@ def main() -> None:
   args = parser.parse_args()
 
   if args.server:
-    run_tui(config=Config(server_url=args.server))
+    run_tui(config=Config(client=ClientConfig(server_url=args.server)))
   else:
     run_tui()
