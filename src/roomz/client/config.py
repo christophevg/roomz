@@ -4,8 +4,6 @@ Configuration management for Roomz client using clevis package.
 Provides simplified configuration with built-in security validation.
 """
 
-from __future__ import annotations
-
 import logging
 from dataclasses import dataclass, field
 
