@@ -435,10 +435,13 @@ def run_tui(config: RoomzConfig | None = None, args: list[str] | None = None) ->
 
   Configuration Resolution Order:
     1. CLI arguments (--server-url, --display-name)
-    2. Environment variables (ROOMZ_SERVER_URL, ROOMZ_DISPLAY_NAME)
-    3. ./roomz.toml (current directory) with security validation
-    4. ~/.roomz.toml (user home directory)
-    5. Dataclass defaults
+    2. ./roomz.toml (project config with ${VAR} interpolation)
+    3. ~/.roomz.toml (user config with ${VAR} interpolation)
+    4. Dataclass defaults
+
+  Environment Variables:
+    Environment variables are supported via ${VAR} interpolation in TOML files,
+    not directly. Use ${ROOMZ_SERVER_URL} and ${ROOMZ_DISPLAY_NAME} in TOML.
 
   Example:
     >>> # Explicit config
@@ -465,3 +468,4 @@ def run_tui(config: RoomzConfig | None = None, args: list[str] | None = None) ->
 
   app = ChatApp(config=config)
   app.run()
+

@@ -26,13 +26,11 @@ class SyncClient:
   Provides a synchronous API wrapping the async implementation.
   Runs async event loop in background thread.
 
-  Configuration is resolved in this order (highest to lowest priority):
+  Configuration Resolution Order (highest to lowest priority):
     1. Explicit `config` parameter
-    2. CLI arguments (if args provided)
-    3. Environment variables (ROOMZ_SERVER_URL, ROOMZ_DISPLAY_NAME)
-    4. ./roomz.toml (current directory) with security validation
-    5. ~/.roomz.toml (user home directory)
-    6. Dataclass defaults (empty)
+    2. ./roomz.toml (project config with ${VAR} interpolation)
+    3. ~/.roomz.toml (user config with ${VAR} interpolation)
+    4. Dataclass defaults
 
   Usage with explicit config:
     config = RoomzConfig(server_url="http://localhost:5000")
@@ -236,3 +234,4 @@ class SyncClient:
       handler: Specific handler to remove, or None to remove all handlers for event
     """
     self._async_client.off(event, handler)
+

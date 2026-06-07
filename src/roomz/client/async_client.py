@@ -28,13 +28,11 @@ class AsyncClient:
   """
   Async WebSocket client for Roomz real-time chat.
 
-  Configuration is resolved in this order (highest to lowest priority):
+  Configuration Resolution Order (highest to lowest priority):
     1. Explicit `config` parameter
-    2. CLI arguments (if args provided)
-    3. Environment variables (ROOMZ_SERVER_URL, ROOMZ_DISPLAY_NAME)
-    4. ./roomz.toml (current directory) with security validation
-    5. ~/.roomz.toml (user home directory)
-    6. Dataclass defaults (empty)
+    2. ./roomz.toml (project config with ${VAR} interpolation)
+    3. ~/.roomz.toml (user config with ${VAR} interpolation)
+    4. Dataclass defaults
 
   Usage with explicit config:
     config = RoomzConfig(server_url="http://localhost:5000")
@@ -47,12 +45,13 @@ class AsyncClient:
       await client.connect(session_token="magic-link-token")
 
   Environment Variables:
-    - ROOMZ_SERVER_URL: Server URL
-    - ROOMZ_DISPLAY_NAME: Display name
+    Environment variables are supported via ${VAR} interpolation in TOML files,
+    not directly. Use ${ROOMZ_SERVER_URL} and ${ROOMZ_DISPLAY_NAME} in TOML:
 
-  Config File Format (~/.roomz.toml):
-    server_url = "http://localhost:5000"
-    display_name = "Alice"
+    TOML file example:
+      [client]
+      server_url = "${ROOMZ_SERVER_URL}"
+      display_name = "${ROOMZ_DISPLAY_NAME}"
 
   Authentication Flow:
     1. Shared aiohttp.ClientSession is used for HTTP and WebSocket
@@ -90,12 +89,11 @@ class AsyncClient:
       max_reconnect_attempts: Maximum reconnection attempts (default: 5)
       connection_timeout: Timeout for connection in seconds (default: 10.0)
 
-    Configuration Resolution Order:
+    Configuration Resolution Order (highest to lowest priority):
       1. Explicit `config` parameter
-      2. Environment variables (ROOMZ_SERVER_URL, ROOMZ_DISPLAY_NAME)
-      3. ./roomz.toml (current directory) with security validation
-      4. ~/.roomz.toml (user home directory)
-      5. Dataclass defaults
+      2. ./roomz.toml (project config with ${VAR} interpolation)
+      3. ~/.roomz.toml (user config with ${VAR} interpolation)
+      4. Dataclass defaults
 
     Security:
       - Config files with group/other read permissions are REJECTED
@@ -637,3 +635,4 @@ class AsyncClient:
         "code": 503,
       },
     )
+
