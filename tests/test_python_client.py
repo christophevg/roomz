@@ -968,22 +968,31 @@ class TestDisplayNameConfigLoading:
   """
 
   @pytest.mark.skipif(IS_WINDOWS, reason="Home directory not available on Windows CI")
-  def test_load_display_name_from_env_var(self):
+  def test_load_display_name_from_env_var(self, tmp_path: Path):
     """
-    Test that display name is loaded from ROOMZ_DISPLAY_NAME env var via auto-discovery.
+    Test that display name is loaded from ROOMZ_DISPLAY_NAME env var via TOML interpolation.
 
-    Given: Environment variable ROOMZ_DISPLAY_NAME="Laptop"
+    Given: Environment variable ROOMZ_DISPLAY_NAME="Laptop" and TOML file with ${ROOMZ_DISPLAY_NAME}
     When: Creating AsyncClient with auto-discovery (no explicit config)
     Then: client._display_name is set to "Laptop"
     """
     import os
+    from unittest import mock
 
     original = os.environ.get("ROOMZ_DISPLAY_NAME")
     try:
       os.environ["ROOMZ_DISPLAY_NAME"] = "Laptop"
-      # Use auto-discovery (no explicit config) to pick up env vars
-      client = AsyncClient(session_token="test-token")
-      assert client._display_name == "Laptop"
+
+      # Create TOML file with env var interpolation
+      config_file = tmp_path / "roomz.toml"
+      config_file.write_text('display_name = "${ROOMZ_DISPLAY_NAME}"\n')
+      config_file.chmod(0o600)
+
+      # Mock cwd to use tmp_path
+      with mock.patch.object(Path, "cwd", return_value=tmp_path):
+        # Use auto-discovery (no explicit config) to pick up env vars via TOML
+        client = AsyncClient(session_token="test-token")
+        assert client._display_name == "Laptop"
     finally:
       if original is not None:
         os.environ["ROOMZ_DISPLAY_NAME"] = original

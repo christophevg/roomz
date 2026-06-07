@@ -23,13 +23,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from clevis import SecurityAction, get_config
 from textual.app import App, ComposeResult
 from textual.containers import VerticalScroll
 from textual.reactive import reactive
 from textual.widgets import Static, TextArea
 
 from roomz.client import AsyncClient
-from roomz.client.config import RoomzConfig, get_roomz_config
+from roomz.client.config import RoomzConfig
 
 # =============================================================================
 # UI Components (implementation details)
@@ -451,7 +452,18 @@ def run_tui(config: RoomzConfig | None = None, args: list[str] | None = None) ->
     >>> run_tui()
   """
   if config is None:
-    config = get_roomz_config(cli=True, args=args)
+    config = get_config(
+      RoomzConfig,
+      name="roomz",
+      user=True,
+      project=True,
+      cli=True,
+      args=args,
+      security={
+        "file_permissions": SecurityAction.REJECT,
+        "directory_permissions": SecurityAction.REJECT,
+      },
+    )
 
   app = ChatApp(config=config)
   app.run()

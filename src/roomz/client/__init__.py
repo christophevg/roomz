@@ -5,7 +5,7 @@ Provides async and sync WebSocket clients for Roomz real-time chat.
 """
 
 from roomz.client.async_client import AsyncClient
-from roomz.client.config import Config, RoomzConfig, get_roomz_config
+from roomz.client.config import Config, RoomzConfig
 from roomz.client.events import EventHandler
 from roomz.client.exceptions import (
   AuthenticationError,
@@ -22,7 +22,6 @@ __all__ = [
   "SyncClient",
   "Config",
   "RoomzConfig",
-  "get_roomz_config",
   "ConnectionState",
   "ClientError",
   "ConfigurationError",

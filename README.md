@@ -182,19 +182,24 @@ Roomz uses [clevis](https://pypi.org/project/clevis/) for configuration manageme
 
 **Configuration Resolution Order** (highest to lowest priority):
 1. CLI arguments (`--server-url`, `--display-name`)
-2. Environment variables (`ROOMZ_SERVER_URL`, `ROOMZ_DISPLAY_NAME`)
-3. Project-level config (`./roomz.toml` in current directory)
-4. User-level config (`~/.roomz.toml` in home directory)
-5. Dataclass defaults
+2. Project-level config (`./roomz.toml` in current directory)
+3. User-level config (`~/.roomz.toml` in home directory)
+4. Dataclass defaults
 
-**Environment Variables:**
-```bash
-export ROOMZ_SERVER_URL="http://localhost:8000"
-export ROOMZ_DISPLAY_NAME="Alice"
+**Environment Variable Interpolation:**
+
+Use `${VAR}` syntax in TOML files to interpolate environment variables:
+
+```toml
+# ~/.roomz.toml
+server_url = "${ROOMZ_SERVER_URL}"
+display_name = "${ROOMZ_DISPLAY_NAME}"
 ```
 
-**Config File Format** (`~/.roomz.toml`):
+**Static Configuration:**
+
 ```toml
+# ~/.roomz.toml
 server_url = "http://localhost:8000"
 display_name = "Alice"
 ```
@@ -204,28 +209,6 @@ display_name = "Alice"
 - Config files in world-writable directories are **rejected**
 - Home directory is trusted (no directory security check)
 - Session cache files are created with 0600 permissions
-
-**Migration from v0.1.x:**
-If you have an existing `~/.roomz/config.toml`, migrate to the new format:
-
-**Old Format** (deprecated):
-```toml
-[client]
-server_url = "http://localhost:8000"
-display_name = "Alice"
-```
-
-**New Format:**
-```toml
-server_url = "http://localhost:8000"
-display_name = "Alice"
-```
-
-Then set secure permissions:
-```bash
-mv ~/.roomz/config.toml ~/.roomz.toml
-chmod 600 ~/.roomz.toml
-```
 
 ### Using the AsyncClient
 

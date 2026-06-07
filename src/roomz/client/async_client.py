@@ -12,9 +12,10 @@ from typing import Any
 
 import aiohttp
 import socketio  # type: ignore[import-untyped]
+from clevis import SecurityAction, get_config
 from yarl import URL
 
-from roomz.client.config import RoomzConfig, get_roomz_config
+from roomz.client.config import RoomzConfig
 from roomz.client.events import EventEmitter, EventHandler
 from roomz.client.exceptions import AuthenticationError, ConfigurationError, ConnectionError
 from roomz.client.session import load_session_cache, save_session_cache
@@ -113,7 +114,17 @@ class AsyncClient:
     if config is not None:
       self._config = config
     else:
-      self._config = get_roomz_config(cli=False, args=args)
+      self._config = get_config(
+        RoomzConfig,
+        name="roomz",
+        user=True,
+        project=True,
+        cli=False,
+        security={
+          "file_permissions": SecurityAction.REJECT,
+          "directory_permissions": SecurityAction.REJECT,
+        },
+      )
 
     self._session_token = session_token
     self._reconnect = reconnect
