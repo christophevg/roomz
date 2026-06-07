@@ -1,5 +1,51 @@
 # Roomz Version History
 
+## 0.3.0 (2026-06-07)
+
+### Breaking Changes
+
+#### Configuration Format Change (I8-004)
+
+The TOML configuration file format has changed. Configuration values must now be at the top level instead of nested under a `[client]` section:
+
+**Old format (v0.2.x):**
+```toml
+[client]
+server_url = "http://localhost:5000"
+display_name = "Alice"
+```
+
+**New format (v0.3.x):**
+```toml
+server_url = "http://localhost:5000"
+display_name = "Alice"
+```
+
+### New Features
+
+#### Clevis Integration (I8-004)
+
+- **Replaced custom config module with clevis package** - Reduced custom code by 353 lines by adopting the clevis package for configuration management
+- **Security validation** - Configuration files with insecure permissions (group/world readable/writable) are now rejected
+- **RoomzConfig dataclass** - New structured configuration with built-in validation
+- **Session file security** - Session cache files now use secure 0600 permissions
+
+### Improvements
+
+- **Code reduction** - Eliminated 440+ lines of custom configuration and session handling code
+- **Better error messages** - Clearer error messages for configuration issues
+- **Simplified configuration** - Direct use of clevis for configuration discovery and loading
+
+### Migration Guide
+
+If you were using the TOML configuration file:
+
+1. Update your `~/.roomz.toml` or `./roomz.toml` file
+2. Remove the `[client]` section header
+3. Move all configuration values to the top level
+
+Environment variables and command-line arguments remain unchanged.
+
 ## 0.2.0 (2025-05-26)
 
 ### New Features
