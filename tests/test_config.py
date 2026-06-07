@@ -3,6 +3,7 @@ Tests for Config class using clevis package.
 """
 
 import os
+import platform
 from pathlib import Path
 from unittest import mock
 
@@ -10,6 +11,9 @@ import pytest
 
 from roomz.client.config import RoomzConfig, get_roomz_config
 from roomz.client.exceptions import ConfigurationError
+
+# Windows detection
+IS_WINDOWS = platform.system() == "Windows" or os.name == "nt"
 
 
 class TestRoomzConfig:
@@ -52,6 +56,7 @@ class TestRoomzConfig:
 class TestGetRoomzConfig:
   """Tests for get_roomz_config function."""
 
+  @pytest.mark.skipif(IS_WINDOWS, reason="Home directory not available on Windows CI")
   def test_get_config_from_env(self) -> None:
     """Test get_roomz_config from environment variables."""
     with mock.patch.dict(
@@ -63,6 +68,7 @@ class TestGetRoomzConfig:
       assert config.server_url == "http://example.com"
       assert config.display_name == "Bob"
 
+  @pytest.mark.skipif(IS_WINDOWS, reason="Unix file permissions not supported on Windows")
   def test_get_config_from_file(self, tmp_path: Path) -> None:
     """Test get_roomz_config from TOML file."""
     config_file = tmp_path / "roomz.toml"
@@ -81,6 +87,7 @@ display_name = "Alice"
       assert config.server_url == "http://localhost:5000"
       assert config.display_name == "Alice"
 
+  @pytest.mark.skipif(IS_WINDOWS, reason="Home directory not available on Windows CI")
   def test_get_config_priority_env_over_file(self, tmp_path: Path) -> None:
     """Test that env vars take precedence over file."""
     config_file = tmp_path / "roomz.toml"
@@ -137,6 +144,7 @@ class TestSecurity:
       with pytest.raises(ConfigurationError, match="Failed to load configuration"):
         get_roomz_config(cli=False, args=[])
 
+  @pytest.mark.skipif(IS_WINDOWS, reason="Unix file permissions not supported on Windows")
   def test_accepts_secure_config(self, tmp_path: Path) -> None:
     """Test that clevis accepts config with 0600 permissions."""
     config_file = tmp_path / "roomz.toml"
@@ -159,6 +167,7 @@ class TestBackwardCompatibility:
     result = resolve_config(config=explicit)
     assert result.server_url == "http://explicit.com"
 
+  @pytest.mark.skipif(IS_WINDOWS, reason="Home directory not available on Windows CI")
   def test_resolve_config_auto_discover(self) -> None:
     """Test resolve_config with auto-discovery."""
     from roomz.client.config import resolve_config
@@ -185,6 +194,7 @@ class TestIntegration:
     assert client.server_url == "http://localhost:5000"
     assert client.display_name == "TestUser"
 
+  @pytest.mark.skipif(IS_WINDOWS, reason="Home directory not available on Windows CI")
   def test_config_auto_discover_used_by_async_client(self) -> None:
     """Test that auto-discovered config works with AsyncClient."""
     from roomz.client import AsyncClient

@@ -127,7 +127,7 @@ def load_session_cache(cache_file: Path | None = None) -> dict[str, Any] | None:
 
   try:
     with open(cache_file) as f:
-      data = json.load(f)
+      data: dict[str, Any] = json.load(f)
       return data
   except (json.JSONDecodeError, OSError) as e:
     logger.warning(f"Failed to load session cookie: {e}")
