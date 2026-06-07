@@ -250,6 +250,30 @@
 
 ---
 
+### Iteration 9: Content Types & Participant List
+
+**Goal**: Enhanced message rendering and participant visibility
+
+- [ ] **I9-001: Message content type support** (Issue #8) (Priority: TBD - waiting for clarification)
+  - **Status**: WAITING FOR CLARIFICATION
+  - Add content type to messages (e.g., text/markdown, application/json)
+  - Support content sniffing for types without authoritative MIME types (e.g., diffs as text/plain)
+  - Render messages appropriately based on content type
+  - **Clarifying questions posted**: per-room vs per-message, initial formats, web vs Python client
+  - **Delivers**: Rich message rendering
+  - **Acceptance**: TBD after clarification
+
+- [ ] **I9-002: Participant list display** (Issue #9) (Priority: TBD - waiting for clarification)
+  - **Status**: WAITING FOR CLARIFICATION
+  - Display list of participants in room
+  - Show active/online status indicators
+  - Handle offline participants (still in room but not active)
+  - **Clarifying questions posted**: UI location, all vs active, web vs Python CLI
+  - **Delivers**: Visibility of who is in the room
+  - **Acceptance**: TBD after clarification
+
+---
+
 ### Postponed: Developer Experience
 
 - Enable repository as a plugin and create a skill for using/developing clients with the roomz module (cfr ../baseweb)
