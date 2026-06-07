@@ -250,11 +250,65 @@
 
 ---
 
-### Iteration 9: Content Types & Participant List
+### Iteration 9: CLI & Usability Improvements
+
+**Goal**: Improve CLI user experience and fix display name bugs
+
+- [ ] **I9-001: CLI Connection Status** (Priority: P1)
+  - Show connection status when starting CLI
+  - Display "Connecting to server..." message on startup
+  - Display "Connected to {server_url}" on successful connection
+  - Display error message if connection fails (with actionable guidance)
+  - **Delivers**: User visibility into connection state
+  - **Acceptance**:
+    - ✅ User sees "Connecting to server..." when CLI starts
+    - ✅ User sees "Connected to {server_url}" on successful connection
+    - ✅ User sees clear error message if connection fails
+    - ✅ Status messages are visible in TUI
+
+- [ ] **I9-002: CLI Config Command** (Priority: P2)
+  - Add `roomz config` command to show current configuration
+  - Display server_url, display_name, session_cache_file
+  - Show config file location (which file is being used)
+  - Useful for debugging configuration issues
+  - **Delivers**: Configuration visibility for debugging
+  - **Acceptance**:
+    - ✅ `roomz config` shows all current config values
+    - ✅ Shows which config file is active (path)
+    - ✅ Shows environment variable overrides in effect
+    - ✅ Clear, readable output format
+
+- [ ] **I9-003: Fix display_name not applied** (Priority: P1)
+  - **Bug**: display_name from config or CLI args is not being sent to server
+  - Investigate: Check if display_name is passed correctly from CliConfig
+  - Investigate: Verify display_name is being sent to server in WebSocket connection
+  - Ensure display_name flows from config → CliConfig → server
+  - **Delivers**: Working display name configuration
+  - **Acceptance**:
+    - ✅ display_name from ~/.roomz.toml is applied on connect
+    - ✅ display_name from --name CLI flag is applied
+    - ✅ display_name appears in presence events
+    - ✅ Messages show correct display name format: "{name} ({email})"
+
+- [ ] **I9-004: Text input focus in TUI** (Priority: P2)
+  - **Bug**: Text focus should always be on the input field in the TUI
+  - Ensure input field has focus on app start
+  - Ensure input field regains focus after any action
+  - Prevent focus from getting stuck elsewhere
+  - **Delivers**: Always-ready input for seamless typing
+  - **Acceptance**:
+    - ✅ Input field has focus when CLI starts
+    - ✅ Input field regains focus after sending message
+    - ✅ Input field regains focus after any command
+    - ✅ User can type immediately without clicking
+
+---
+
+### Iteration 10: Content Types & Participant List
 
 **Goal**: Enhanced message rendering and participant visibility
 
-- [ ] **I9-001: Message content type support** (Issue #8) (Priority: TBD)
+- [ ] **I10-001: Message content type support** (Issue #8) (Priority: TBD)
   - **Status**: READY FOR ANALYSIS
   - Content types: per message (not per-room)
   - Priority formats: markdown, code/diff (default: plain text)
@@ -269,7 +323,7 @@
     - ✅ Default plain text for messages without content type
     - ✅ Content type is per-message, not per-room
 
-- [ ] **I9-002: Participant list display** (Issue #9) (Priority: TBD)
+- [ ] **I10-002: Participant list display** (Issue #9) (Priority: TBD)
   - **Status**: READY FOR ANALYSIS
   - UI location: designer's choice
   - Display: all participants with active indicator
@@ -283,7 +337,7 @@
     - ✅ Python CLI has `/who` command to list participants
     - ✅ Active status clearly indicated for each participant
 
-- [ ] **I9-003: Question message type** (Issue #10) (Priority: TBD)
+- [ ] **I10-003: Question message type** (Issue #10) (Priority: TBD)
   - **Status**: READY FOR ANALYSIS
   - **Related to**: I9-001 (Message content types)
   - **Owner feedback received**: 2026-06-07
@@ -298,10 +352,10 @@
   - **Delivers**: Structured question/answer interactions
   - **Acceptance**: TBD (pending analysis)
 
-- [ ] **I9-004: Collapsible messages with subject** (Issue #11) (Priority: P2)
+- [ ] **I10-004: Collapsible messages with subject** (Issue #11) (Priority: P2)
   - **Status**: ANALYZED (ready for implementation)
   - **Analysis**: analysis/I9-004-collapsible-messages.md
-  - **Related to**: I9-001 (Message content types)
+  - **Related to**: I10-001 (Message content types)
   - **Owner feedback received**: 2026-06-07
   - **Subject**: Optional field (max 200 chars), supports markdown formatting, emoji
   - **Collapse state**: User preference > Message preference > Global default (collapsed)
@@ -325,11 +379,11 @@
 
 ---
 
-### Iteration 10: Message Persistence (Phase 1 - Foundation)
+### Iteration 11: Message Persistence (Phase 1 - Foundation)
 
 **Goal**: Enable message history, search, and threading foundation
 
-- [ ] **I10-001: Message History Persistence** (Priority: P1 - High)
+- [ ] **I11-001: Message History Persistence** (Priority: P1 - High)
   - **Status**: READY FOR ANALYSIS
   - **Research Reference**: research/chat-room-features.md (F3)
   - Store message history beyond current session with configurable retention
@@ -338,7 +392,7 @@
   - Per-conversation ordering for efficient pagination
   - Support incremental sync with "last known message" tracking
   - **Dependencies**: None (foundation feature)
-  - **Satisfies**: Enables I11-001 (search), I11-002 (threading)
+  - **Satisfies**: Enables I12-001 (search), I12-002 (threading)
   - **Delivers**: Persistent message history across sessions
   - **Acceptance**:
     - ✅ Messages persist across server restarts
@@ -346,14 +400,14 @@
     - ✅ Messages have unique, time-sortable IDs
     - ✅ Pagination works efficiently (cursor-based)
 
-- [ ] **I10-002: Infinite Scroll Back** (Priority: P2 - High)
+- [ ] **I11-002: Infinite Scroll Back** (Priority: P2 - High)
   - **Status**: READY FOR ANALYSIS
   - **Research Reference**: research/chat-room-features.md (F3 - Implementation Notes)
   - Load older messages on scroll to top
   - Cursor-based pagination for large result sets
   - Smooth loading experience without message jump
   - Preserve scroll position when new messages arrive
-  - **Dependencies**: I10-001 (Message History Persistence)
+  - **Dependencies**: I11-001 (Message History Persistence)
   - **Satisfies**: Efficient history browsing
   - **Delivers**: Seamless message history navigation
   - **Acceptance**:
@@ -363,11 +417,11 @@
 
 ---
 
-### Iteration 11: Participant & Status (Phase 1 - High Priority)
+### Iteration 12: Participant & Status (Phase 1 - High Priority)
 
 **Goal**: Visibility and status for multi-agent coordination
 
-- [ ] **I11-001: Participant Status with typing indicator** (Priority: P1 - High)
+- [ ] **I12-001: Participant Status with typing indicator** (Priority: P1 - High)
   - **Status**: READY FOR ANALYSIS
   - **Research Reference**: research/chat-room-features.md (F7, F9)
   - Real-time status: active, thinking, idle, error, disconnected
@@ -375,7 +429,7 @@
   - Debounced WebSocket events for typing (short TTL 2-3 seconds)
   - Combine multiple typing states: "Alice and 2 others are typing..."
   - Server-side coalescing to avoid overwhelming clients
-  - **Dependencies**: I9-002 (Participant List Display)
+  - **Dependencies**: I10-002 (Participant List Display)
   - **Satisfies**: R-agent-status (from research)
   - **Delivers**: Real-time agent availability and activity visibility
   - **Acceptance**:
@@ -384,14 +438,14 @@
     - ✅ Multiple concurrent typing states display correctly
     - ✅ Status updates in real-time via WebSocket
 
-- [ ] **I11-002: Status command** (Priority: P2 - Medium)
+- [ ] **I12-002: Status command** (Priority: P2 - Medium)
   - **Status**: READY FOR ANALYSIS
   - **Research Reference**: research/chat-room-features.md (F7 - Agent Status Indicators)
   - `/status <status>` command for setting custom status
   - Status types: available, busy, away, sleeping, custom message
   - Status appears in participant list with visual indicator
   - Auto-clear status after configurable timeout
-  - **Dependencies**: I11-001 (Participant Status infrastructure)
+  - **Dependencies**: I12-001 (Participant Status infrastructure)
   - **Satisfies**: Custom agent status visibility
   - **Delivers**: Custom status for agents and users
   - **Acceptance**:
@@ -402,11 +456,11 @@
 
 ---
 
-### Iteration 12: Advanced Messaging (Phase 2)
+### Iteration 13: Advanced Messaging (Phase 2)
 
 **Goal**: Organize conversations and provide visual feedback
 
-- [ ] **I12-001: Message Threading** (Priority: P2 - Medium)
+- [ ] **I13-001: Message Threading** (Priority: P2 - Medium)
   - **Status**: READY FOR ANALYSIS
   - **Research Reference**: research/chat-room-features.md (F1)
   - Parent-child message relationships for topic-focused discussions
@@ -415,7 +469,7 @@
   - Reply count on parent messages
   - Inline threading UI (like Google Chat) or modal views for mobile
   - Thread summarization for context management
-  - **Dependencies**: I10-001 (Message History Persistence)
+  - **Dependencies**: I11-001 (Message History Persistence)
   - **Satisfies**: R-threading (from research)
   - **Delivers**: Organized multi-turn agent conversations
   - **Acceptance**:
@@ -424,7 +478,7 @@
     - ✅ Reply count displayed on parent message
     - ✅ Thread view shows full conversation thread
 
-- [ ] **I12-002: Typing Indicators** (Priority: P3 - Low)
+- [ ] **I13-002: Typing Indicators** (Priority: P3 - Low)
   - **Status**: READY FOR ANALYSIS
   - **Research Reference**: research/chat-room-features.md (F9)
   - Visual "Agent is typing..." feedback during agent processing
@@ -440,11 +494,11 @@
 
 ---
 
-### Iteration 13: File & Export (Phase 3)
+### Iteration 14: File & Export (Phase 3)
 
 **Goal**: Enable artifact sharing and compliance workflows
 
-- [ ] **I13-001: File Attachments** (Priority: P3 - Medium)
+- [ ] **I14-001: File Attachments** (Priority: P3 - Medium)
   - **Status**: READY FOR ANALYSIS
   - **Research Reference**: research/chat-room-features.md (F20)
   - Upload and share files in chat (documents, images, code files)
@@ -463,14 +517,14 @@
     - ✅ Download link works for all file types
     - ✅ File size limits enforced
 
-- [ ] **I13-002: Message Export** (Priority: P3 - Low)
+- [ ] **I14-002: Message Export** (Priority: P3 - Low)
   - **Status**: READY FOR ANALYSIS
   - **Research Reference**: research/chat-room-features.md (F17)
   - Export conversation history as JSON, Markdown, or plain text
   - Filter by date range
   - Include all metadata (timestamps, user info)
   - Download as file
-  - **Dependencies**: I10-001 (Message History Persistence)
+  - **Dependencies**: I11-001 (Message History Persistence)
   - **Satisfies**: R-compliance (from research)
   - **Delivers**: Compliance and backup capability
   - **Acceptance**:
@@ -742,6 +796,7 @@
     - ✅ Works on mobile (responsive layout)
 
 **Result**: Open the web app, type a message, see it appear on all connected browsers. Pure real-time chat, no auth, no persistence, no rooms.
+
 
 
 
