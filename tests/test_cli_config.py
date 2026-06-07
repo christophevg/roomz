@@ -5,12 +5,18 @@ This tests the specific issue where nested dataclasses with
 'from __future__ import annotations' fail to parse CLI arguments.
 """
 
+import os
+import platform
 from pathlib import Path
 from unittest import mock
 
+import pytest
 from clevis import get_config
 
 from roomz.client.config import RoomzConfig
+
+# Windows detection
+IS_WINDOWS = platform.system() == "Windows" or os.name == "nt"
 
 
 class TestCLIConfig:
@@ -56,6 +62,7 @@ class TestCLIConfig:
           assert config.client.server_url == "http://localhost:8000"
           assert config.client.display_name == "Alice"
 
+  @pytest.mark.skipif(IS_WINDOWS, reason="Unix file permissions not supported on Windows")
   def test_get_config_cli_overrides_file(self, tmp_path: Path) -> None:
     """Test that CLI args override file config for nested fields."""
     config_file = tmp_path / "roomz.toml"
