@@ -283,6 +283,37 @@
     - ✅ Python CLI has `/who` command to list participants
     - ✅ Active status clearly indicated for each participant
 
+- [ ] **I9-003: Question message type** (Issue #10) (Priority: TBD)
+  - **Status**: WAITING FOR CLARIFICATION
+  - **Related to**: I9-001 (Message content types)
+  - **Clarifying questions posted**: 2026-06-07
+  - Questions:
+    1. Rendering differences between web/CLI?
+    2. Answer options provided by sender or open-ended?
+    3. Response as new message type (application/x-answer)?
+    4. Agent-to-user, user-to-agent, or both?
+    5. Timeout for unanswered questions?
+  - Feature: Special message type for multiple choice questions
+  - Extensions: multiple answers (checkboxes), free text option
+  - **Delivers**: Structured question/answer interactions
+  - **Acceptance**: TBD (pending clarification)
+
+- [ ] **I9-004: Collapsible messages with subject** (Issue #11) (Priority: TBD)
+  - **Status**: WAITING FOR CLARIFICATION
+  - **Related to**: I9-001 (Message content types)
+  - **Clarifying questions posted**: 2026-06-07
+  - Questions:
+    1. Subject required or optional?
+    2. Collapsed state persistence across sessions?
+    3. Global expand/collapse all setting?
+    4. Default collapsed content types?
+    5. Apply to all messages or specific content types?
+  - Feature: Messages with optional subject and collapsible body
+  - User can control default expanded/collapsed state
+  - Enables large messages with short summary
+  - **Delivers**: Better handling of large/complex messages
+  - **Acceptance**: TBD (pending clarification)
+
 ---
 
 ### Postponed: Developer Experience
@@ -546,5 +577,6 @@
     - ✅ Works on mobile (responsive layout)
 
 **Result**: Open the web app, type a message, see it appear on all connected browsers. Pure real-time chat, no auth, no persistence, no rooms.
+
 
 
